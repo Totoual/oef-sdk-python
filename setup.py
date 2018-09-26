@@ -32,9 +32,9 @@ class build_ext(build_ext_orig):
         # these dirs will be created in build_py, so if you don't have
         # any python sources to bundle, the dirs will be missing
         build_temp = pathlib.Path(self.build_temp)
+        print("build_temp: ", build_temp)
         build_temp.mkdir(parents=True, exist_ok=True)
         extdir = pathlib.Path(self.get_ext_fullpath(ext.name))
-        print("self.get_ext_fullpath(ext.name): ", self.get_ext_fullpath(ext.name))
         extdir.mkdir(parents=True, exist_ok=True)
         # example of cmake args
         config = 'Debug' if self.debug else 'Release'
@@ -56,8 +56,9 @@ class build_ext(build_ext_orig):
         os.chdir(str(cwd))
         if ext.name == "oef3":
             # need to copy node executable
-            copyfile("build/temp.linux-x86_64-3.6/apps/node/Node", "./Node")
-            copymode("build/temp.linux-x86_64-3.6/apps/node/Node", "./Node")
+            node_path = os.path.join(str(build_temp), "apps/node/Node")
+            copyfile(node_path, "./Node")
+            copymode(node_path, "./Node")
 
 
 setup(

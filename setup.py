@@ -27,7 +27,7 @@ class build_ext(build_ext_orig):
 
     def build_cmake(self, ext):
         cwd = pathlib.Path().absolute()
-        library_dir = os.path.join(cwd, ext.name)
+        library_dir = os.path.join(str(cwd), ext.name)
 
         # these dirs will be created in build_py, so if you don't have
         # any python sources to bundle, the dirs will be missing

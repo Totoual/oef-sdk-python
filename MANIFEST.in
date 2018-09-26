@@ -1,0 +1,7 @@
+include README.md LICENSE HISTORY.rst AUTHORS.rst Pipfile Pipfile.lock
+
+recursive-include examples *
+recursive-include test *.py
+recursive-include oef-core-protocol *
+recursive-include scripts *.py
+recursive-include docs *

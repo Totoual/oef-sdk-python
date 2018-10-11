@@ -2,7 +2,7 @@
 	path = OEFCoreProtocol
 	url = git@github.com:uvue-git/OEFCoreProtocol.git
 	branch = master
-[submodule "oef3"]
-	path = oef3
-	url = git@github.com:uvue-git/oef3.git
-	branch = master
+
+[submodule "OEFCore"]
+	path = OEFCore
+	url = git@github.com:uvue-git/OEFCore.git

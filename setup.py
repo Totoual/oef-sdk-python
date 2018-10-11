@@ -54,7 +54,7 @@ class build_ext(build_ext_orig):
         if not self.dry_run:
             self.spawn(['cmake', '--build', '.'] + build_args)
         os.chdir(str(cwd))
-        if ext.name == "oef3":
+        if ext.name == "OEFCore":
             # need to copy node executable
             node_path = os.path.join(str(build_temp), "apps/node/Node")
             copyfile(node_path, "./Node")
@@ -65,7 +65,7 @@ setup(
     name='oef_python',
     version='0.1',
     packages=['oef_python'],
-    ext_modules=[CMakeExtension('oef3')],
+    ext_modules=[CMakeExtension('OEFCore')],
     cmdclass={
         'build_ext': build_ext,
     }

@@ -11,6 +11,8 @@ from typing import List, Optional
 from api import Description, AttributeSchema, AttributeInconsistencyException,\
         generate_schema, OEFProxy, DataModel, Query, Constraint, Range, In, NotIn, CFP_TYPES
 
+from google.protobuf import text_format
+
 class Agent(object):
     def __init__(self, connection):
         self._connection = connection
@@ -52,8 +54,12 @@ if __name__ == "__main__":
 #    query = Query([Constraint(AttributeSchema("manufacturer", str, True), Range(("A","K")))])
 #    query = Query([Constraint(AttributeSchema("manufacturer", str, True), NotIn(["Lamborghini","Porsche"]))])
 #    query = Query([Constraint(AttributeSchema("year", int, True), In([2000,2012]))])
-#    query = Query([Constraint(AttributeSchema("price", float, True), In([5000.,20000.]))])
-    query = Query([Constraint(AttributeSchema("luxury", bool, True), In([True]))])
+    query = Query([Constraint(AttributeSchema("price", float, True), In([5000.,20000.]))])
+#    query = Query([Constraint(AttributeSchema("luxury", bool, True), In([True]))])
+    query_pb = query.to_query_pb()
+    print(text_format.MessageToString(query_pb))
+    query2 = Query.from_pb(query_pb)
+    print(text_format.MessageToString(query2.to_pb()))
     connection3.search_services(query)
     agent = Agent(connection3)
     event_loop.run_until_complete(connection3.loop(agent))

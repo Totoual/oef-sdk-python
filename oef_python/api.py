@@ -302,8 +302,7 @@ def relation_from_pb(relation : query_pb2.Query.Relation) -> Relation:
     elif value_case == "i":
         return relations_from_pb[relation.op](relation.val.i)
     elif value_case == "f":
-        return relations_from_pb[relation.op](relation.val.f)
-        
+        return relations_from_pb[relation.op](relation.val.f)        
     
 RANGE_TYPES = Union[Tuple[str,str],Tuple[int,int],Tuple[float,float]]
 
@@ -330,6 +329,18 @@ class Range(object):
             range_.f.CopyFrom(values)
         return range_
 
+    @classmethod
+    def from_pb(cls, range_pb : query_pb2.Query.Range):
+        range_case = range_pb.WhichOneof("pair")
+        if range_case == "s":
+            values = (range_pb.s.first, range_pb.s.second)
+        elif range_case == "i":
+            values = (range_pb.i.first, range_pb.i.second)
+        elif range_case == "f":
+            values = (range_pb.f.first, range_pb.f.second)
+        return cls(values)
+
+    
 SET_TYPES = Union[List[float],List[str],List[bool],List[int]]
 
 class Set(object):
@@ -368,7 +379,19 @@ class NotIn(Set):
         super().__init__(values)
     def _to_pb(self):
         return query_pb2.Query.Set.NOTIN
-    
+
+def set_from_pb(set_pb : query_pb2.Query.Set) -> Set:
+    op_from_pb = {query_pb2.Query.Set.IN: In, query_pb2.Query.Set.NOTIN: NotIn}
+    value_case = set_pb.vals.WhichOneof("values")
+    if value_case == "s":
+        return op_from_pb[set_pb.op](set_pb.vals.s.vals)
+    elif value_case == "b":
+        return op_from_pb[set_pb.op](set_pb.vals.b.vals)
+    elif value_case == "i":
+        return op_from_pb[set_pb.op](set_pb.vals.i.vals)
+    elif value_case == "f":
+        return op_from_pb[set_pb.op](set_pb.vals.f.vals)
+
 CONSTRAINT_TYPES = Union[Relation,Range,Set]
 
 class Constraint(object):
@@ -396,6 +419,10 @@ class Constraint(object):
         constraint_case = constraint_pb.constraint.WhichOneof("constraint")
         if constraint_case == "relation":
             constraint = relation_from_pb(constraint_pb.constraint.relation)
+        elif constraint_case == "set_":
+            constraint = set_from_pb(constraint_pb.constraint.set_)
+        elif constraint_case == "range_":
+            constraint = Range.from_pb(constraint_pb.constraint.range_)
         return cls(AttributeSchema.from_pb(constraint_pb.attribute), constraint)
     
 class Query(object):

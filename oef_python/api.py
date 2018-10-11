@@ -305,8 +305,32 @@ def relation_from_pb(relation : query_pb2.Query.Relation) -> Relation:
         return relations_from_pb[relation.op](relation.val.f)
         
     
-    
-CONSTRAINT_TYPES = Union[Relation]
+RANGE_TYPES = Union[Tuple[str,str],Tuple[int,int],Tuple[float,float]]
+
+class Range(object):
+    def __init__(self, values: RANGE_TYPES) -> None:
+        self._values = values
+
+    def to_pb(self):
+        range_ = query_pb2.Query.Range()
+        if isinstance(self._values[0], str):
+            values = query_pb2.Query.StringPair()
+            values.first = self._values[0]
+            values.second = self._values[1]
+            range_.s.CopyFrom(values)
+        elif isinstance(self._values[0], int):
+            values = query_pb2.Query.IntPair()
+            values.first = self._values[0]
+            values.second = self._values[1]
+            range_.i.CopyFrom(values)
+        elif isinstance(self._values[0], float):
+            values = query_pb2.Query.FloatPair()
+            values.first = self._values[0]
+            values.second = self._values[1]
+            range_.f.CopyFrom(values)
+        return range_
+            
+CONSTRAINT_TYPES = Union[Relation,Range]
 
 class Constraint(object):
     def __init__(self,
@@ -319,6 +343,8 @@ class Constraint(object):
         constraint_type = query_pb2.Query.Constraint.ConstraintType()
         if isinstance(self._constraint, Relation):
             constraint_type.relation.CopyFrom(self._constraint.to_pb())
+        elif isinstance(self._constraint, Range):
+            constraint_type.range_.CopyFrom(self._constraint.to_pb())
         constraint = query_pb2.Query.Constraint()
         constraint.attribute.CopyFrom(self._attribute.to_pb())
         constraint.constraint.CopyFrom(constraint_type)

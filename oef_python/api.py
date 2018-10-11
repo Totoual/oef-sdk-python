@@ -329,8 +329,47 @@ class Range(object):
             values.second = self._values[1]
             range_.f.CopyFrom(values)
         return range_
-            
-CONSTRAINT_TYPES = Union[Relation,Range]
+
+SET_TYPES = Union[List[float],List[str],List[bool],List[int]]
+
+class Set(object):
+    def __init__(self, values : SET_TYPES) -> None:
+        self._values = values
+
+    def to_pb(self):
+        set_ = query_pb2.Query.Set()
+        set_.op = self._to_pb()
+        if isinstance(self._values[0], str):
+            values = query_pb2.Query.Set.Values.Strings()
+            values.vals.extend(self._values)
+            set_.vals.s.CopyFrom(values)
+        elif isinstance(self._values[0], bool): # warning: order matters, bools before ints.
+            values = query_pb2.Query.Set.Values.Bools()
+            values.vals.extend(self._values)
+            set_.vals.b.CopyFrom(values)
+        elif isinstance(self._values[0], int):
+            values = query_pb2.Query.Set.Values.Ints()
+            values.vals.extend(self._values)
+            set_.vals.i.CopyFrom(values)
+        elif isinstance(self._values[0], float):
+            values = query_pb2.Query.Set.Values.Floats()
+            values.vals.extend(self._values)
+            set_.vals.f.CopyFrom(values)
+        return set_
+
+class In(Set):
+    def __init__(self, values : SET_TYPES) -> None:
+        super().__init__(values)
+    def _to_pb(self):
+        return query_pb2.Query.Set.IN
+    
+class NotIn(Set):
+    def __init__(self, values : SET_TYPES) -> None:
+        super().__init__(values)
+    def _to_pb(self):
+        return query_pb2.Query.Set.NOTIN
+    
+CONSTRAINT_TYPES = Union[Relation,Range,Set]
 
 class Constraint(object):
     def __init__(self,
@@ -345,6 +384,8 @@ class Constraint(object):
             constraint_type.relation.CopyFrom(self._constraint.to_pb())
         elif isinstance(self._constraint, Range):
             constraint_type.range_.CopyFrom(self._constraint.to_pb())
+        elif isinstance(self._constraint, Set):
+            constraint_type.set_.CopyFrom(self._constraint.to_pb())
         constraint = query_pb2.Query.Constraint()
         constraint.attribute.CopyFrom(self._attribute.to_pb())
         constraint.constraint.CopyFrom(constraint_type)

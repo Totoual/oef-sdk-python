@@ -9,7 +9,7 @@ import asyncio
 from typing import List, Optional
 
 from api import Description, AttributeSchema, AttributeInconsistencyException,\
-        generate_schema, OEFProxy, DataModel, Query, Constraint, Range, CFP_TYPES
+        generate_schema, OEFProxy, DataModel, Query, Constraint, Range, In, NotIn, CFP_TYPES
 
 class Agent(object):
     def __init__(self, connection):
@@ -49,7 +49,11 @@ if __name__ == "__main__":
     connection2.register_service(car_description2)
 #    query = Query([Constraint(AttributeSchema("year", int, True), Range((2000,2013)))])
 #    query = Query([Constraint(AttributeSchema("price", float, True), Range((5000.,20000.)))])
-    query = Query([Constraint(AttributeSchema("manufacturer", str, True), Range(("A","K")))])
+#    query = Query([Constraint(AttributeSchema("manufacturer", str, True), Range(("A","K")))])
+#    query = Query([Constraint(AttributeSchema("manufacturer", str, True), NotIn(["Lamborghini","Porsche"]))])
+#    query = Query([Constraint(AttributeSchema("year", int, True), In([2000,2012]))])
+#    query = Query([Constraint(AttributeSchema("price", float, True), In([5000.,20000.]))])
+    query = Query([Constraint(AttributeSchema("luxury", bool, True), In([True]))])
     connection3.search_services(query)
     agent = Agent(connection3)
     event_loop.run_until_complete(connection3.loop(agent))

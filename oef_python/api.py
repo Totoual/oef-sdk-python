@@ -9,9 +9,35 @@ Python bindings for OEFCore
 
 import asyncio
 import copy
+import agent_pb2 as agent_pb2
+import query_pb2 as query_pb2
+import fipa_pb2 as fipa_pb2
+import struct
+
 from typing import List, Callable, Optional, Union, Dict, Awaitable, Tuple
 
 ATTRIBUTE_TYPES = Union[float, str, bool, int]
+
+def attribute_type_to_pb(attribute_type: ATTRIBUTE_TYPES):
+    if attribute_type == bool:
+        return query_pb2.Query.Attribute.BOOL
+    elif attribute_type == int:
+        return query_pb2.Query.Attribute.INT
+    elif attribute_type == float:
+        return query_pb2.Query.Attribute.FLOAT
+    elif attribute_type == str:
+        return query_pb2.Query.Attribute.STRING
+
+def attribute_pb_to_type(attribute_type : query_pb2.Query.Attribute):
+    if attribute_type == query_pb2.Query.Attribute.BOOL:
+        return bool
+    elif attribute_type == query_pb2.Query.Attribute.STRING :
+        return str
+    elif attribute_type == query_pb2.Query.Attribute.INT :
+        return int
+    elif attribute_type == query_pb2.Query.Attribute.FLOAT :
+        return float
+    
 """
 The allowable types that an Attribute can have
 """
@@ -49,6 +75,18 @@ class AttributeSchema(object):
                     self.required == other.required and self.description == other.description)
         return False
 
+    def to_pb(self):
+        attribute = query_pb2.Query.Attribute()
+        attribute.name = self.name
+        attribute.type = attribute_type_to_pb(self.type)
+        attribute.required = self.required
+        if self.description is not None:
+            attribute.description = self.description
+        return attribute
+
+    @classmethod
+    def from_pb(cls, attribute : query_pb2.Query.Attribute):
+        return cls(attribute.name, attribute_pb_to_type(attribute.type), attribute.required, attribute.description)
 
 class AttributeInconsistencyException(Exception):
     """
@@ -60,16 +98,52 @@ class AttributeInconsistencyException(Exception):
     pass
 
 
-def generate_schema(attribute_values):
+
+class DataModel(object):
+    def __init__(self,
+                 name : str,
+                 attribute_schemas: List[AttributeSchema],
+                 description : Optional[str] = None) -> None:
+        self.name = name
+        self.attribute_schemas = copy.deepcopy(attribute_schemas) # what for ?
+        self.description = description
+
+    @classmethod
+    def from_pb(cls, model : query_pb2.Query.DataModel):
+        name = model.name
+        attributes = [AttributeSchema.from_pb(attr_pb) for attr_pb in model.attributes]
+        description = model.description
+        return cls(name, attributes, description)
+        
+    def to_pb(self):
+        model = query_pb2.Query.DataModel()
+        model.name = self.name
+        model.attributes.extend([attr.to_pb() for attr in self.attribute_schemas])
+        if self.description is not None:
+            model.description = self.description
+        return model
+
+def generate_schema(model_name, attribute_values):
     """
     Will generate a schema that matches the values stored in this description.
 
     For each attribute (name, value), we generate an AttributeSchema:
         AttributeInconsistencyException(name, type(value), false, "")
-    Note that it is assumed that each attribute is not required.
+    Note that it is assumed that each attribute is required.
     """
-    return [AttributeSchema(k, type(v), False, "") for k, v in attribute_values.items()]
+    return DataModel(model_name, [AttributeSchema(k, type(v), True, "") for k, v in attribute_values.items()])
 
+
+def extract_value(value : query_pb2.Query.Value) -> ATTRIBUTE_TYPES:
+    value_case = value.WhichOneof("value")
+    if value_case == "s":
+        return value.s
+    elif value_case == "b":
+        return value.b
+    elif value_case == "i":
+        return value.i
+    elif value_case == "f":
+        return value.f
 
 class Description(object):
     """
@@ -82,7 +156,7 @@ class Description(object):
     """
     def __init__(self,
                  attribute_values: Dict[str, ATTRIBUTE_TYPES],
-                 attribute_schemas: Optional[List[AttributeSchema]]) -> None:
+                 data_model: DataModel) -> None:
         """
         :param attribute_values: the values of each attribute in the description. This is a
         dictionary from attribute name to attribute value, each attribute value must have a type
@@ -92,13 +166,39 @@ class Description(object):
         for preventing hard to debug problems, and are highly recommended.
         """
         self._values = copy.deepcopy(attribute_values)
-        if attribute_schemas is not None:
-            self._schemas = copy.deepcopy(attribute_schemas)
-        else:
-            self._schemas = generate_schema(self._values)
-
+        self._data_model = data_model
         self._check_consistency()
 
+    @classmethod
+    def from_pb(cls, query_instance : query_pb2.Query.Instance):
+        model = DataModel.from_pb(query_instance.model)
+        values = dict([(attr.key,extract_value(attr.value)) for attr in query_instance.values])
+        return cls(values, model)
+        
+    def _to_key_value_pb(self, key: str, value: ATTRIBUTE_TYPES):
+        kv = query_pb2.Query.KeyValue()
+        kv.key = key
+        if isinstance(value, bool):
+            kv.value.b = value
+        elif isinstance(value, int):
+            kv.value.i = value
+        elif isinstance(value, float):
+            kv.value.f = value
+        elif isinstance(value, str):
+            kv.value.s = value
+        return kv
+
+    def as_instance(self):
+        instance = query_pb2.Query.Instance()
+        instance.model.CopyFrom(self._data_model.to_pb())
+        instance.values.extend([self._to_key_value_pb(key, value) for key, value in self._values.items()])
+        return instance
+    
+    def to_pb(self):
+        description = agent_pb2.AgentDescription()
+        description.description.CopyFrom(self.as_instance())
+        return description
+        
     def _check_consistency(self):
         """
         Checks the consistency of the values of this description.
@@ -109,19 +209,19 @@ class Description(object):
         :raises AttributeInconsistencyException: if values do not meet the schema, or if no schema
         is present if they have disallowed types.
         """
-        if self._schemas is not None:
+        if self._data_model is not None:
             # check that all required attributes in the schema are contained in
-            required_attributes = [s.name for s in self._schemas if s.required]
+            required_attributes = [s.name for s in self._data_model.attribute_schemas if s.required]
             if not all(a in self._values for a in required_attributes):
                 raise AttributeInconsistencyException("Missing required attribute.")
 
             # check that all values are defined in the schema
-            all_schema_attributes = [s.name for s in self._schemas]
+            all_schema_attributes = [s.name for s in self._data_model.attribute_schemas]
             if not all(k in all_schema_attributes for k in self._values):
                 raise AttributeInconsistencyException("Have extra attribute not in schema")
 
             # check that each of the values are consistent with that specified in the schema
-            for schema in self._schemas:
+            for schema in self._data_model.attribute_schemas:
                 if schema.name in self._values:
                     if not isinstance(self._values[schema.name], schema.type):
                         # values does not match type in schema
@@ -133,18 +233,141 @@ class Description(object):
                             "Attribute {} has unallowed type".format(schema.name))
 
 
+# there must be a better way ...
+class Relation(object):
+    def __init__(self, value: ATTRIBUTE_TYPES) -> None:
+        self.value = value
+
+    def to_pb(self):
+        relation = query_pb2.Query.Relation()
+        relation.op = self._to_pb()
+        query_value = query_pb2.Query.Value()
+        if isinstance(self.value, bool):
+            query_value.b = self.value
+        elif isinstance(self.value, int):
+            query_value.i = self.value
+        elif isinstance(self.value, float):
+            query_value.f = self.value
+        elif isinstance(self.value, str):
+            query_value.s = self.value
+        relation.val.CopyFrom(query_value)
+        return relation
+
+
+class Eq(Relation):
+    def __init__(self, value: ATTRIBUTE_TYPES) -> None:
+        super().__init__(value)
+    def _to_pb(self):
+        return query_pb2.Query.Relation.EQ
+    
+class NotEq(Relation):
+    def __init__(self, value: ATTRIBUTE_TYPES) -> None:
+        super().__init__(value)
+    def _to_pb(self):
+        return query_pb2.Query.Relation.NOTEQ
+    
+class Lt(Relation):
+    def __init__(self, value: ATTRIBUTE_TYPES) -> None:
+        super().__init__(value)
+    def _to_pb(self):
+        return query_pb2.Query.Relation.LT
+    
+class LtEq(Relation):
+    def __init__(self, value: ATTRIBUTE_TYPES) -> None:
+        super().__init__(value)
+    def _to_pb(self):
+        return query_pb2.Query.Relation.LTEQ
+    
+class Gt(Relation):
+    def __init__(self, value: ATTRIBUTE_TYPES) -> None:
+        super().__init__(value)
+    def _to_pb(self):
+        return query_pb2.Query.Relation.GT
+    
+class GtEq(Relation):
+    def __init__(self, value: ATTRIBUTE_TYPES) -> None:
+        super().__init__(value)
+    def _to_pb(self):
+        return query_pb2.Query.Relation.GTEQ
+
+def relation_from_pb(relation : query_pb2.Query.Relation) -> Relation:
+    relations_from_pb = {query_pb2.Query.Relation.GTEQ: GtEq, query_pb2.Query.Relation.GT: Gt,
+                         query_pb2.Query.Relation.LTEQ: LtEq, query_pb2.Query.Relation.LT: Lt,
+                         query_pb2.Query.Relation.NOTEQ: NotEq, query_pb2.Query.Relation.EQ: Eq}
+    value_case = relation.val.WhichOneof("value")
+    if value_case == "s":
+        return relations_from_pb[relation.op](relation.val.s)
+    elif value_case == "b":
+        return relations_from_pb[relation.op](relation.val.b)
+    elif value_case == "i":
+        return relations_from_pb[relation.op](relation.val.i)
+    elif value_case == "f":
+        return relations_from_pb[relation.op](relation.val.f)
+        
+    
+    
+CONSTRAINT_TYPES = Union[Relation]
+
+class Constraint(object):
+    def __init__(self,
+                 attribute: AttributeSchema,
+                 constraint: CONSTRAINT_TYPES) -> None:
+        self._attribute = attribute
+        self._constraint = constraint
+        
+    def to_pb(self):
+        constraint_type = query_pb2.Query.Constraint.ConstraintType()
+        if isinstance(self._constraint, Relation):
+            constraint_type.relation.CopyFrom(self._constraint.to_pb())
+        constraint = query_pb2.Query.Constraint()
+        constraint.attribute.CopyFrom(self._attribute.to_pb())
+        constraint.constraint.CopyFrom(constraint_type)
+        return constraint
+
+    @classmethod
+    def from_pb(cls, constraint_pb : query_pb2.Query.Constraint):
+        constraint_case = constraint_pb.constraint.WhichOneof("constraint")
+        if constraint_case == "relation":
+            constraint = relation_from_pb(constraint_pb.constraint.relation)
+        return cls(AttributeSchema.from_pb(constraint_pb.attribute), constraint)
+    
 class Query(object):
     """
     Representation of a search that is to be performed. Currently a search is represented as a
     set of key value pairs that must be contained in the description of the service/ agent.
     """
-    pass
+    def __init__(self,
+                 constraints: List[Constraint],
+                 model: Optional[DataModel] = None) -> None:
+        self._constraints = constraints
+        self._model = model
+
+    def to_query_pb(self):
+        query = query_pb2.Query.Model()
+        query.constraints.extend([constraint.to_pb() for constraint in self._constraints])
+        if self._model is not None:
+            query.model.CopyFrom(self._model.to_pb())
+        return query
+
+    def to_pb(self):
+        query = self.to_query_pb()
+        agent_search = agent_pb2.AgentSearch()
+        agent_search.query.CopyFrom(query)
+        return agent_search
+
+    @classmethod
+    def from_pb(cls, query : query_pb2.Query.Model):
+        constraints = [Constraint.from_pb(constraint_pb) for constraint_pb in query.constraints]
+        return cls(constraints, DataModel.from_pb(query.model) if query.HasField("model") else None)
 
 class Conversation(object):
     """
     A conversation
     """
 
+NoneType = type(None)
+CFP_TYPES = Union[Query,bytes,NoneType]
+PROPOSE_TYPES = Union[bytes,List[Description]]
 
 class OEFProxy(object):
     """
@@ -156,19 +379,187 @@ class OEFProxy(object):
      * Establish a connection with another agent
     """
 
-    def __init__(self, host_path: str) -> None:
+    def __init__(self, public_key: str, host_path: str) -> None:
         """
         :param host_path: the path to the host
         """
+        self._public_key = public_key
         self._host_path = host_path
 
         # these are setup in _connect_to_server
+        self._connection = None
         self._server_reader = None
         self._server_writer = None
 
-    async def _connect_to_server(self) -> Awaitable[Tuple[asyncio.StreamReader, asyncio.StreamWriter]]:
-        return await asyncio.open_connection(self._host_path, OEF_SERVER_PORT)
+    async def _connect_to_server(self, event_loop) -> Awaitable[Tuple[asyncio.StreamReader, asyncio.StreamWriter]]:
+        return await asyncio.open_connection(self._host_path, OEF_SERVER_PORT, loop=event_loop)
 
+    def _send(self, protobuf_msg): # async too ?
+        serialized_msg = protobuf_msg.SerializeToString()
+        nbytes = struct.pack("I", len(serialized_msg))
+        self._server_writer.write(nbytes)
+        self._server_writer.write(serialized_msg)
+
+    async def _receive(self):
+        nbytes_packed = await self._server_reader.read(len(struct.pack("I",0)))
+        print("received ${0}".format(nbytes_packed))
+        nbytes = struct.unpack("I", nbytes_packed)
+        print("received unpacked ${0}".format(nbytes[0]))
+        print("Preparing to receive ${0} bytes ...".format(nbytes[0]))
+        return await self._server_reader.read(nbytes[0])
+
+    async def connect(self) -> bool:
+        event_loop = asyncio.get_event_loop()
+        self._connection = await self._connect_to_server(event_loop)
+        self._server_reader, self._server_writer = self._connection
+        # Step 1: Agent --(ID)--> OEFCore
+        pb_public_key = agent_pb2.Agent.Server.ID()
+        pb_public_key.public_key = self._public_key
+        self._send(pb_public_key)
+        # Step 2: OEFCore --(Phrase)--> Agent
+        data = await self._receive()
+        pb_phrase = agent_pb2.Server.Phrase()
+        pb_phrase.ParseFromString(data)
+        case = pb_phrase.WhichOneof("payload")
+        if case == "failure":
+            return False
+        # Step 3: Agent --(Answer)--> OEFCore
+        pb_answer = agent_pb2.Agent.Server.Answer()
+        pb_answer.answer = pb_phrase.phrase[::-1]
+        self._send(pb_answer)
+        # Step 4: OEFCore --(Connected)--> Agent
+        data = await self._receive()
+        pb_status = agent_pb2.Server.Connected()
+        pb_status.ParseFromString(data)
+        return pb_status.status
+
+    async def loop(self, agent) -> None:
+        while True:
+            data = await self._receive()
+            msg = agent_pb2.Server.AgentMessage()
+            msg.ParseFromString(data)
+            case = msg.WhichOneof("payload")
+            print("loop {0}".format(case))
+            if case == "agents":
+                agent.onSearchResult(msg.agents.agents)
+            elif case == "error":
+                agent.onError(msg.error.operation, msg.error.conversation_id, msg.error.msgid)
+            elif case == "content":
+                content_case = msg.content.WhichOneof("payload")
+                print("msg content {0}".format(content_case))
+                if content_case == "content":
+                    agent.onMessage(msg.content.origin, msg.content.conversation_id, msg.content.content)
+                elif content_case == "fipa":
+                    fipa = msg.content.fipa
+                    fipa_case = fipa.WhichOneof("msg")
+                    if fipa_case == "cfp":
+                        cfp_case = fipa.cfp.WhichOneof("payload")
+                        if cfp_case == "nothing":
+                            query = None
+                        elif cfp_case == "content":
+                            query = fipa.cfp.content
+                        elif cfp_case == "query":
+                            query = Query.from_pb(fipa.cfp.query)
+                        agent.onCFP(msg.content.origin, msg.content.conversation_id, fipa.msg_id, fipa.target, query)
+                    elif fipa_case == "propose":
+                        propose_case = fipa.propose.WhichOneof("payload")
+                        if propose_case == "content":
+                            proposals = fipa.propose.content
+                        else:
+                            proposals = [Description.from_pb(propose) for propose in fipa.propose.proposals.objects]
+                        agent.onPropose(msg.content.origin, msg.content.conversation_id, fipa.msg_id, fipa.target, proposals)
+                    elif fipa_case == "accept":
+                        agent.onAccept(msg.content.origin, msg.content.conversation_id, fipa.msg_id, fipa.target)
+                    elif fipa_case == "decline":
+                        agent.onDecline(msg.content.origin, msg.content.conversation_id, fipa.msg_id, fipa.target)
+                    else:
+                        print("Not implemented yet: fipa {0}".format(fipa_case))
+            
+
+    def send_message(self, conversation_id : str, destination : str, msg : bytes):
+        agent_msg = agent_pb2.Agent.Message()
+        agent_msg.conversation_id = conversation_id
+        agent_msg.destination = destination
+        agent_msg.content = msg
+        envelope = agent_pb2.Envelope()
+        envelope.message.CopyFrom(agent_msg)
+        self._send(envelope)
+        
+    def send_cfp(self, conversation_id : str, destination : str, query : CFP_TYPES, msg_id : Optional[int] = 1,
+                 target : Optional[int] = 0):
+        fipa_msg = fipa_pb2.Fipa.Message()
+        fipa_msg.msg_id = msg_id
+        fipa_msg.target = target
+        cfp = fipa_pb2.Fipa.Cfp()
+        if query is None:
+            cfp.nothing.CopyFrom(fipa_pb2.Fipa.Cfp.Nothing())
+        elif isinstance(query, Query):
+            cfp.query.CopyFrom(query.to_query_pb())
+        elif isinstance(query, bytes):
+            cfp.content = query
+        fipa_msg.cfp.CopyFrom(cfp)
+        agent_msg = agent_pb2.Agent.Message()
+        agent_msg.conversation_id = conversation_id
+        agent_msg.destination = destination
+        agent_msg.fipa.CopyFrom(fipa_msg)
+        envelope = agent_pb2.Envelope()
+        envelope.message.CopyFrom(agent_msg)
+        self._send(envelope)
+        
+    def send_propose(self, conversation_id : str, destination : str, proposals : PROPOSE_TYPES, msg_id : int,
+                     target : Optional[int] = None):
+        fipa_msg = fipa_pb2.Fipa.Message()
+        fipa_msg.msg_id = msg_id
+        fipa_msg.target = target if target is not None else (msg_id - 1)
+        propose = fipa_pb2.Fipa.Propose()
+        if isinstance(proposals, bytes):
+            propose.content = proposals
+        else:
+            proposals_pb = fipa_pb2.Fipa.Propose.Proposals()
+            proposals_pb.objects.extend([propose.as_instance() for propose in proposals])
+            propose.proposals.CopyFrom(proposals_pb)
+        fipa_msg.propose.CopyFrom(propose)
+        agent_msg = agent_pb2.Agent.Message()
+        agent_msg.conversation_id = conversation_id
+        agent_msg.destination = destination
+        agent_msg.fipa.CopyFrom(fipa_msg)
+        envelope = agent_pb2.Envelope()
+        envelope.message.CopyFrom(agent_msg)
+        print("propose envelope {0}".format(envelope))
+        self._send(envelope)
+        
+    def send_accept(self, conversation_id : str, destination : str, msg_id : int,
+                    target : Optional[int] = None):
+        fipa_msg = fipa_pb2.Fipa.Message()
+        fipa_msg.msg_id = msg_id
+        fipa_msg.target = target if target is not None else (msg_id - 1)
+        accept = fipa_pb2.Fipa.Accept()
+        fipa_msg.accept.CopyFrom(accept)
+        agent_msg = agent_pb2.Agent.Message()
+        agent_msg.conversation_id = conversation_id
+        agent_msg.destination = destination
+        agent_msg.fipa.CopyFrom(fipa_msg)
+        envelope = agent_pb2.Envelope()
+        envelope.message.CopyFrom(agent_msg)
+        print("accept envelope {0}".format(envelope))
+        self._send(envelope)
+        
+    def send_decline(self, conversation_id : str, destination : str, msg_id : int,
+                     target : Optional[int] = None):
+        fipa_msg = fipa_pb2.Fipa.Message()
+        fipa_msg.msg_id = msg_id
+        fipa_msg.target = target if target is not None else (msg_id - 1)
+        decline = fipa_pb2.Fipa.Decline()
+        fipa_msg.accept.CopyFrom(decline)
+        agent_msg = agent_pb2.Agent.Message()
+        agent_msg.conversation_id = conversation_id
+        agent_msg.destination = destination
+        agent_msg.fipa.CopyFrom(fipa_msg)
+        envelope = agent_pb2.Envelope()
+        envelope.message.CopyFrom(agent_msg)
+        print("decline envelope {0}".format(envelope))
+        self._send(envelope)
+        
     def close(self) -> None:
         """
         Used to tear down resources associated with this Proxy, i.e. the writing connection with
@@ -203,7 +594,19 @@ class OEFProxy(object):
         """
         pass
 
-    def register_service(self, service_description: Description) -> bool:
+    def register_service(self, service_description: Description):
+        """
+        Adds a description of the respective service so that it can be understood/ queried by
+        other agents in the OEF.
+        :param service_description: description of the services to add
+        :returns: `True` if service is successfully added, `False` otherwise. Can fail if such an
+        service already exists in the OEF.
+        """
+        envelope = agent_pb2.Envelope()
+        envelope.register.CopyFrom(service_description.to_pb())
+        self._send(envelope)
+
+    def unregister_service(self, service_description: Description) -> None:
         """
         Adds a description of the respective service so that it can be understood/ queried by
         other agents in the OEF.
@@ -213,17 +616,7 @@ class OEFProxy(object):
         """
         pass
 
-    def unregister_service(self, service_description: Description) -> bool:
-        """
-        Adds a description of the respective service so that it can be understood/ queried by
-        other agents in the OEF.
-        :param service_description: description of the services to add
-        :returns: `True` if service is successfully added, `False` otherwise. Can fail if such an
-        service already exists in the OEF.
-        """
-        pass
-
-    def search_agents(self, query: Query) -> List[Description]:
+    def search_agents(self, query: Query) -> None:
         """
         Allows an agent to search for other agents it is interested in communicating with. This can
         be useful when an agent wishes to directly proposition the provision of a service that it
@@ -234,14 +627,17 @@ class OEFProxy(object):
         """
         pass
 
-    def search_services(self, query: Query) -> List[Description]:
+    def search_services(self, query: Query) -> None:
         """
         Allows an agent to search for a particular service. This allows constrained search of all
         services that have been registered with the OEF. All matching services will be returned
         (potentially including services offered by ourself)
         :param query: the constraint on the matching services
         """
-        pass
+        envelope = agent_pb2.Envelope()
+        envelope.query.CopyFrom(query.to_pb())
+        self._send(envelope)
+
 
     def start_conversation(self, agent_id: str) -> Conversation:
         """

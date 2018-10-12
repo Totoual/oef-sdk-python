@@ -670,7 +670,10 @@ class OEFProxy(object):
         :returns: `True` if agent is successfully added, `False` otherwise. Can fail if such an
         agent already exists in the OEF.
         """
-        pass
+        envelope = agent_pb2.Envelope()
+        envelope.description.CopyFrom(service_description.to_pb())
+        self._send(envelope)
+
 
     def unregister_agent(self,
                          agent_description: Description,
@@ -708,7 +711,9 @@ class OEFProxy(object):
         :returns: `True` if service is successfully added, `False` otherwise. Can fail if such an
         service already exists in the OEF.
         """
-        pass
+        envelope = agent_pb2.Envelope()
+        envelope.unregister.CopyFrom(service_description.to_pb())
+        self._send(envelope)
 
     def search_agents(self, query: Query) -> None:
         """
@@ -719,7 +724,10 @@ class OEFProxy(object):
         :param query: specifications of the constraints on the agents that are matched
         :returns: a list of the matching agents
         """
-        pass
+        envelope = agent_pb2.Envelope()
+        envelope.search.CopyFrom(query.to_pb())
+        self._send(envelope)
+
 
     def search_services(self, query: Query) -> None:
         """

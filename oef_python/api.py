@@ -251,8 +251,9 @@ class Relation(object):
         elif isinstance(self.value, str):
             query_value.s = self.value
         relation.val.CopyFrom(query_value)
-        return relation
-
+        constraint_type = query_pb2.Query.Constraint.ConstraintType()
+        constraint_type.relation.CopyFrom(relation)
+        return constraint_type
 
 class Eq(Relation):
     def __init__(self, value: ATTRIBUTE_TYPES) -> None:
@@ -327,7 +328,9 @@ class Range(object):
             values.first = self._values[0]
             values.second = self._values[1]
             range_.f.CopyFrom(values)
-        return range_
+        constraint_type = query_pb2.Query.Constraint.ConstraintType()
+        constraint_type.range_.CopyFrom(range_)
+        return constraint_type
 
     @classmethod
     def from_pb(cls, range_pb : query_pb2.Query.Range):
@@ -366,7 +369,9 @@ class Set(object):
             values = query_pb2.Query.Set.Values.Floats()
             values.vals.extend(self._values)
             set_.vals.f.CopyFrom(values)
-        return set_
+        constraint_type = query_pb2.Query.Constraint.ConstraintType()
+        constraint_type.set_.CopyFrom(set_)
+        return constraint_type
 
 class In(Set):
     def __init__(self, values : SET_TYPES) -> None:
@@ -394,6 +399,30 @@ def set_from_pb(set_pb : query_pb2.Query.Set) -> Set:
 
 CONSTRAINT_TYPES = Union[Relation,Range,Set]
 
+class And(object):
+    def __init__(self, constraints: List[CONSTRAINT_TYPES]) -> None:
+        self._constraints = constraints
+
+    def to_pb(self):
+        and_pb = query_pb2.Query.Constraint.ConstraintType.And()
+        and_pb.expr.extend([constraint.to_pb() for constraint in self._constraints])
+        constraint_type = query_pb2.Query.Constraint.ConstraintType()
+        constraint_type.and_.CopyFrom(and_pb)
+        return constraint_type
+
+class Or(object):
+    def __init__(self, constraints: List[CONSTRAINT_TYPES]) -> None:
+        self._constraints = constraints
+
+    def to_pb(self):
+        or_pb = query_pb2.Query.Constraint.ConstraintType.Or()
+        or_pb.expr.extend([constraint.to_pb() for constraint in self._constraints])
+        constraint_type = query_pb2.Query.Constraint.ConstraintType()
+        constraint_type.or_.CopyFrom(or_pb)
+        return constraint_type
+
+CONSTRAINT_TYPES = Union[Relation,Range,Set,And,Or]
+
 class Constraint(object):
     def __init__(self,
                  attribute: AttributeSchema,
@@ -402,16 +431,9 @@ class Constraint(object):
         self._constraint = constraint
         
     def to_pb(self):
-        constraint_type = query_pb2.Query.Constraint.ConstraintType()
-        if isinstance(self._constraint, Relation):
-            constraint_type.relation.CopyFrom(self._constraint.to_pb())
-        elif isinstance(self._constraint, Range):
-            constraint_type.range_.CopyFrom(self._constraint.to_pb())
-        elif isinstance(self._constraint, Set):
-            constraint_type.set_.CopyFrom(self._constraint.to_pb())
         constraint = query_pb2.Query.Constraint()
         constraint.attribute.CopyFrom(self._attribute.to_pb())
-        constraint.constraint.CopyFrom(constraint_type)
+        constraint.constraint.CopyFrom(self._constraint.to_pb())
         return constraint
 
     @classmethod
@@ -424,6 +446,8 @@ class Constraint(object):
         elif constraint_case == "range_":
             constraint = Range.from_pb(constraint_pb.constraint.range_)
         return cls(AttributeSchema.from_pb(constraint_pb.attribute), constraint)
+
+
     
 class Query(object):
     """

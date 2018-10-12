@@ -9,7 +9,7 @@ import asyncio
 from typing import List, Optional
 
 from api import Description, AttributeSchema, AttributeInconsistencyException,\
-        generate_schema, OEFProxy, DataModel, Query, Constraint, Range, In, NotIn, CFP_TYPES
+        generate_schema, OEFProxy, DataModel, Query, Constraint, Range, In, NotIn, And, Or, CFP_TYPES
 
 from google.protobuf import text_format
 
@@ -60,6 +60,8 @@ if __name__ == "__main__":
     print(text_format.MessageToString(query_pb))
     query2 = Query.from_pb(query_pb)
     print(text_format.MessageToString(query2.to_pb()))
+    and_ = And([Or([Range((2000,2013))])])
+    print(text_format.MessageToString(and_.to_pb()))
     connection3.search_services(query)
     agent = Agent(connection3)
     event_loop.run_until_complete(connection3.loop(agent))

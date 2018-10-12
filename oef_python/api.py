@@ -398,7 +398,19 @@ def set_from_pb(set_pb : query_pb2.Query.Set) -> Set:
         return op_from_pb[set_pb.op](set_pb.vals.f.vals)
 
 CONSTRAINT_TYPES = Union[Relation,Range,Set]
-
+def constraint_type_from_pb(constraint_pb : query_pb2.Query.Constraint.ConstraintType):
+    constraint_case = constraint_pb.WhichOneof("constraint")
+    if constraint_case == "relation":
+        return relation_from_pb(constraint_pb.relation)
+    elif constraint_case == "set_":
+        return set_from_pb(constraint_pb.set_)
+    elif constraint_case == "range_":
+        return Range.from_pb(constraint_pb.range_)
+    elif constraint_case == "and_":
+        return And.from_pb(constraint_pb.and_)
+    elif constraint_case == "or_":
+        return Or.from_pb(constraint_pb.or_)
+    
 class And(object):
     def __init__(self, constraints: List[CONSTRAINT_TYPES]) -> None:
         self._constraints = constraints
@@ -410,6 +422,11 @@ class And(object):
         constraint_type.and_.CopyFrom(and_pb)
         return constraint_type
 
+    @classmethod
+    def from_pb(cls, constraint_pb : query_pb2.Query.Constraint.ConstraintType.And):
+        expr = [constraint_type_from_pb(c) for c in constraint_pb.expr]
+        return cls(expr)
+
 class Or(object):
     def __init__(self, constraints: List[CONSTRAINT_TYPES]) -> None:
         self._constraints = constraints
@@ -420,6 +437,11 @@ class Or(object):
         constraint_type = query_pb2.Query.Constraint.ConstraintType()
         constraint_type.or_.CopyFrom(or_pb)
         return constraint_type
+
+    @classmethod
+    def from_pb(cls, constraint_pb : query_pb2.Query.Constraint.ConstraintType.Or):
+        expr = [constraint_type_from_pb(c) for c in constraint_pb.expr]
+        return cls(expr)
 
 CONSTRAINT_TYPES = Union[Relation,Range,Set,And,Or]
 
@@ -438,17 +460,9 @@ class Constraint(object):
 
     @classmethod
     def from_pb(cls, constraint_pb : query_pb2.Query.Constraint):
-        constraint_case = constraint_pb.constraint.WhichOneof("constraint")
-        if constraint_case == "relation":
-            constraint = relation_from_pb(constraint_pb.constraint.relation)
-        elif constraint_case == "set_":
-            constraint = set_from_pb(constraint_pb.constraint.set_)
-        elif constraint_case == "range_":
-            constraint = Range.from_pb(constraint_pb.constraint.range_)
+        constraint = constraint_type_from_pb(constraint_pb.constraint)
         return cls(AttributeSchema.from_pb(constraint_pb.attribute), constraint)
 
-
-    
 class Query(object):
     """
     Representation of a search that is to be performed. Currently a search is represented as a

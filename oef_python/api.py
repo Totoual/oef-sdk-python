@@ -9,9 +9,9 @@ Python bindings for OEFCore
 
 import asyncio
 import copy
-import agent_pb2 as agent_pb2
-import query_pb2 as query_pb2
-import fipa_pb2 as fipa_pb2
+import oef_python.agent_pb2 as agent_pb2
+import oef_python.query_pb2 as query_pb2
+import oef_python.fipa_pb2 as fipa_pb2
 import struct
 
 from typing import List, Callable, Optional, Union, Dict, Awaitable, Tuple
@@ -534,10 +534,10 @@ class OEFProxy(object):
 
     async def _receive(self):
         nbytes_packed = await self._server_reader.read(len(struct.pack("I",0)))
-        print("received ${0}".format(nbytes_packed))
+        # print("received ${0}".format(nbytes_packed))
         nbytes = struct.unpack("I", nbytes_packed)
-        print("received unpacked ${0}".format(nbytes[0]))
-        print("Preparing to receive ${0} bytes ...".format(nbytes[0]))
+        # print("received unpacked ${0}".format(nbytes[0]))
+        # print("Preparing to receive ${0} bytes ...".format(nbytes[0]))
         return await self._server_reader.read(nbytes[0])
 
     async def connect(self) -> bool:
@@ -571,7 +571,7 @@ class OEFProxy(object):
             msg = agent_pb2.Server.AgentMessage()
             msg.ParseFromString(data)
             case = msg.WhichOneof("payload")
-            print("loop {0}".format(case))
+            # print("loop {0}".format(case))
             if case == "agents":
                 agent.onSearchResult(msg.agents.agents)
             elif case == "error":
@@ -709,7 +709,7 @@ class OEFProxy(object):
         agent already exists in the OEF.
         """
         envelope = agent_pb2.Envelope()
-        envelope.description.CopyFrom(service_description.to_pb())
+        envelope.description.CopyFrom(agent_description.to_pb())
         self._send(envelope)
 
 

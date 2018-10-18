@@ -111,5 +111,8 @@ tags
 
 # build stuff
 Node
-log.txt
+log.txt*
+
+# pycharm stuff
+.idea
 

@@ -123,6 +123,14 @@ class DataModel(object):
             model.description = self.description
         return model
 
+    def __eq__(self, other):
+        if type(other) != DataModel:
+            return False
+        return self.name == other.name and \
+               self.attribute_schemas == other.attribute_schema and \
+               self.description == other.description
+
+
 def generate_schema(model_name, attribute_values):
     """
     Will generate a schema that matches the values stored in this description.

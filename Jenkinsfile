@@ -1,30 +1,24 @@
 pipeline {
-    agent none
+
+    agent {
+        docker {
+            image 'gcr.io/organic-storm-201412/python-ci'
+            }
+         }
+
     stages {
         stage('Build') {
-            agent {
-                docker {
-                    image 'python:2-alpine'
-                }
-            }
+
             steps {
-                sh 'python -m py_compile oef_python/*.py
+                sh 'pip install -r requirements.txt'
+                sh 'python3 -m py_compile oef_python/*.py'
             }
         }
         stage('Test') {
-            agent {
-                docker {
-                    image 'qnib/pytest'
-                }
-            }
             steps {
-                sh 'PYTHONPATH=$PYTHONPATH:./oef_python py.test --verbose --cov=test_oef_python'
+                sh 'PYTHONPATH=$PYTHONPATH:./oef_python pytest --verbose --cov=oef_python ./test_oef_python'
             }
-            post {
-                always {
-                    codecov
-                }
-            }
+
         }
     }
 }

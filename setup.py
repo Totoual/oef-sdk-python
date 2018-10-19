@@ -55,7 +55,7 @@ class ProtocCommand(distutils.cmd.Command):
         # Works also in Python 2
         result = os.popen("which protoc").read().strip()
 
-        if result is None:
+        if result is None or result == "":
             raise EnvironmentError("protoc compiler not found.")
         return result
 
@@ -69,7 +69,7 @@ class ProtocCommand(distutils.cmd.Command):
         arguments = []
         arguments.append("--proto_path=./OEFCoreProtocol")
         arguments.append("--python_out=./oef_python")
-        arguments += glob.glob("OEFCoreProtocol/*.proto", recursive=True)
+        arguments += glob.glob("OEFCoreProtocol/*.proto") # TODO add recursive search
         return arguments
 
     def _fix_import_statements_in_all_protobuf_modules(self):

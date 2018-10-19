@@ -3,10 +3,6 @@
 	url = github:uvue-git/OEFCoreProtocol.git
 	branch = master
 
-[submodule "OEFCore"]
-	path = OEFCore
-	url = github:uvue-git/OEFCore.git
-
 [submodule "docker-images"]
 	path = docker-images
 	url = github:uvue-git/docker-images.git

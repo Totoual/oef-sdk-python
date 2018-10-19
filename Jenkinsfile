@@ -10,9 +10,10 @@ pipeline {
         stage('Build') {
 
             steps {
+                sh 'apt-get install -y protobuf-compiler'
                 sh 'pip install -r requirements.txt'
+                sh 'python setup.py install'
                 sh 'python3 -m py_compile oef_python/*.py'
-                sh 'pip install .'
             }
         }
         stage('Test') {

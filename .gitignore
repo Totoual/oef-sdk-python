@@ -116,3 +116,5 @@ log.txt*
 # pycharm stuff
 .idea
 
+# protobuf python modules (generated at installation time)
+oef_python/*_pb2.py

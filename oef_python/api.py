@@ -164,7 +164,7 @@ class Description(object):
     """
     def __init__(self,
                  attribute_values: Dict[str, ATTRIBUTE_TYPES],
-                 data_model: DataModel) -> None:
+                 data_model: DataModel=None) -> None:
         """
         :param attribute_values: the values of each attribute in the description. This is a
         dictionary from attribute name to attribute value, each attribute value must have a type
@@ -174,8 +174,12 @@ class Description(object):
         for preventing hard to debug problems, and are highly recommended.
         """
         self._values = copy.deepcopy(attribute_values)
-        self._data_model = data_model
-        self._check_consistency()
+        if data_model is not None:
+            self._data_model = data_model
+            self._check_consistency()
+        else:
+            # TODO: choose a default name for the data model
+            self._data_model = generate_schema("", attribute_values)
 
     @classmethod
     def from_pb(cls, query_instance : query_pb2.Query.Instance):

@@ -12,6 +12,7 @@ pipeline {
             steps {
                 sh 'pip install -r requirements.txt'
                 sh 'python3 -m py_compile oef_python/*.py'
+                sh 'pip install .'
             }
         }
         stage('Test') {

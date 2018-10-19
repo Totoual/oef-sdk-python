@@ -120,12 +120,13 @@ def test_generate_schema_longer_values():
               AttributeSchema("bool", bool, True, "")]
 
     generate_schema_checker(values, schema)
-    
-def test_can_connect_to_oef():
-    """
-    Simple test that sees if we can connect to the OEF on localhost without errors
-    """
-    with oef_server_context():
-        connection = OEFProxy("pub_key", "127.0.0.1")
 
-    # if we get here without errors we have passed
+# TODO: test connection that do not require 'Node' executable (from OEFCore build)
+# def test_can_connect_to_oef():
+#     """
+#     Simple test that sees if we can connect to the OEF on localhost without errors
+#     """
+#     with oef_server_context():
+#         connection = OEFProxy("pub_key", "127.0.0.1")
+#
+#     # if we get here without errors we have passed

@@ -4,7 +4,7 @@ pipeline {
         docker {
             image 'gcr.io/organic-storm-201412/python-ci'
             }
-         }
+        }
 
     stages {
         stage('Build') {
@@ -16,6 +16,7 @@ pipeline {
                 sh 'python3 -m py_compile oef_python/*.py'
             }
         }
+
         stage('Test & Lint'){
             parallel{
                 stage('Test') {
@@ -25,9 +26,9 @@ pipeline {
                 }
                 stage('Lint'){
                     steps{
-                        flake8 oef_python
-                        # TODO remove the --disable-all flag
-                        pylint -d all oef_python/api.py
+                        sh 'flake8 oef_python'
+                        // TODO remove the --disable-all flag
+                        sh 'pylint -d all oef_python/api.py'
                     }
                 }
             }

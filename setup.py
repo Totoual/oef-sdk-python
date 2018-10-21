@@ -100,5 +100,6 @@ setup(
     cmdclass={
         'protoc': ProtocCommand,
         'build_py': BuildPyCommand
-    }
+    },
+    install_requires=["protobuf"]
 )

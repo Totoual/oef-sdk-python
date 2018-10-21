@@ -1,3 +1,10 @@
+# build
 protobuf
+
+# test
 pytest
 pytest-cov
+pylint
+pydocstyle
+flake8
+mypy

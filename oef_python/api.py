@@ -16,7 +16,11 @@ import struct
 
 from typing import List, Callable, Optional, Union, Dict, Awaitable, Tuple
 
+"""
+The allowable types that an Attribute can have
+"""
 ATTRIBUTE_TYPES = Union[float, str, bool, int]
+
 
 def attribute_type_to_pb(attribute_type: ATTRIBUTE_TYPES):
     if attribute_type == bool:
@@ -28,24 +32,24 @@ def attribute_type_to_pb(attribute_type: ATTRIBUTE_TYPES):
     elif attribute_type == str:
         return query_pb2.Query.Attribute.STRING
 
-def attribute_pb_to_type(attribute_type : query_pb2.Query.Attribute):
+
+def attribute_pb_to_type(attribute_type: query_pb2.Query.Attribute):
     if attribute_type == query_pb2.Query.Attribute.BOOL:
         return bool
-    elif attribute_type == query_pb2.Query.Attribute.STRING :
+    elif attribute_type == query_pb2.Query.Attribute.STRING:
         return str
-    elif attribute_type == query_pb2.Query.Attribute.INT :
+    elif attribute_type == query_pb2.Query.Attribute.INT:
         return int
-    elif attribute_type == query_pb2.Query.Attribute.FLOAT :
+    elif attribute_type == query_pb2.Query.Attribute.FLOAT:
         return float
-    
-"""
-The allowable types that an Attribute can have
-"""
+
 
 OEF_SERVER_PORT = 3333
+
 """
 The port the OEF server is going to be listening on
 """
+
 
 class AttributeSchema(object):
     """
@@ -53,6 +57,7 @@ class AttributeSchema(object):
 
     This defines the schema that a single entry in a schema must take.
     """
+
     def __init__(self,
                  attribute_name: str,
                  attribute_type: ATTRIBUTE_TYPES,
@@ -85,8 +90,9 @@ class AttributeSchema(object):
         return attribute
 
     @classmethod
-    def from_pb(cls, attribute : query_pb2.Query.Attribute):
+    def from_pb(cls, attribute: query_pb2.Query.Attribute):
         return cls(attribute.name, attribute_pb_to_type(attribute.type), attribute.required, attribute.description)
+
 
 class AttributeInconsistencyException(Exception):
     """
@@ -98,23 +104,22 @@ class AttributeInconsistencyException(Exception):
     pass
 
 
-
 class DataModel(object):
     def __init__(self,
-                 name : str,
+                 name: str,
                  attribute_schemas: List[AttributeSchema],
-                 description : Optional[str] = None) -> None:
+                 description: Optional[str] = None) -> None:
         self.name = name
-        self.attribute_schemas = copy.deepcopy(attribute_schemas) # what for ?
+        self.attribute_schemas = copy.deepcopy(attribute_schemas)  # what for ?
         self.description = description
 
     @classmethod
-    def from_pb(cls, model : query_pb2.Query.DataModel):
+    def from_pb(cls, model: query_pb2.Query.DataModel):
         name = model.name
         attributes = [AttributeSchema.from_pb(attr_pb) for attr_pb in model.attributes]
         description = model.description
         return cls(name, attributes, description)
-        
+
     def to_pb(self):
         model = query_pb2.Query.DataModel()
         model.name = self.name
@@ -127,8 +132,8 @@ class DataModel(object):
         if type(other) != DataModel:
             return False
         return self.name == other.name and \
-               self.attribute_schemas == other.attribute_schema and \
-               self.description == other.description
+            self.attribute_schemas == other.attribute_schema and \
+            self.description == other.description
 
 
 def generate_schema(model_name, attribute_values):
@@ -142,7 +147,7 @@ def generate_schema(model_name, attribute_values):
     return DataModel(model_name, [AttributeSchema(k, type(v), True, "") for k, v in attribute_values.items()])
 
 
-def extract_value(value : query_pb2.Query.Value) -> ATTRIBUTE_TYPES:
+def extract_value(value: query_pb2.Query.Value) -> ATTRIBUTE_TYPES:
     value_case = value.WhichOneof("value")
     if value_case == "s":
         return value.s
@@ -153,6 +158,7 @@ def extract_value(value : query_pb2.Query.Value) -> ATTRIBUTE_TYPES:
     elif value_case == "f":
         return value.f
 
+
 class Description(object):
     """
     Description of either a service or an agent so it can be understood by the OEF/ other agents.
@@ -162,9 +168,10 @@ class Description(object):
     Whenever the description is changed (including when it is create), the attribute values will
     checked to make sure they do not violate the attribute schema.
     """
+
     def __init__(self,
                  attribute_values: Dict[str, ATTRIBUTE_TYPES],
-                 data_model: DataModel=None) -> None:
+                 data_model: DataModel = None) -> None:
         """
         :param attribute_values: the values of each attribute in the description. This is a
         dictionary from attribute name to attribute value, each attribute value must have a type
@@ -182,11 +189,11 @@ class Description(object):
             self._data_model = generate_schema("", attribute_values)
 
     @classmethod
-    def from_pb(cls, query_instance : query_pb2.Query.Instance):
+    def from_pb(cls, query_instance: query_pb2.Query.Instance):
         model = DataModel.from_pb(query_instance.model)
-        values = dict([(attr.key,extract_value(attr.value)) for attr in query_instance.values])
+        values = dict([(attr.key, extract_value(attr.value)) for attr in query_instance.values])
         return cls(values, model)
-        
+
     def _to_key_value_pb(self, key: str, value: ATTRIBUTE_TYPES):
         kv = query_pb2.Query.KeyValue()
         kv.key = key
@@ -205,12 +212,12 @@ class Description(object):
         instance.model.CopyFrom(self._data_model.to_pb())
         instance.values.extend([self._to_key_value_pb(key, value) for key, value in self._values.items()])
         return instance
-    
+
     def to_pb(self):
         description = agent_pb2.AgentDescription()
         description.description.CopyFrom(self.as_instance())
         return description
-        
+
     def _check_consistency(self):
         """
         Checks the consistency of the values of this description.
@@ -267,43 +274,56 @@ class Relation(object):
         constraint_type.relation.CopyFrom(relation)
         return constraint_type
 
+
 class Eq(Relation):
     def __init__(self, value: ATTRIBUTE_TYPES) -> None:
         super().__init__(value)
+
     def _to_pb(self):
         return query_pb2.Query.Relation.EQ
-    
+
+
 class NotEq(Relation):
     def __init__(self, value: ATTRIBUTE_TYPES) -> None:
         super().__init__(value)
+
     def _to_pb(self):
         return query_pb2.Query.Relation.NOTEQ
-    
+
+
 class Lt(Relation):
     def __init__(self, value: ATTRIBUTE_TYPES) -> None:
         super().__init__(value)
+
     def _to_pb(self):
         return query_pb2.Query.Relation.LT
-    
+
+
 class LtEq(Relation):
     def __init__(self, value: ATTRIBUTE_TYPES) -> None:
         super().__init__(value)
+
     def _to_pb(self):
         return query_pb2.Query.Relation.LTEQ
-    
+
+
 class Gt(Relation):
     def __init__(self, value: ATTRIBUTE_TYPES) -> None:
         super().__init__(value)
+
     def _to_pb(self):
         return query_pb2.Query.Relation.GT
-    
+
+
 class GtEq(Relation):
     def __init__(self, value: ATTRIBUTE_TYPES) -> None:
         super().__init__(value)
+
     def _to_pb(self):
         return query_pb2.Query.Relation.GTEQ
 
-def relation_from_pb(relation : query_pb2.Query.Relation) -> Relation:
+
+def relation_from_pb(relation: query_pb2.Query.Relation) -> Relation:
     relations_from_pb = {query_pb2.Query.Relation.GTEQ: GtEq, query_pb2.Query.Relation.GT: Gt,
                          query_pb2.Query.Relation.LTEQ: LtEq, query_pb2.Query.Relation.LT: Lt,
                          query_pb2.Query.Relation.NOTEQ: NotEq, query_pb2.Query.Relation.EQ: Eq}
@@ -315,9 +335,11 @@ def relation_from_pb(relation : query_pb2.Query.Relation) -> Relation:
     elif value_case == "i":
         return relations_from_pb[relation.op](relation.val.i)
     elif value_case == "f":
-        return relations_from_pb[relation.op](relation.val.f)        
-    
-RANGE_TYPES = Union[Tuple[str,str],Tuple[int,int],Tuple[float,float]]
+        return relations_from_pb[relation.op](relation.val.f)
+
+
+RANGE_TYPES = Union[Tuple[str, str], Tuple[int, int], Tuple[float, float]]
+
 
 class Range(object):
     def __init__(self, values: RANGE_TYPES) -> None:
@@ -345,7 +367,7 @@ class Range(object):
         return constraint_type
 
     @classmethod
-    def from_pb(cls, range_pb : query_pb2.Query.Range):
+    def from_pb(cls, range_pb: query_pb2.Query.Range):
         range_case = range_pb.WhichOneof("pair")
         if range_case == "s":
             values = (range_pb.s.first, range_pb.s.second)
@@ -355,11 +377,12 @@ class Range(object):
             values = (range_pb.f.first, range_pb.f.second)
         return cls(values)
 
-    
-SET_TYPES = Union[List[float],List[str],List[bool],List[int]]
+
+SET_TYPES = Union[List[float], List[str], List[bool], List[int]]
+
 
 class Set(object):
-    def __init__(self, values : SET_TYPES) -> None:
+    def __init__(self, values: SET_TYPES) -> None:
         self._values = values
 
     def to_pb(self):
@@ -369,7 +392,7 @@ class Set(object):
             values = query_pb2.Query.Set.Values.Strings()
             values.vals.extend(self._values)
             set_.vals.s.CopyFrom(values)
-        elif isinstance(self._values[0], bool): # warning: order matters, bools before ints.
+        elif isinstance(self._values[0], bool):  # warning: order matters, bools before ints.
             values = query_pb2.Query.Set.Values.Bools()
             values.vals.extend(self._values)
             set_.vals.b.CopyFrom(values)
@@ -385,19 +408,24 @@ class Set(object):
         constraint_type.set_.CopyFrom(set_)
         return constraint_type
 
+
 class In(Set):
-    def __init__(self, values : SET_TYPES) -> None:
+    def __init__(self, values: SET_TYPES) -> None:
         super().__init__(values)
+
     def _to_pb(self):
         return query_pb2.Query.Set.IN
-    
+
+
 class NotIn(Set):
-    def __init__(self, values : SET_TYPES) -> None:
+    def __init__(self, values: SET_TYPES) -> None:
         super().__init__(values)
+
     def _to_pb(self):
         return query_pb2.Query.Set.NOTIN
 
-def set_from_pb(set_pb : query_pb2.Query.Set) -> Set:
+
+def set_from_pb(set_pb: query_pb2.Query.Set) -> Set:
     op_from_pb = {query_pb2.Query.Set.IN: In, query_pb2.Query.Set.NOTIN: NotIn}
     value_case = set_pb.vals.WhichOneof("values")
     if value_case == "s":
@@ -409,8 +437,11 @@ def set_from_pb(set_pb : query_pb2.Query.Set) -> Set:
     elif value_case == "f":
         return op_from_pb[set_pb.op](set_pb.vals.f.vals)
 
-CONSTRAINT_TYPES = Union[Relation,Range,Set]
-def constraint_type_from_pb(constraint_pb : query_pb2.Query.Constraint.ConstraintType):
+
+CONSTRAINT_TYPES = Union[Relation, Range, Set]
+
+
+def constraint_type_from_pb(constraint_pb: query_pb2.Query.Constraint.ConstraintType):
     constraint_case = constraint_pb.WhichOneof("constraint")
     if constraint_case == "relation":
         return relation_from_pb(constraint_pb.relation)
@@ -422,7 +453,8 @@ def constraint_type_from_pb(constraint_pb : query_pb2.Query.Constraint.Constrain
         return And.from_pb(constraint_pb.and_)
     elif constraint_case == "or_":
         return Or.from_pb(constraint_pb.or_)
-    
+
+
 class And(object):
     def __init__(self, constraints: List[CONSTRAINT_TYPES]) -> None:
         self._constraints = constraints
@@ -435,9 +467,10 @@ class And(object):
         return constraint_type
 
     @classmethod
-    def from_pb(cls, constraint_pb : query_pb2.Query.Constraint.ConstraintType.And):
+    def from_pb(cls, constraint_pb: query_pb2.Query.Constraint.ConstraintType.And):
         expr = [constraint_type_from_pb(c) for c in constraint_pb.expr]
         return cls(expr)
+
 
 class Or(object):
     def __init__(self, constraints: List[CONSTRAINT_TYPES]) -> None:
@@ -451,11 +484,13 @@ class Or(object):
         return constraint_type
 
     @classmethod
-    def from_pb(cls, constraint_pb : query_pb2.Query.Constraint.ConstraintType.Or):
+    def from_pb(cls, constraint_pb: query_pb2.Query.Constraint.ConstraintType.Or):
         expr = [constraint_type_from_pb(c) for c in constraint_pb.expr]
         return cls(expr)
 
-CONSTRAINT_TYPES = Union[Relation,Range,Set,And,Or]
+
+CONSTRAINT_TYPES = Union[Relation, Range, Set, And, Or]
+
 
 class Constraint(object):
     def __init__(self,
@@ -463,7 +498,7 @@ class Constraint(object):
                  constraint: CONSTRAINT_TYPES) -> None:
         self._attribute = attribute
         self._constraint = constraint
-        
+
     def to_pb(self):
         constraint = query_pb2.Query.Constraint()
         constraint.attribute.CopyFrom(self._attribute.to_pb())
@@ -471,15 +506,17 @@ class Constraint(object):
         return constraint
 
     @classmethod
-    def from_pb(cls, constraint_pb : query_pb2.Query.Constraint):
+    def from_pb(cls, constraint_pb: query_pb2.Query.Constraint):
         constraint = constraint_type_from_pb(constraint_pb.constraint)
         return cls(AttributeSchema.from_pb(constraint_pb.attribute), constraint)
+
 
 class Query(object):
     """
     Representation of a search that is to be performed. Currently a search is represented as a
     set of key value pairs that must be contained in the description of the service/ agent.
     """
+
     def __init__(self,
                  constraints: List[Constraint],
                  model: Optional[DataModel] = None) -> None:
@@ -500,18 +537,21 @@ class Query(object):
         return agent_search
 
     @classmethod
-    def from_pb(cls, query : query_pb2.Query.Model):
+    def from_pb(cls, query: query_pb2.Query.Model):
         constraints = [Constraint.from_pb(constraint_pb) for constraint_pb in query.constraints]
         return cls(constraints, DataModel.from_pb(query.model) if query.HasField("model") else None)
+
 
 class Conversation(object):
     """
     A conversation
     """
 
+
 NoneType = type(None)
-CFP_TYPES = Union[Query,bytes,NoneType]
-PROPOSE_TYPES = Union[bytes,List[Description]]
+CFP_TYPES = Union[Query, bytes, NoneType]
+PROPOSE_TYPES = Union[bytes, List[Description]]
+
 
 class OEFProxy(object):
     """
@@ -538,14 +578,14 @@ class OEFProxy(object):
     async def _connect_to_server(self, event_loop) -> Awaitable[Tuple[asyncio.StreamReader, asyncio.StreamWriter]]:
         return await asyncio.open_connection(self._host_path, OEF_SERVER_PORT, loop=event_loop)
 
-    def _send(self, protobuf_msg): # async too ?
+    def _send(self, protobuf_msg):  # async too ?
         serialized_msg = protobuf_msg.SerializeToString()
         nbytes = struct.pack("I", len(serialized_msg))
         self._server_writer.write(nbytes)
         self._server_writer.write(serialized_msg)
 
     async def _receive(self):
-        nbytes_packed = await self._server_reader.read(len(struct.pack("I",0)))
+        nbytes_packed = await self._server_reader.read(len(struct.pack("I", 0)))
         # print("received ${0}".format(nbytes_packed))
         nbytes = struct.unpack("I", nbytes_packed)
         # print("received unpacked ${0}".format(nbytes[0]))
@@ -577,7 +617,9 @@ class OEFProxy(object):
         pb_status.ParseFromString(data)
         return pb_status.status
 
-    async def loop(self, agent) -> None:
+    # TODO eventually remove the flake8 ignore for McCabe
+    async def loop(self, agent) -> None:    # noqa: C901
+
         while True:
             data = await self._receive()
             msg = agent_pb2.Server.AgentMessage()
@@ -611,16 +653,16 @@ class OEFProxy(object):
                             proposals = fipa.propose.content
                         else:
                             proposals = [Description.from_pb(propose) for propose in fipa.propose.proposals.objects]
-                        agent.onPropose(msg.content.origin, msg.content.conversation_id, fipa.msg_id, fipa.target, proposals)
+                        agent.onPropose(msg.content.origin, msg.content.conversation_id, fipa.msg_id, fipa.target,
+                                        proposals)
                     elif fipa_case == "accept":
                         agent.onAccept(msg.content.origin, msg.content.conversation_id, fipa.msg_id, fipa.target)
                     elif fipa_case == "decline":
                         agent.onDecline(msg.content.origin, msg.content.conversation_id, fipa.msg_id, fipa.target)
                     else:
                         print("Not implemented yet: fipa {0}".format(fipa_case))
-            
 
-    def send_message(self, conversation_id : str, destination : str, msg : bytes):
+    def send_message(self, conversation_id: str, destination: str, msg: bytes):
         agent_msg = agent_pb2.Agent.Message()
         agent_msg.conversation_id = conversation_id
         agent_msg.destination = destination
@@ -628,9 +670,9 @@ class OEFProxy(object):
         envelope = agent_pb2.Envelope()
         envelope.message.CopyFrom(agent_msg)
         self._send(envelope)
-        
-    def send_cfp(self, conversation_id : str, destination : str, query : CFP_TYPES, msg_id : Optional[int] = 1,
-                 target : Optional[int] = 0):
+
+    def send_cfp(self, conversation_id: str, destination: str, query: CFP_TYPES, msg_id: Optional[int] = 1,
+                 target: Optional[int] = 0):
         fipa_msg = fipa_pb2.Fipa.Message()
         fipa_msg.msg_id = msg_id
         fipa_msg.target = target
@@ -649,9 +691,9 @@ class OEFProxy(object):
         envelope = agent_pb2.Envelope()
         envelope.message.CopyFrom(agent_msg)
         self._send(envelope)
-        
-    def send_propose(self, conversation_id : str, destination : str, proposals : PROPOSE_TYPES, msg_id : int,
-                     target : Optional[int] = None):
+
+    def send_propose(self, conversation_id: str, destination: str, proposals: PROPOSE_TYPES, msg_id: int,
+                     target: Optional[int] = None):
         fipa_msg = fipa_pb2.Fipa.Message()
         fipa_msg.msg_id = msg_id
         fipa_msg.target = target if target is not None else (msg_id - 1)
@@ -671,9 +713,9 @@ class OEFProxy(object):
         envelope.message.CopyFrom(agent_msg)
         print("propose envelope {0}".format(envelope))
         self._send(envelope)
-        
-    def send_accept(self, conversation_id : str, destination : str, msg_id : int,
-                    target : Optional[int] = None):
+
+    def send_accept(self, conversation_id: str, destination: str, msg_id: int,
+                    target: Optional[int] = None):
         fipa_msg = fipa_pb2.Fipa.Message()
         fipa_msg.msg_id = msg_id
         fipa_msg.target = target if target is not None else (msg_id - 1)
@@ -687,9 +729,9 @@ class OEFProxy(object):
         envelope.message.CopyFrom(agent_msg)
         print("accept envelope {0}".format(envelope))
         self._send(envelope)
-        
-    def send_decline(self, conversation_id : str, destination : str, msg_id : int,
-                     target : Optional[int] = None):
+
+    def send_decline(self, conversation_id: str, destination: str, msg_id: int,
+                     target: Optional[int] = None):
         fipa_msg = fipa_pb2.Fipa.Message()
         fipa_msg.msg_id = msg_id
         fipa_msg.target = target if target is not None else (msg_id - 1)
@@ -703,7 +745,7 @@ class OEFProxy(object):
         envelope.message.CopyFrom(agent_msg)
         print("decline envelope {0}".format(envelope))
         self._send(envelope)
-        
+
     def close(self) -> None:
         """
         Used to tear down resources associated with this Proxy, i.e. the writing connection with
@@ -723,7 +765,6 @@ class OEFProxy(object):
         envelope = agent_pb2.Envelope()
         envelope.description.CopyFrom(agent_description.to_pb())
         self._send(envelope)
-
 
     def unregister_agent(self,
                          agent_description: Description,
@@ -778,7 +819,6 @@ class OEFProxy(object):
         envelope.search.CopyFrom(query.to_pb())
         self._send(envelope)
 
-
     def search_services(self, query: Query) -> None:
         """
         Allows an agent to search for a particular service. This allows constrained search of all
@@ -789,7 +829,6 @@ class OEFProxy(object):
         envelope = agent_pb2.Envelope()
         envelope.query.CopyFrom(query.to_pb())
         self._send(envelope)
-
 
     def start_conversation(self, agent_id: str) -> Conversation:
         """

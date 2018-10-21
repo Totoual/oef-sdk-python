@@ -16,11 +16,21 @@ pipeline {
                 sh 'python3 -m py_compile oef_python/*.py'
             }
         }
-        stage('Test') {
-            steps {
-                sh 'PYTHONPATH=$PYTHONPATH:./oef_python pytest --verbose --cov=oef_python ./test'
+        stage('Test & Lint'){
+            parallel{
+                stage('Test') {
+                    steps {
+                        sh 'PYTHONPATH=$PYTHONPATH:./oef_python pytest --verbose --cov=oef_python ./test'
+                    }
+                }
+                stage('Lint'){
+                    steps{
+                        flake8 oef_python
+                        # TODO remove the --disable-all flag
+                        pylint -d all oef_python/api.py
+                    }
+                }
             }
-
         }
     }
 }

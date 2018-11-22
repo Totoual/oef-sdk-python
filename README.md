@@ -1,7 +1,12 @@
 # OEFCore Python API
 
+![](https://img.shields.io/badge/python-3.5%20%7C%203.6%20%7C%203.7-blue.svg)
+![](https://img.shields.io/badge/license-Apache--2.0-lightgrey.svg)
+
+
 ## Introduction
-This is the python API for the OEFCore, allowing
+
+This is the Python API for the OEFCore, allowing
  * registration of agents and services in the OEF
  * searching for agents and services in the OEF
  * constructing a direct communication channel with another agent
@@ -21,10 +26,25 @@ by choosing the release for your platform. The name format is `protoc-$(VERSION)
 
     
 ## Installation
-In order to install oef_python, run:
+In order to install `oef`, run:
 
     python setup.py install
 
+
+## Documentation
+
+For the documentation we use [Sphinx](http://www.sphinx-doc.org/en/master/).
+
+You can build it with:
+
+    cd docs/
+    make html
+    
+And then just open `index.html` in the `build/html` folder.
+
+## How to Contribute
+
+TODO
 
 ## Tutorial 
 

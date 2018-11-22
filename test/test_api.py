@@ -15,7 +15,7 @@ from typing import List, Dict
 import pytest
 import subprocess
 
-from oef_python.api import Description, AttributeSchema, AttributeInconsistencyException, \
+from oef.api import Description, AttributeSchema, AttributeInconsistencyException, \
     generate_schema, OEFProxy, DataModel, ATTRIBUTE_TYPES
 
 NODE_FROM_ROOT_PATH = "./Node"

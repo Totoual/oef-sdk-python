@@ -9,9 +9,9 @@ Python bindings for OEFCore
 
 import asyncio
 import copy
-import oef_python.agent_pb2 as agent_pb2
-import oef_python.query_pb2 as query_pb2
-import oef_python.fipa_pb2 as fipa_pb2
+import oef.agent_pb2 as agent_pb2
+import oef.query_pb2 as query_pb2
+import oef.fipa_pb2 as fipa_pb2
 import struct
 
 from typing import List, Callable, Optional, Union, Dict, Awaitable, Tuple
@@ -43,8 +43,6 @@ def attribute_pb_to_type(attribute_type: query_pb2.Query.Attribute):
     elif attribute_type == query_pb2.Query.Attribute.FLOAT:
         return float
 
-
-OEF_SERVER_PORT = 3333
 
 """
 The port the OEF server is going to be listening on
@@ -552,6 +550,7 @@ NoneType = type(None)
 CFP_TYPES = Union[Query, bytes, NoneType]
 PROPOSE_TYPES = Union[bytes, List[Description]]
 
+DEFAULT_OEF_NODE_PORT = 3333
 
 class OEFProxy(object):
     """
@@ -563,12 +562,13 @@ class OEFProxy(object):
      * Establish a connection with another agent
     """
 
-    def __init__(self, public_key: str, host_path: str) -> None:
+    def __init__(self, public_key: str, host_path: str, port: int = DEFAULT_OEF_NODE_PORT) -> None:
         """
         :param host_path: the path to the host
         """
         self._public_key = public_key
         self._host_path = host_path
+        self._port = port
 
         # these are setup in _connect_to_server
         self._connection = None
@@ -576,7 +576,7 @@ class OEFProxy(object):
         self._server_writer = None
 
     async def _connect_to_server(self, event_loop) -> Awaitable[Tuple[asyncio.StreamReader, asyncio.StreamWriter]]:
-        return await asyncio.open_connection(self._host_path, OEF_SERVER_PORT, loop=event_loop)
+        return await asyncio.open_connection(self._host_path, self._port, loop=event_loop)
 
     def _send(self, protobuf_msg):  # async too ?
         serialized_msg = protobuf_msg.SerializeToString()
@@ -617,8 +617,8 @@ class OEFProxy(object):
         pb_status.ParseFromString(data)
         return pb_status.status
 
-    # TODO eventually remove the flake8 ignore for McCabe
     async def loop(self, agent) -> None:    # noqa: C901
+        # param: OEFAgent
 
         while True:
             data = await self._receive()
@@ -627,14 +627,14 @@ class OEFProxy(object):
             case = msg.WhichOneof("payload")
             # print("loop {0}".format(case))
             if case == "agents":
-                agent.onSearchResult(msg.agents.agents)
+                agent.on_search_result(msg.agents.agents)
             elif case == "error":
-                agent.onError(msg.error.operation, msg.error.conversation_id, msg.error.msgid)
+                agent.on_error(msg.error.operation, msg.error.conversation_id, msg.error.msgid)
             elif case == "content":
                 content_case = msg.content.WhichOneof("payload")
                 print("msg content {0}".format(content_case))
                 if content_case == "content":
-                    agent.onMessage(msg.content.origin, msg.content.conversation_id, msg.content.content)
+                    agent.on_message(msg.content.origin, msg.content.conversation_id, msg.content.content)
                 elif content_case == "fipa":
                     fipa = msg.content.fipa
                     fipa_case = fipa.WhichOneof("msg")
@@ -646,19 +646,19 @@ class OEFProxy(object):
                             query = fipa.cfp.content
                         elif cfp_case == "query":
                             query = Query.from_pb(fipa.cfp.query)
-                        agent.onCFP(msg.content.origin, msg.content.conversation_id, fipa.msg_id, fipa.target, query)
+                        agent.on_cfp(msg.content.origin, msg.content.conversation_id, fipa.msg_id, fipa.target, query)
                     elif fipa_case == "propose":
                         propose_case = fipa.propose.WhichOneof("payload")
                         if propose_case == "content":
                             proposals = fipa.propose.content
                         else:
                             proposals = [Description.from_pb(propose) for propose in fipa.propose.proposals.objects]
-                        agent.onPropose(msg.content.origin, msg.content.conversation_id, fipa.msg_id, fipa.target,
+                        agent.on_propose(msg.content.origin, msg.content.conversation_id, fipa.msg_id, fipa.target,
                                         proposals)
                     elif fipa_case == "accept":
                         agent.onAccept(msg.content.origin, msg.content.conversation_id, fipa.msg_id, fipa.target)
                     elif fipa_case == "decline":
-                        agent.onDecline(msg.content.origin, msg.content.conversation_id, fipa.msg_id, fipa.target)
+                        agent.on_decline(msg.content.origin, msg.content.conversation_id, fipa.msg_id, fipa.target)
                     else:
                         print("Not implemented yet: fipa {0}".format(fipa_case))
 
@@ -677,6 +677,7 @@ class OEFProxy(object):
         fipa_msg.msg_id = msg_id
         fipa_msg.target = target
         cfp = fipa_pb2.Fipa.Cfp()
+
         if query is None:
             cfp.nothing.CopyFrom(fipa_pb2.Fipa.Cfp.Nothing())
         elif isinstance(query, Query):
@@ -766,17 +767,13 @@ class OEFProxy(object):
         envelope.description.CopyFrom(agent_description.to_pb())
         self._send(envelope)
 
-    def unregister_agent(self,
-                         agent_description: Description,
-                         conversation_handler: Callable[[Conversation], None]) -> bool:
+    def unregister_agent(self, agent_description: Description) -> bool:
         """
         Removes the description of an agent from the OEF. This agent will no longer be queryable
         by other agents in the OEF. A conversation handler must be provided that allows the agent
         to receive and manage conversations from other agents wishing to communicate with it.
 
         :param agent_description: description of the agent to remove
-        :param conversation_handler: function that allows handling of conversations with other
-        agents
         :returns: `True` if agent is successfully removed, `False` otherwise. Can fail if
         such an agent is not registered with the OEF.
         """

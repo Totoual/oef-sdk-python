@@ -7,7 +7,6 @@ import distutils.log
 import fileinput
 import os
 import re
-import shutil
 import subprocess
 import glob
 
@@ -64,17 +63,17 @@ class ProtocCommand(distutils.cmd.Command):
         command = [protoc_executable_path] + self._get_arguments()
         return command
 
-    # TODO: generalize to other system path pattern (e.g. Windows' one)
+    # TODO: generalize to other system path pattern (e.g. Windows)
     def _get_arguments(self):
         arguments = []
         arguments.append("--proto_path=./OEFCoreProtocol")
-        arguments.append("--python_out=./oef_python")
+        arguments.append("--python_out=./oef")
         arguments += glob.glob("OEFCoreProtocol/*.proto") # TODO add recursive search
         return arguments
 
     def _fix_import_statements_in_all_protobuf_modules(self):
         # TODO: generalize to other system path pattern (e.g. Windows' one)
-        generated_protobuf_python_modules = glob.glob("oef_python/*_pb2.py")
+        generated_protobuf_python_modules = glob.glob("oef/*_pb2.py")
         for filepath in generated_protobuf_python_modules:
             self._fix_import_statements_in_protobuf_module(filepath)
 
@@ -94,9 +93,9 @@ class BuildPyCommand(setuptools.command.build_py.build_py):
 
 
 setup(
-    name='oef_python',
+    name='oef',
     version='0.1',
-    packages=['oef_python'],
+    packages=['oef'],
     cmdclass={
         'protoc': ProtocCommand,
         'build_py': BuildPyCommand

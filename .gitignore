@@ -107,14 +107,16 @@ venv.bak/
 # vim stuff
 *.swp
 *.swo
+.*.swn
+.*.swm
 tags
 
-# build stuff
+# build
 Node
 log.txt*
 
-# pycharm stuff
+# pycharm
 .idea
 
 # protobuf python modules (generated at installation time)
-oef_python/*_pb2.py
+oef/*_pb2.py

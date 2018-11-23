@@ -16,7 +16,7 @@ OEFCore Python API
 .. image:: https://img.shields.io/badge/license-Apache--2.0-lightgrey.svg
    :target: https://img.shields.io/badge/license-Apache--2.0-lightgrey.svg
 
-
+**WARNING**: the package is in active development, so the API might change frequently.
 
 This is the Python API for the OEFCore, allowing
 
@@ -32,6 +32,7 @@ User guide
 
    user/introduction
    user/install
+   user/quickstart
    user/tutorial
 
 

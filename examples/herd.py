@@ -1,14 +1,13 @@
 import sys
 import os
 
+from oef.api import OEFProxy
+
 PACKAGE_PARENT = '../oef'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
 sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 import asyncio
-
-from api import Description, AttributeSchema, AttributeInconsistencyException,\
-        generate_schema, OEFProxy
 
 if __name__ == "__main__":
     connections = []

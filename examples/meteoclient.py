@@ -9,8 +9,7 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 from typing import List
 
-from oef.api import Description, AttributeSchema, AttributeInconsistencyException,\
-        generate_schema, OEFProxy, DataModel, Eq, Query, Constraint, PROPOSE_TYPES
+from oef.api import AttributeSchema, DataModel, Eq, Query, Constraint, PROPOSE_TYPES
 
 class Agent(OEFAgent):
 

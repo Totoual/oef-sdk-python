@@ -2,16 +2,13 @@ import sys
 import os
 
 from oef.agents import OEFAgent
+from oef.api import CFP_TYPES, Description, DataModel, AttributeSchema
 
 PACKAGE_PARENT = '../oef'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
 sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
-import asyncio
-from typing import List, Optional
-
-from api import Description, AttributeSchema, AttributeInconsistencyException,\
-        generate_schema, OEFProxy, DataModel, Query, CFP_TYPES
+from typing import List
 
 class Agent(OEFAgent):
 

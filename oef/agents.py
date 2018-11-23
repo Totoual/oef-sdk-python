@@ -1,26 +1,11 @@
-# vim: set number autoindent tabstop=2 expandtab :
-# Company: FETCH.ai
-# Author: Lokman Rahmani
-# Creation: 26/09/18
-#
-# This file implements python OEF agent SDK oef.agent submodule
-# It provides:
-#   - low-level functions: _send_message() and _areceive_encoded_message()
-#      to send and receive oef.message-s to and from OEF core
-#   - high-level functions: _connectOEF(), RegisterDataModelInstance(),
-#      sendsearch_services(), aWaitCFPProposal(), sendCFProposal(), 
-#      aWaitProposalAnswer(), sendProposalAnswer(), DeliverProposal(),
-#      aWaitProposalDelivery()
-#      that implements OEF protocols as functions that facilitate 
-#      agent developement
-# Type checking:
-#   - _send_message() do check if the message to be sent is allowed to be
-#     sent from a  white list variable (AUTHORIZED_MSGS)
+# Copyright (C) Fetch.ai 2018 - All Rights Reserved
+# Unauthorized copying of this file, via any medium is strictly prohibited
+# Proprietary and confidential
 import asyncio
 from abc import ABC
 
 import logging
-from typing import List
+from typing import List, Optional
 
 from oef import agent_pb2
 from oef.api import OEFProxy, PROPOSE_TYPES, CFP_TYPES, Description, Query
@@ -87,11 +72,15 @@ class OEFAgent(ABC):
         logger.info("on_propose: {}, {}, {}, {}, {}", origin, conversation_id, fipa_message_id, fipa_target, proposal)
         _warning_not_implemented_method(self.on_propose.__name__)
 
-    def on_error(self, operation: agent_pb2.Server.AgentMessage.Error.Operation, conversation_id: str, message_id: int):
+    def on_error(self, operation: agent_pb2.Server.AgentMessage.Error.Operation,
+                 conversation_id: str,
+                 message_id: int):
         logger.info("on_error: {}, {}, {}", operation, conversation_id, message_id)
         _warning_not_implemented_method(self.on_error.__name__)
 
-    def on_message(self, origin: str, conversation_id: str, content: bytes):
+    def on_message(self, origin: str,
+                   conversation_id: str,
+                   content: bytes):
         logger.info("on_message: {}, {}, {}, {}", origin, conversation_id, content)
         _warning_not_implemented_method(self.on_message.__name__)
 
@@ -161,3 +150,70 @@ class OEFAgent(ABC):
         :param query: the constraint on the matching services
         """
         self._connection.search_services(query)
+
+    def send_message(self, conversation_id: str,
+                     destination: str,
+                     msg: bytes):
+        logger.debug("Agent {}: conversation_id={}, destination={}, msg={}"
+                     .format(self._pubkey,
+                             conversation_id,
+                             destination,
+                             msg)
+                     )
+        self._connection.send_message(conversation_id, destination, msg)
+
+    def send_cfp(self, conversation_id: str,
+                 destination: str,
+                 query: CFP_TYPES,
+                 msg_id: Optional[int] = 1,
+                 target: Optional[int] = 0):
+        logger.debug("Agent {}: conversation_id={}, destination={}, query={}, msg_id={}, target={}"
+                     .format(self._pubkey,
+                             conversation_id,
+                             destination,
+                             query,
+                             msg_id,
+                             target)
+                     )
+        self._connection.send_cfp(conversation_id, destination, query, msg_id,target)
+
+    def send_propose(self, conversation_id: str,
+                     destination: str,
+                     proposals: PROPOSE_TYPES,
+                     msg_id: int,
+                     target: Optional[int] = None):
+        logger.debug("Agent {}: conversation_id={}, destination={}, proposals={}, msg_id={}, target={}"
+                     .format(self._pubkey,
+                             conversation_id,
+                             destination,
+                             proposals,
+                             msg_id,
+                             target)
+                     )
+        self._connection.send_propose(conversation_id, destination, proposals, msg_id, target)
+
+    def send_accept(self, conversation_id: str,
+                    destination: str,
+                    msg_id: int,
+                    target: Optional[int] = None):
+        logger.debug("Agent {}: conversation_id={}, destination={}, msg_id={}, target={}"
+                     .format(self._pubkey,
+                             conversation_id,
+                             destination,
+                             msg_id,
+                             target)
+                     )
+        self._connection.send_accept(conversation_id, destination, msg_id, target)
+
+    def send_decline(self, conversation_id: str,
+                     destination: str,
+                     msg_id: int,
+                     target: Optional[int] = None):
+        logger.debug("Agent {}: conversation_id={}, destination={}, msg_id={}, target={}"
+                     .format(self._pubkey,
+                             conversation_id,
+                             destination,
+                             msg_id,
+                             target)
+                     )
+        self._connection.send_decline(conversation_id, destination, msg_id, target)

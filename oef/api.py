@@ -1,7 +1,6 @@
 # Copyright (C) Fetch.ai 2018 - All Rights Reserved
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
-# Written by Tom Nicholson <tom.nicholson@fetch.ai>
 
 """
 Python bindings for OEFCore
@@ -9,12 +8,16 @@ Python bindings for OEFCore
 
 import asyncio
 import copy
+import logging
+
 import oef.agent_pb2 as agent_pb2
 import oef.query_pb2 as query_pb2
 import oef.fipa_pb2 as fipa_pb2
 import struct
 
 from typing import List, Callable, Optional, Union, Dict, Awaitable, Tuple
+
+logger = logging.getLogger(__name__)
 
 """
 The allowable types that an Attribute can have

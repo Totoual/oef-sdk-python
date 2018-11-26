@@ -29,7 +29,7 @@ Finally, the AEA layer implements data models and communication protocols for ag
 to interact with the OEF and with each other.
 
 What is OEF? (Open Economic Framework)
-------------
+--------------------------------------
 
 Overview
 ~~~~~~~~

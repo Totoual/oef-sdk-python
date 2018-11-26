@@ -20,7 +20,6 @@ class EchoServerAgent(OEFAgent):
 
 if __name__ == '__main__':
 
-
     # create agent and connect it to OEF
     agent = EchoServerAgent("echo_server", oef_addr="127.0.0.1", oef_port=3333)
     agent.connect()

@@ -44,7 +44,7 @@ Follow these steps:
 
 ::
 
-  git clone https://github.com/uvue-git/OEFCorePython.git
+  git clone https://github.com/uvue-git/OEFCorePython.git --recursive && cd OEFCorePython/
 
 
 * Install the package:

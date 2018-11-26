@@ -40,7 +40,10 @@ class OEFAgent(ABC):
         return connection
 
     def run(self):
-        self._loop.run_until_complete(self._connection.loop(self))
+        self._loop.run_until_complete(self.async_run())
+
+    async def async_run(self):
+        await self._connection.loop(self)
 
     def on_cfp(self, origin: str,
                conversation_id: str,

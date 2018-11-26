@@ -17,8 +17,11 @@ class EchoClientAgent(OEFAgent):
         print("Received message: origin={}, conversation_id={}, content={}".format(origin, conversation_id, content))
 
     def on_search_result(self, agents: List[str]):
-        print("Agent found: ", agents)
-        self.send_message("uuid", agents[0], b"hello")
+        if len(agents) > 0:
+            print("Agents found: ", agents)
+            self.send_message("uuid", agents[0], b"hello")
+        else:
+            print("No agent found.")
 
 
 if __name__ == '__main__':

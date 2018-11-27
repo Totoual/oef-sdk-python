@@ -141,6 +141,6 @@ The output should be:
   greetings_client: Received message: origin=greetings_server, conversation_id=8d79deba-1043-4679-918c-a899c863ac49, content=b'greetings'
 
 
-You can find the sources at `this link <https://github.com/uvue-git/OEFCorePython/tree/develop/examples/greetings_example.py>`_.
+You can find the sources at `this link <https://github.com/uvue-git/OEFCorePython/tree/develop/examples/greetings/greetings_example.py>`_.
 
 In the :ref:`tutorial` you might find all the details and how to implement more complex behaviours.

@@ -13,7 +13,7 @@ def set_logger(name="oef", level=logging.INFO, handler: logging.Handler=None):
     :param name: the name of the module you want to activate the logger.
     :param level: the logging level
     :param handler: the logging handler. If None, then a default handler is provided, printing to standard error.
-    :return:
+    :return: the logger.
     """
 
     # Make the logger
@@ -28,4 +28,7 @@ def set_logger(name="oef", level=logging.INFO, handler: logging.Handler=None):
         formatter = logging.Formatter(_DEFAULT_LOG_FORMAT)
         handler.setFormatter(formatter)
 
+    # Make the handler the unique handler for the logger.
     logger.handlers = [handler]
+
+    return logger

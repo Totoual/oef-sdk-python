@@ -635,7 +635,7 @@ class OEFProxy(object):
                 agent.on_error(msg.error.operation, msg.error.conversation_id, msg.error.msgid)
             elif case == "content":
                 content_case = msg.content.WhichOneof("payload")
-                print("msg content {0}".format(content_case))
+                logger.debug("msg content {0}".format(content_case))
                 if content_case == "content":
                     agent.on_message(msg.content.origin, msg.content.conversation_id, msg.content.content)
                 elif content_case == "fipa":

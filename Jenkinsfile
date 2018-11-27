@@ -7,13 +7,20 @@ pipeline {
         }
 
     stages {
-        stage('Build') {
+
+        stage('Pre-build'){
 
             steps {
                 sh 'apt-get install -y protobuf-compiler'
                 sh 'pip install -r requirements.txt'
+            }
+        }
+
+        stage('Build') {
+
+            steps {
                 sh 'python setup.py install'
-                sh 'python3 -m py_compile oef_python/*.py'
+                sh 'python3 -m py_compile oef/*.py'
             }
         }
 
@@ -21,7 +28,7 @@ pipeline {
             parallel{
                 stage('Test') {
                     steps {
-                        sh 'PYTHONPATH=$PYTHONPATH:./oef_python pytest --verbose --cov=oef_python ./test'
+                        sh 'PYTHONPATH=$PYTHONPATH:./oef pytest --verbose --cov=oef ./test'
                     }
                 }
                 stage('Lint'){

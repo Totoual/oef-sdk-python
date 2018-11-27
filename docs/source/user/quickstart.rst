@@ -119,7 +119,7 @@ Start Communications
 
 When the ``client_agent`` receives a search result from the OEF, the ``on_search_result`` method is executed.
 
-* execute both agents concurrently
+* Execute both agents concurrently
 
 .. code-block:: python
 
@@ -143,4 +143,4 @@ The output should be:
 
 You can find the sources at `this link <https://github.com/uvue-git/OEFCorePython/tree/develop/examples/greetings/greetings_example.py>`_.
 
-In the :ref:`tutorial` you might find all the details and how to implement more complex behaviours.
+In :ref:`tutorial` you might find all the details and how to implement more complex behaviours.

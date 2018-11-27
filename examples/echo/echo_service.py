@@ -11,17 +11,17 @@ from oef.logger import set_logger
 set_logger("oef", logging.DEBUG)
 
 
-class EchoServerAgent(OEFAgent):
+class EchoServiceAgent(OEFAgent):
 
     def on_message(self, origin: str, conversation_id: str, content: bytes):
-        print("Received message: origin={}, conversation_id={}, content={}".format(origin, conversation_id, content))
-        self.send_message(conversation_id, origin, b"ciao")
+        # we send the received message back to the origin
+        self.send_message(conversation_id, origin, content)
 
 
 if __name__ == '__main__':
 
     # create agent and connect it to OEF
-    agent = EchoServerAgent("echo_server", oef_addr="127.0.0.1", oef_port=3333)
+    agent = EchoServiceAgent("echo_server", oef_addr="127.0.0.1", oef_port=3333)
     agent.connect()
 
     # register a data service on the OEF

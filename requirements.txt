@@ -8,3 +8,7 @@ pylint
 pydocstyle
 flake8
 mypy
+
+#docs
+sphinx
+sphinx_rtd_theme

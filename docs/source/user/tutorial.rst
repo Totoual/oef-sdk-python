@@ -106,6 +106,9 @@ with the same message.
 First, we define the service agent that implements the echo service.
 Then, we implement other client agents to interact with the echo service.
 
+`Here <https://github.com/uvue-git/OEFCorePython/tree/master/examples/echo>`_
+you can find the full code of the examples.
+
 Echo Agent service
 ~~~~~~~~~~~~~~~~~~
 
@@ -143,8 +146,8 @@ instance running. If you followed the previous instructions, they should be ``12
 .. code-block:: python
 
   # create agent and connect it to OEF
-  agent = EchoServiceAgent("echo_server", oef_addr="127.0.0.1", oef_port=3333)
-  agent.connect()
+  server_agent = EchoServiceAgent("echo_server", oef_addr="127.0.0.1", oef_port=3333)
+  server_agent.connect()
 
 Define a Data Model and a Description
 ``````````````````````````````````````
@@ -172,7 +175,7 @@ Now that we have a description for our service, let's register our service agent
 .. code-block:: python
 
 
-  agent.register_service(echo_description)
+  server_agent.register_service(echo_description)
 
 
 This instruction will notify the OEF Node that there is a new service available.
@@ -187,8 +190,10 @@ To run the agent waiting for events:
 
 ::
 
-  agent.run()
+  server_agent.run()
 
+
+The ``run()`` method is blocking, so you have to switch to another terminal/console to launch the client.
 
 For some particular use cases, you may want to use the associated ``async`` method, that is ``async_run()``.
 
@@ -196,4 +201,82 @@ For some particular use cases, you may want to use the associated ``async`` meth
 Echo Agent client
 ~~~~~~~~~~~~~~~~~
 
-TODO
+The `EchoClientAgent` implements our `echo client`, that is the consumer of the service we implemented in the previous
+section.
+
+.. code-block:: python
+
+  import uuid
+  from typing import List
+
+  from oef.agents import OEFAgent
+
+  class EchoClientAgent(OEFAgent):
+
+      def on_message(self, origin: str, conversation_id: str, content: bytes):
+          print("Received message: origin={}, conversation_id={}, content={}".format(origin, conversation_id, content))
+
+      def on_search_result(self, agents: List[str]):
+          if len(agents) > 0:
+              print("Agents found: ", agents)
+              self.send_message(str(uuid.uuid4()), agents[0], b"hello")
+          else:
+              print("No agent found.")
+
+
+
+The ``on_message`` method has the same semantics of the one implemented in the ``EchoServiceAgent`` class. In this case,
+we don't implement any complex behavior (we just print the received message).
+
+The ``on_search_result`` callback is called whenever the agent receives a search result followed by a search query with
+``search_agents()`` or ``search_services()`` methods.
+
+Connect to the OEF
+``````````````````
+
+Analogously to the previous section, we connect our client to the OEF.
+
+.. code-block:: python
+
+  client_agent = EchoClientAgent("echo_client", oef_addr="127.0.0.1", oef_port=3333)
+  client_agent.connect()
+
+
+Make a query
+````````````
+
+Now we need to search for agents who provides the ``echo` service.
+
+To do so, we create a ``Query`` referring to the ``echo`` data model. The first parameter is a list
+of *constraints* over the attributes of the data model. However, since our data model is trivial,
+our query just returns all the agents that are registered with the `echo` data model.
+
+.. code-block:: python
+
+  # create a query for the echo data model
+  echo_model = DataModel("echo", [], "Echo data service.")
+  echo_query = Query([], echo_model)
+
+
+Search for services
+```````````````````
+
+Once we have a query, we can ask the OEF to returns all the agents that satisfy those constraints.
+
+.. code-block:: python
+
+  client_agent.search_services(echo_query)
+
+Wait for search results
+```````````````````````
+
+The client agent needs to wait for the search result from the OEF Node:
+
+.. code-block:: python
+
+  # wait for events
+  client_agent.run()
+
+
+Once the OEF Node computed the result, the ``on_search_result`` callback is called.
+

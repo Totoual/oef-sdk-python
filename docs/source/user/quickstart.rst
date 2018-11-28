@@ -8,7 +8,7 @@ This is a quick start guide, for the eager users.
 Install
 -------
 
-For Linux (Ubuntu):
+* On Linux Ubuntu:
 
 .. code-block:: bash
 
@@ -17,11 +17,22 @@ For Linux (Ubuntu):
   cd OEFCorePython/
   python setup.py install
 
-For other platforms and other details, please follow the installation guide: :ref:`install`.
+
+* On Mac OS X:
+
+.. code-block:: bash
+
+  brew install protobuf
+  git clone https://github.com/uvue-git/OEFCorePython.git --recursive
+  cd OEFCorePython/
+  python setup.py install
+
+
+* For other platforms and other details, please follow the installation guide: :ref:`install`.
 
 
 Run a OEF Node
-~~~~~~~~~~~~~~~~
+--------------
 
 In a separate terminal:
 

@@ -21,14 +21,14 @@ class EchoServiceAgent(OEFAgent):
 if __name__ == '__main__':
 
     # create agent and connect it to OEF
-    agent = EchoServiceAgent("echo_server", oef_addr="127.0.0.1", oef_port=3333)
-    agent.connect()
+    server_agent = EchoServiceAgent("echo_server", oef_addr="127.0.0.1", oef_port=3333)
+    server_agent.connect()
 
     # register a data service on the OEF
     echo_model = DataModel("echo", [], "echo data service.")
     echo_description = Description({}, echo_model)
 
-    agent.register_service(echo_description)
+    server_agent.register_service(echo_description)
 
     # run the agent
-    agent.run()
+    server_agent.run()

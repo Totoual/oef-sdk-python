@@ -22,10 +22,6 @@ If you get ``Missing input file.``, then you have already it.
 
 Otherwise, you can install it in several  ways, depending on your platform.
 
-* On Debian-based (e.g. Ubuntu):
-
-::
-
 
 Linux (Ubuntu)
 ~~~~~~~~~~~~~~
@@ -95,12 +91,12 @@ To install the Python package ``oef``, follow these steps:
 
 ::
 
-  git clone https://github.com/uvue-git/OEFCorePython.git --recursive && cd OEFCorePython/
+    git clone https://github.com/uvue-git/OEFCorePython.git --recursive && cd OEFCorePython/
 
 
 * Install the package:
 
 ::
 
-  python setup.py install
+    python setup.py install
 

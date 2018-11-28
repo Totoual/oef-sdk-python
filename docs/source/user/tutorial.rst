@@ -322,3 +322,29 @@ The order of the exchanged message is the following:
 - The OEF Node dispatch the message from ``echo_server`` to ``echo_client``;
 - The ``echo_client`` receives the echo message.
 
+
+Second example: Weather Station
+-------------------------------
+
+In this second example, consider the following scenario:
+
+* A `weather station` that provides measurements of some physical quantity (e.g. wind speed, temperature, air pressure)
+* A `weather client` interested in these measurements.
+
+However, the owner fo the weather station wants to sell the data it measure. In the next sections, we describe a
+protocol that allow the agents to:
+
+* request for resources (physical assets, services, informations etc.)
+* make price proposals on the negotiated resources
+* accept/decline proposals.
+
+
+You can check the code `here <https://github.com/uvue-git/OEFCorePython/tree/master/examples/weather>`_.
+
+Weather Station Agent
+~~~~~~~~~~~~~~~~~~~~~
+
+Weather Client Agent
+~~~~~~~~~~~~~~~~~~~~~
+
+

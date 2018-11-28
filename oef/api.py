@@ -15,7 +15,7 @@ import oef.query_pb2 as query_pb2
 import oef.fipa_pb2 as fipa_pb2
 import struct
 
-from typing import List, Callable, Optional, Union, Dict, Awaitable, Tuple
+from typing import List, Callable, Optional, Union, Dict, Awaitable, Tuple, Type
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ The allowable types that an Attribute can have
 ATTRIBUTE_TYPES = Union[float, str, bool, int]
 
 
-def attribute_type_to_pb(attribute_type: ATTRIBUTE_TYPES):
+def attribute_type_to_pb(attribute_type: Type[ATTRIBUTE_TYPES]):
     if attribute_type == bool:
         return query_pb2.Query.Attribute.BOOL
     elif attribute_type == int:
@@ -61,7 +61,7 @@ class AttributeSchema(object):
 
     def __init__(self,
                  attribute_name: str,
-                 attribute_type: ATTRIBUTE_TYPES,
+                 attribute_type: Type[ATTRIBUTE_TYPES],
                  is_attribute_required: bool,
                  attribute_description: Optional[str] = None) -> None:
         """

@@ -27,7 +27,6 @@ pipeline {
                         sh 'python3 -m py_compile oef/*.py'
                     }
                 }
-
                 stage('Test') {
                     steps {
                         sh 'PYTHONPATH=$PYTHONPATH:./oef pytest --verbose --cov=oef ./test'
@@ -40,12 +39,12 @@ pipeline {
                         sh 'pylint -d all oef/api.py'
                     }
                 }
-
                 stage('Build docs'){
                     steps{
                         sh 'cd docs && make html'
                     }
                 }
+
             }
 
         }

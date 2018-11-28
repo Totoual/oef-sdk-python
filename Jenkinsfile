@@ -8,6 +8,7 @@ pipeline {
 
     stages {
 
+
         stage('Pre-build'){
 
             steps {
@@ -16,16 +17,17 @@ pipeline {
             }
         }
 
-        stage('Build') {
+        stage('Builds & Tests'){
 
-            steps {
-                sh 'python setup.py install'
-                sh 'python3 -m py_compile oef/*.py'
-            }
-        }
-
-        stage('Test & Lint'){
             parallel{
+
+                stage('Build') {
+                    steps {
+                        sh 'python setup.py install'
+                        sh 'python3 -m py_compile oef/*.py'
+                    }
+                }
+
                 stage('Test') {
                     steps {
                         sh 'PYTHONPATH=$PYTHONPATH:./oef pytest --verbose --cov=oef ./test'
@@ -35,10 +37,18 @@ pipeline {
                     steps{
                         sh 'flake8 oef_python'
                         // TODO remove the --disable-all flag
-                        sh 'pylint -d all oef_python/api.py'
+                        sh 'pylint -d all oef/api.py'
+                    }
+                }
+
+                stage('Build docs'){
+                    steps{
+                        sh 'cd docs && make html'
                     }
                 }
             }
+
         }
+
     }
 }

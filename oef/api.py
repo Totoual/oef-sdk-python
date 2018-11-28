@@ -659,7 +659,7 @@ class OEFProxy(object):
                         agent.on_propose(msg.content.origin, msg.content.conversation_id, fipa.msg_id, fipa.target,
                                         proposals)
                     elif fipa_case == "accept":
-                        agent.onAccept(msg.content.origin, msg.content.conversation_id, fipa.msg_id, fipa.target)
+                        agent.on_accept(msg.content.origin, msg.content.conversation_id, fipa.msg_id, fipa.target)
                     elif fipa_case == "decline":
                         agent.on_decline(msg.content.origin, msg.content.conversation_id, fipa.msg_id, fipa.target)
                     else:

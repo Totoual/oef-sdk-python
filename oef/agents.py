@@ -30,9 +30,9 @@ class OEFAgent(ABC):
 
     def connect(self) -> None:
         """Connect the agent to the OEF Node specified by _oef_addr and _oef_port"""
-        logger.debug("{}: Start connection to %s:%s", self._pubkey, self._oef_addr, self._oef_port)
+        logger.debug("{}: Start connection to {}:{}".format(self._pubkey, self._oef_addr, self._oef_port))
         self._connection = self._get_connection()
-        logger.debug("{}: Connection established to %s:%s", self._pubkey, self._oef_addr, self._oef_port)
+        logger.debug("{}: Connection established to {}:{}".format(self._pubkey, self._oef_addr, self._oef_port))
 
     def _get_connection(self) -> OEFProxy:
         connection = OEFProxy(self._pubkey, str(self._oef_addr), self._oef_port)

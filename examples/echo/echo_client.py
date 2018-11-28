@@ -20,8 +20,10 @@ class EchoClientAgent(OEFAgent):
     def on_search_result(self, agents: List[str]):
         if len(agents) > 0:
             print("Agents found: ", agents)
+            msg = b"hello"
             for agent in agents:
-                self.send_message(str(uuid.uuid4()), agent, b"hello")
+                print("Sending {} to {}".format(msg, agent))
+                self.send_message(str(uuid.uuid4()), agent, msg)
         else:
             print("No agent found.")
 
@@ -37,6 +39,8 @@ if __name__ == '__main__':
     # query OEF for DataService providers
     echo_model = DataModel("echo", [], "Echo data service.")
     echo_query = Query([], echo_model)
+
+    print("Make search to the OEF")
     client_agent.search_services(echo_query)
 
     # wait for events

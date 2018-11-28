@@ -14,7 +14,8 @@ set_logger("oef", logging.DEBUG)
 class EchoServiceAgent(OEFAgent):
 
     def on_message(self, origin: str, conversation_id: str, content: bytes):
-        # we send the received message back to the origin
+        print("Received message: origin={}, conversation_id={}, content={}".format(origin, conversation_id, content))
+        print("Sending {} back to {}".format(content, origin))
         self.send_message(conversation_id, origin, content)
 
 

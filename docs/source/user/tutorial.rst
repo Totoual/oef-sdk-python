@@ -127,8 +127,11 @@ In later examples we will see more complex protocol and how to implement the ass
   class EchoServiceAgent(OEFAgent):
 
       def on_message(self, origin: str, conversation_id: str, content: bytes):
-          # this method is called whenever a new message is sent to this agent.
-          # we just send the received message back to the origin.
+          """ this method is called whenever a new message is sent to this agent.
+          We send the received message back to the origin"""
+
+          print("Received message: origin={}, conversation_id={}, content={}".format(origin, conversation_id, content))
+          print("Sending {} back to {}".format(content, origin))
           self.send_message(conversation_id, origin, content)
 
 
@@ -219,10 +222,12 @@ section.
       def on_search_result(self, agents: List[str]):
           if len(agents) > 0:
               print("Agents found: ", agents)
-              self.send_message(str(uuid.uuid4()), agents[0], b"hello")
+              msg = b"hello"
+              for agent in agents:
+                  print("Sending {} to {}".format(msg, agent))
+                  self.send_message(str(uuid.uuid4()), agent, msg)
           else:
               print("No agent found.")
-
 
 
 The ``on_message`` method has the same semantics of the one implemented in the ``EchoServiceAgent`` class. In this case,
@@ -230,6 +235,9 @@ we don't implement any complex behavior (we just print the received message).
 
 The ``on_search_result`` callback is called whenever the agent receives a search result followed by a search query with
 ``search_agents()`` or ``search_services()`` methods.
+
+In our case, the agent just sends a ``"hello"`` message (in bytes) to every discovered service,
+by using the ``send_message()`` method.
 
 Connect to the OEF
 ``````````````````
@@ -261,7 +269,7 @@ our query just returns all the agents that are registered with the `echo` data m
 Search for services
 ```````````````````
 
-Once we have a query, we can ask the OEF to returns all the agents that satisfy those constraints.
+Once we have a query, we can ask the OEF to returns all service agents that satisfy those constraints.
 
 .. code-block:: python
 
@@ -279,4 +287,38 @@ The client agent needs to wait for the search result from the OEF Node:
 
 
 Once the OEF Node computed the result, the ``on_search_result`` callback is called.
+
+
+Message Exchange
+~~~~~~~~~~~~~~~~
+
+
+If you run the agents in different consoles, you can check the log messages that they produced.
+
+The output from the client agent should be:
+
+::
+
+  Agents found:  ['echo_server']
+  Sending b'hello' to echo_server
+  Received message: origin=echo_server, conversation_id=573a6643-22c3-4a88-aede-77bf65859c5f, content=b'hello'
+
+Whereas, the one from the server agent is:
+
+::
+
+  Received message: origin=echo_client, conversation_id=573a6643-22c3-4a88-aede-77bf65859c5f, content=b'hello'
+  Sending b'hello' back to echo_client
+
+
+The order of the exchanged message is the following:
+
+- The server notify the OEF Node that it is able to serve other agents;
+- The ``echo_client`` make a query to the OEF Node;
+- The OEF Node sends back the list of agents who satisfy the condition in the query (the only agent is ``echo_server``);
+- The client sends ``"hello"`` message to the OEF Node, destined to the ``echo_server``;
+- The OEF Node dispatch the message from ``echo_client`` to ``echo_server``;
+- The ``echo_server`` receives the message and sends back a new message, destined to ``echo_client``, to the OEF Node;
+- The OEF Node dispatch the message from ``echo_server`` to ``echo_client``;
+- The ``echo_client`` receives the echo message.
 

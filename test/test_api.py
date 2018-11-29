@@ -1,7 +1,6 @@
 # Copyright (C) Fetch.ai 2018 - All Rights Reserved
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
-# Written by Tom Nicholson <tom.nicholson@fetch.ai>
 
 """
 Test that our API works
@@ -15,8 +14,9 @@ from typing import List, Dict
 import pytest
 import subprocess
 
-from oef.api import Description, AttributeSchema, AttributeInconsistencyException, \
-    generate_schema, OEFProxy, DataModel, ATTRIBUTE_TYPES
+from oef.api import OEFProxy
+from oef.schema import ATTRIBUTE_TYPES, AttributeSchema, AttributeInconsistencyException, DataModel, generate_schema, \
+    Description
 
 NODE_FROM_ROOT_PATH = "./Node"
 PATH_TO_ROOT = ".."

@@ -2,7 +2,10 @@ import sys
 import os
 
 from oef.agents import OEFAgent
-from oef.api import CFP_TYPES, Description, AttributeSchema, DataModel, Query, Constraint, Range, And, Or
+from oef.api import CFP_TYPES
+from oef.query import Range, And, Or, Constraint
+from oef.schema import AttributeSchema, DataModel, Description
+from oef.query import Query
 
 PACKAGE_PARENT = '../oef'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))

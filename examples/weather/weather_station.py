@@ -1,5 +1,7 @@
+from examples.weather.weather_schemas import WEATHER_DATAMODEL
 from oef.agents import OEFAgent
-from oef.api import CFP_TYPES, Description, DataModel, AttributeSchema
+from oef.api import CFP_TYPES
+from oef.schema import AttributeSchema, DataModel, Description
 
 
 class WeatherStation(OEFAgent):
@@ -16,12 +18,11 @@ class WeatherStation(OEFAgent):
 
 
 if __name__ == "__main__":
-    station_model = DataModel("weather_data",
-                              [AttributeSchema("wind_speed", bool, True),   AttributeSchema("temperature", bool, True),
-                               AttributeSchema("air_pressure", bool, True), AttributeSchema("humidity", bool, True)],
-                              "All possible weather data.")
-    station_description = Description({"wind_speed": True, "temperature": True, "air_pressure": True, "humidity": True},
-                                      station_model)
+    station_description = Description({"wind_speed": True,
+                                       "temperature": True,
+                                       "air_pressure": True,
+                                       "humidity": True},
+                                      WEATHER_DATAMODEL)
     agent = WeatherStation("weather_station", oef_addr="127.0.0.1", oef_port=3333)
     agent.connect()
     agent.register_service(station_description)

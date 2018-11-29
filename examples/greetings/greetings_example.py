@@ -6,7 +6,8 @@ import uuid
 from typing import List
 
 from oef.agents import OEFAgent
-from oef.api import DataModel, Description, Query
+from oef.schema import DataModel, Description
+from oef.query import Query
 
 
 class GreetingsAgent(OEFAgent):

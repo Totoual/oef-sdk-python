@@ -8,7 +8,9 @@ import logging
 from typing import List, Optional
 
 from oef import agent_pb2
-from oef.api import OEFProxy, PROPOSE_TYPES, CFP_TYPES, Description, Query
+from oef.api import OEFProxy, PROPOSE_TYPES, CFP_TYPES
+from oef.schema import Description
+from oef.query import Query
 
 logger = logging.getLogger(__name__)
 

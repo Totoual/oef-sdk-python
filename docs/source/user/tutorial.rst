@@ -161,6 +161,7 @@ In this way, other agents can find our service by making `queries` (defined over
 
 .. code-block:: python
 
+  from oef.schema import DataModel, Description
   echo_model = DataModel("echo", [], "echo data service.")
   echo_description = Description({}, echo_model)
 
@@ -176,7 +177,6 @@ Register the service
 Now that we have a description for our service, let's register our service agent to the OEF:
 
 .. code-block:: python
-
 
   server_agent.register_service(echo_description)
 
@@ -262,6 +262,8 @@ our query just returns all the agents that are registered with the `echo` data m
 .. code-block:: python
 
   # create a query for the echo data model
+  from oef.schema import DataModel
+  from oef.query import Query
   echo_model = DataModel("echo", [], "Echo data service.")
   echo_query = Query([], echo_model)
 
@@ -343,6 +345,9 @@ You can check the code `here <https://github.com/uvue-git/OEFCorePython/tree/mas
 
 Weather Station Agent
 ~~~~~~~~~~~~~~~~~~~~~
+
+
+
 
 Weather Client Agent
 ~~~~~~~~~~~~~~~~~~~~~

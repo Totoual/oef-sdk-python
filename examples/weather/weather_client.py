@@ -1,7 +1,15 @@
+# Copyright (C) Fetch.ai 2018 - All Rights Reserved
+# Unauthorized copying of this file, via any medium is strictly prohibited
+# Proprietary and confidential
+
+from examples.weather.weather_schemas import WEATHER_DATAMODEL, TEMPERATURE_ATTR, AIR_PRESSURE_ATTR, HUMIDITY_ATTR
 from oef.agents import OEFAgent
 
 from typing import List
-from oef.api import AttributeSchema, DataModel, Eq, Query, Constraint, PROPOSE_TYPES
+from oef.api import PROPOSE_TYPES
+from oef.query import Eq, Constraint
+from oef.schema import AttributeSchema
+from oef.query import Query
 
 
 class WeatherClient(OEFAgent):
@@ -10,16 +18,10 @@ class WeatherClient(OEFAgent):
         print("Agent.onSearchResult {0}".format(agents))
         for agent in agents:
             print("Sending to agent {0}".format(agent))
-            station_model = DataModel("weather_data",
-                                      [AttributeSchema("wind_speed", bool, True),
-                                       AttributeSchema("temperature", bool, True),
-                                       AttributeSchema("air_pressure", bool, True),
-                                       AttributeSchema("humidity", bool, True)],
-                                      "All possible weather data.")
-            query = Query([Constraint(AttributeSchema("temperature", bool, True), Eq(True)),
-                           Constraint(AttributeSchema("air_pressure", bool, True), Eq(True)),
-                           Constraint(AttributeSchema("humidity", bool, True), Eq(True))],
-                          station_model)
+            query = Query([Constraint(TEMPERATURE_ATTR, Eq(True)),
+                           Constraint(AIR_PRESSURE_ATTR, Eq(True)),
+                           Constraint(HUMIDITY_ATTR, Eq(True))],
+                          WEATHER_DATAMODEL)
             self._connection.send_cfp("1", agent, query)
 
     def on_propose(self, origin: str, conversation_id: str, msg_id: int, target: int, proposals: PROPOSE_TYPES):
@@ -30,14 +32,10 @@ class WeatherClient(OEFAgent):
 
 
 if __name__ == "__main__":
-    station_model = DataModel("weather_data",
-                              [AttributeSchema("wind_speed", bool, True), AttributeSchema("temperature", bool, True),
-                               AttributeSchema("air_pressure", bool, True),AttributeSchema("humidity", bool, True)],
-                              "All possible weather data.")
     query = Query([Constraint(AttributeSchema("temperature", bool, True), Eq(True)),
                    Constraint(AttributeSchema("air_pressure", bool, True), Eq(True)),
                    Constraint(AttributeSchema("humidity", bool, True), Eq(True))],
-                  station_model)
+                  WEATHER_DATAMODEL)
 
     agent = WeatherClient("weather_client", oef_addr="127.0.0.1", oef_port=3333)
     agent.connect()

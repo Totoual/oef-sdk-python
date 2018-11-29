@@ -12,8 +12,9 @@ PACKAGE_PARENT = '../oef'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
 sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
-from oef.api import AttributeSchema, OEFProxy, DataModel, Eq, Query, Constraint, PROPOSE_TYPES, Description, \
-    Range
+from oef.api import OEFProxy, PROPOSE_TYPES
+from oef.query import Eq, Range, Constraint
+from oef.schema import AttributeSchema, DataModel, Description, Query
 
 ATTRIBUTE_LOCATION_X = AttributeSchema("location_x", float, True, "x coordinate of the agent")
 ATTRIBUTE_LOCATION_Y = AttributeSchema("location_y", float, True, "y coordinate of the agent")

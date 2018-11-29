@@ -4,7 +4,7 @@
 
 
 from oef.agents import OEFAgent
-from oef.api import DataModel, Description
+from oef.schema import DataModel, Description
 
 import logging
 from oef.logger import set_logger

@@ -5,7 +5,8 @@ import uuid
 from typing import List
 
 from oef.agents import OEFAgent
-from oef.api import DataModel, Query
+from oef.schema import DataModel
+from oef.query import Query
 
 import logging
 from oef.logger import set_logger

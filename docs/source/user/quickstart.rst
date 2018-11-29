@@ -74,7 +74,6 @@ The ``GreetingsAgent`` does the following:
   from typing import List
 
   from oef.agents import OEFAgent
-  from oef.api import DataModel, Description, Query
 
   class GreetingsAgent(OEFAgent):
 
@@ -116,6 +115,7 @@ Start Communications
 
 .. code-block:: python
 
+  from oef.schema import DataModel, Description
   greetings_model = DataModel("greetings", [], "Greetings service.")
   greetings_description = Description({}, greetings_model)
   server_agent.register_service(greetings_description)
@@ -124,6 +124,7 @@ Start Communications
 
 .. code-block:: python
 
+  from oef.query import Query
   query = Query([], greetings_model)
   client_agent.search_services(query)
 

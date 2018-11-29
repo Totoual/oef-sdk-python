@@ -14,7 +14,6 @@ from typing import List, Dict
 import pytest
 import subprocess
 
-from oef.api import OEFProxy
 from oef.schema import ATTRIBUTE_TYPES, AttributeSchema, AttributeInconsistencyException, DataModel, generate_schema, \
     Description
 

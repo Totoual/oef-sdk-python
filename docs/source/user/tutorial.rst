@@ -343,13 +343,225 @@ protocol that allow the agents to:
 
 You can check the code `here <https://github.com/uvue-git/OEFCorePython/tree/master/examples/weather>`_.
 
+
 Weather Station Agent
 ~~~~~~~~~~~~~~~~~~~~~
 
+Define a DataModel
+``````````````````
 
+For this example we need a specific data model that can effectively describe the features of services.
+
+
+Let's start with an attribute to represent whether a weather station provides a measure for physical quantities, e.g.
+wind speed:
+
+.. code-block:: python
+
+  from oef.schema import AttributeSchema
+
+  WIND_SPEED_ATTR = AttributeSchema(
+      "wind_speed",
+      bool,
+      is_attribute_required=True,
+      attribute_description="Provides wind speed measurements."
+  )
+
+
+The ``AttributeSchema`` class constructor requires:
+
+- The name of the attribute;
+- The type of the attribute: it can be one of ``int``, ``float``, ``bool`` and ``str``;
+- A flag to determine whether the instances of the data model (that is ``Description``) need to specify a value;
+- A description of the meaning of the attribute.
+
+In this case, our ``wind_speed`` attribute is of type ``bool``. If the description of a weather station has the value
+``wind_speed`` set to ``True``, then it means that it can provide measurements for the wind speed.
+
+We can define other type of measurements as well:
+
+.. code-block:: python
+
+  TEMPERATURE_ATTR = AttributeSchema(
+      "temperature",
+      bool,
+      is_attribute_required=True,
+      attribute_description="Provides temperature measurements."
+  )
+
+  AIR_PRESSURE_ATTR = AttributeSchema(
+      "air_pressure",
+      bool,
+      is_attribute_required=True,
+      attribute_description="Provides air pressure measurements."
+  )
+
+  HUMIDITY_ATTR = AttributeSchema(
+      "humidity",
+      bool,
+      is_attribute_required=True,
+      attribute_description="Provides humidity measurements."
+  )
+
+  PRICE_ATTR = AttributeSchema(
+      "price",
+      int,
+      is_attribute_required=True,
+      attribute_description="The price for a measurement."
+  )
+
+
+We will use the ``price`` attribute, an integer, to represents the price for any measurements.
+
+Now we can define our data model:
+
+.. code-block:: python
+
+  from oef.schema import DataModel
+
+  WEATHER_DATA_MODEL = DataModel(
+      "weather_data",
+      [WIND_SPEED_ATTR,
+      TEMPERATURE_ATTR,
+      AIR_PRESSURE_ATTR,
+      HUMIDITY_ATTR,
+      PRICE_ATTR],
+      "All possible weather data."
+  )
+
+
+To define our data model ``WEATHER_DATA_MODEL`` we need a name and a list of attributes. We use the
+same we defined previously, that is ``WIND_SPEED_ATTR``, ``AIR_PRESSURE_ATTR``, ``HUMIDITY_ATTR`` and ``PRICE_ATTR``.
+
+
+Define a Description
+````````````````````
+
+Once we have the data model, we can provide an `instance` of that model. To do so, we can use the ``Description`` class:
+
+.. code-block:: python
+
+  weather_service_description = Description(
+      {
+          "wind_speed": True,
+          "temperature": True,
+          "air_pressure": True,
+          "humidity": True,
+          "price": 50
+      },
+      WEATHER_DATA_MODEL
+  )
+
+The first argument is a dictionary where:
+
+- the keys are the names of the attributes;
+- the values are the instantiation of the attribute schema specification.
+
+The second argument is the data model the description is referring to.
+
+We will use this description to register our service to the OEF. In this way, other agents can make queries defined over
+the data model ``WEATHER_DATA_MODEL`` and discover the service.
+
+Define the WeatherStation agent
+```````````````````````````````
+
+This is the code for our weather station:
+
+.. code-block:: python
+
+  class WeatherStation(OEFAgent):
+
+
+  def on_cfp(self,
+             origin: str,
+             conversation_id: str,
+             msg_id: int,
+             target: int,
+             query: CFP_TYPES):
+      print("Received cfp from {0} cif {1} msgId {2} target {3} query [{4}]"
+            .format(origin, conversation_id, msg_id, target, query))
+
+      # prepare a propose
+      proposal = self.weather_service_description
+      self.send_propose(conversation_id, origin, [proposal], msg_id + 1, target + 1)
+
+
+And here is the code to run the agent:
+
+.. code-block:: python
+
+
+      agent = WeatherStation("weather_station", oef_addr="127.0.0.1", oef_port=3333)
+      agent.connect()
+      agent.register_service(agent.service_description)
+      agent.run()
 
 
 Weather Client Agent
 ~~~~~~~~~~~~~~~~~~~~~
 
+This is the code for the client of the weather service:
 
+.. code-block:: python
+
+  class WeatherClient(OEFAgent):
+
+      def on_search_result(self, agents: List[str]):
+          print("Agent found: {0}".format(agents))
+          for agent in agents:
+              print("Sending to agent {0}".format(agent))
+              query = Query([Constraint(TEMPERATURE_ATTR, Eq(True)),
+                             Constraint(AIR_PRESSURE_ATTR, Eq(True)),
+                             Constraint(HUMIDITY_ATTR, Eq(True))],
+                            WEATHER_DATA_MODEL)
+              self.send_cfp(str(uuid.uuid4()), agent, query)
+
+      def on_propose(self, origin: str, conversation_id: str, msg_id: int, target: int, proposals: PROPOSE_TYPES):
+          print("Received propose from {0} cif {1} msgId {2} target {3} proposals {4}"
+                .format(origin, conversation_id, msg_id, target, proposals))
+          print("Price {0}".format(proposals[0]._values["price"]))
+          self.send_accept(conversation_id, origin, msg_id + 1, msg_id)
+
+
+
+And here's the code to run it:
+
+.. code-block:: python
+
+  agent = WeatherClient("weather_client", oef_addr="127.0.0.1", oef_port=3333)
+  agent.connect()
+
+  query = Query([Constraint(TEMPERATURE_ATTR, Eq(True)),
+                 Constraint(AIR_PRESSURE_ATTR, Eq(True)),
+                 Constraint(HUMIDITY_ATTR, Eq(True))],
+                 WEATHER_DATA_MODEL)
+
+  agent.search_services(query)
+  agent.run()
+
+
+Message Exchange
+~~~~~~~~~~~~~~~~
+
+
+The output from the client agent should be:
+
+::
+
+  Agent found: ['weather_station']
+  Sending to agent weather_station
+  Received propose from weather_station cif 9f434859-4d2d-447e-82b6-94e3bbff4bc7 msgId 2 target 1 proposals [<oef.schema.Description object at 0x7f9988ae9d30>]
+  Price 50
+
+
+Whereas, the one from the server agent is:
+
+::
+
+  Received cfp from weather_client cif 9f434859-4d2d-447e-82b6-94e3bbff4bc7 msgId 1 target 0 query [<oef.query.Query object at 0x7f8fc68736d8>]
+  Received accept from weather_client cif 9f434859-4d2d-447e-82b6-94e3bbff4bc7 msgId 3 target 2
+
+
+The order of the exchanged message is the following:
+
+TODO

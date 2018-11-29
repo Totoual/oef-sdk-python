@@ -68,10 +68,10 @@ class OEFProxy(object):
 
     async def _receive(self):
         nbytes_packed = await self._server_reader.read(len(struct.pack("I", 0)))
-        # print("received ${0}".format(nbytes_packed))
+        logger.debug("received ${0}".format(nbytes_packed))
         nbytes = struct.unpack("I", nbytes_packed)
-        # print("received unpacked ${0}".format(nbytes[0]))
-        # print("Preparing to receive ${0} bytes ...".format(nbytes[0]))
+        logger.debug("received unpacked ${0}".format(nbytes[0]))
+        logger.debug("Preparing to receive ${0} bytes ...".format(nbytes[0]))
         return await self._server_reader.read(nbytes[0])
 
     async def connect(self) -> bool:
@@ -107,7 +107,7 @@ class OEFProxy(object):
             msg = agent_pb2.Server.AgentMessage()
             msg.ParseFromString(data)
             case = msg.WhichOneof("payload")
-            # print("loop {0}".format(case))
+            logger.debug("loop {0}".format(case))
             if case == "agents":
                 agent.on_search_result(msg.agents.agents)
             elif case == "error":
@@ -142,7 +142,7 @@ class OEFProxy(object):
                     elif fipa_case == "decline":
                         agent.on_decline(msg.content.origin, msg.content.conversation_id, fipa.msg_id, fipa.target)
                     else:
-                        print("Not implemented yet: fipa {0}".format(fipa_case))
+                        logger.warning("Not implemented yet: fipa {0}".format(fipa_case))
 
     def send_message(self, conversation_id: str, destination: str, msg: bytes):
         agent_msg = agent_pb2.Agent.Message()
@@ -194,7 +194,7 @@ class OEFProxy(object):
         agent_msg.fipa.CopyFrom(fipa_msg)
         envelope = agent_pb2.Envelope()
         envelope.message.CopyFrom(agent_msg)
-        print("propose envelope {0}".format(envelope))
+        logger.debug("propose envelope {0}".format(envelope))
         self._send(envelope)
 
     def send_accept(self, conversation_id: str, destination: str, msg_id: int,
@@ -210,7 +210,7 @@ class OEFProxy(object):
         agent_msg.fipa.CopyFrom(fipa_msg)
         envelope = agent_pb2.Envelope()
         envelope.message.CopyFrom(agent_msg)
-        print("accept envelope {0}".format(envelope))
+        logger.debug("accept envelope {0}".format(envelope))
         self._send(envelope)
 
     def send_decline(self, conversation_id: str, destination: str, msg_id: int,
@@ -226,7 +226,7 @@ class OEFProxy(object):
         agent_msg.fipa.CopyFrom(fipa_msg)
         envelope = agent_pb2.Envelope()
         envelope.message.CopyFrom(agent_msg)
-        print("decline envelope {0}".format(envelope))
+        logger.debug("decline envelope {0}".format(envelope))
         self._send(envelope)
 
     def close(self) -> None:

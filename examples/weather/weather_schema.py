@@ -31,4 +31,4 @@ PRICE_ATTR = AttributeSchema("price",
 
 WEATHER_DATA_MODEL = DataModel("weather_data",
                                [WIND_SPEED_ATTR, TEMPERATURE_ATTR, AIR_PRESSURE_ATTR, HUMIDITY_ATTR, PRICE_ATTR],
-                              "All possible weather data.")
+                               "All possible weather data.")

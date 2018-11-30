@@ -2,7 +2,7 @@ import sys
 import os
 
 from oef.agents import OEFAgent
-from oef.api import CFP_TYPES
+from oef.proxy import CFP_TYPES
 from oef.query import Range, And, Or, Constraint
 from oef.schema import AttributeSchema, DataModel, Description
 from oef.query import Query
@@ -67,10 +67,10 @@ if __name__ == "__main__":
 #    query = Query([Constraint(AttributeSchema("price", float, True), In([5000.,20000.]))])
 #    query = Query([Constraint(AttributeSchema("luxury", bool, True), In([True]))])
     query = Query([Constraint(AttributeSchema("luxury", bool, True), And([Or([Range((2000, 2013))])]))])
-    query_pb = query.to_query_pb()
+    query_pb = query.to_pb()
     print(text_format.MessageToString(query_pb))
     query2 = Query.from_pb(query_pb)
-    print(text_format.MessageToString(query2.to_pb()))
+    print(text_format.MessageToString(query2.to_search_pb()))
     and_ = And([Or([Range((2000,2013))])])
     # agent3.search_services(query)
     agent3.search_services(Query([]))

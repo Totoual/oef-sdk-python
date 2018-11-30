@@ -8,7 +8,7 @@ import logging
 from typing import List, Optional
 
 from oef import agent_pb2
-from oef.api import OEFProxy, PROPOSE_TYPES, CFP_TYPES
+from oef.proxy import OEFNetworkProxy, PROPOSE_TYPES, CFP_TYPES, OEFProxy, AgentInterface
 from oef.schema import Description
 from oef.query import Query
 
@@ -19,7 +19,7 @@ def _warning_not_implemented_method(method_name):
     logger.warning("You should implement {} in your OEFAgent class.", method_name)
 
 
-class OEFAgent(ABC):
+class OEFAgent(AgentInterface):
     """The abstract definition of an agent."""
 
     def __init__(self, public_key: str, oef_addr: str, oef_port: int = 3333) -> None:
@@ -36,8 +36,8 @@ class OEFAgent(ABC):
         self._connection = self._get_connection()
         logger.debug("{}: Connection established to {}:{}".format(self._pubkey, self._oef_addr, self._oef_port))
 
-    def _get_connection(self) -> OEFProxy:
-        connection = OEFProxy(self._pubkey, str(self._oef_addr), self._oef_port)
+    def _get_connection(self) -> OEFNetworkProxy:
+        connection = OEFNetworkProxy(self._pubkey, str(self._oef_addr), self._oef_port)
         self._loop.run_until_complete(connection.connect())
         return connection
 
@@ -47,7 +47,8 @@ class OEFAgent(ABC):
     async def async_run(self):
         await self._connection.loop(self)
 
-    def on_cfp(self, origin: str,
+    def on_cfp(self,
+               origin: str,
                conversation_id: str,
                fipa_message_id: int,
                fipa_target: int,
@@ -55,21 +56,24 @@ class OEFAgent(ABC):
         logger.info("on_cfp: {}, {}, {}, {}", origin, conversation_id, fipa_message_id, fipa_target, query)
         _warning_not_implemented_method(self.on_cfp.__name__)
 
-    def on_accept(self, origin: str,
+    def on_accept(self,
+                  origin: str,
                   conversation_id: str,
                   fipa_message_id: int,
                   fipa_target: int, ):
         logger.info("on_accept: {}, {}, {}, {}", origin, conversation_id, fipa_message_id, fipa_target)
         _warning_not_implemented_method(self.on_accept.__name__)
 
-    def on_decline(self, origin: str,
+    def on_decline(self,
+                   origin: str,
                    conversation_id: str,
                    fipa_message_id: int,
                    fipa_target: int, ):
         logger.info("on_decline: {}, {}, {}, {}", origin, conversation_id, fipa_message_id, fipa_target)
         _warning_not_implemented_method(self.on_decline.__name__)
 
-    def on_propose(self, origin: str,
+    def on_propose(self,
+                   origin: str,
                    conversation_id: str,
                    fipa_message_id: int,
                    fipa_target: int,
@@ -77,13 +81,15 @@ class OEFAgent(ABC):
         logger.info("on_propose: {}, {}, {}, {}, {}", origin, conversation_id, fipa_message_id, fipa_target, proposal)
         _warning_not_implemented_method(self.on_propose.__name__)
 
-    def on_error(self, operation: agent_pb2.Server.AgentMessage.Error.Operation,
+    def on_error(self,
+                 operation: agent_pb2.Server.AgentMessage.Error.Operation,
                  conversation_id: str,
                  message_id: int):
         logger.info("on_error: {}, {}, {}", operation, conversation_id, message_id)
         _warning_not_implemented_method(self.on_error.__name__)
 
-    def on_message(self, origin: str,
+    def on_message(self,
+                   origin: str,
                    conversation_id: str,
                    content: bytes):
         logger.info("on_message: {}, {}, {}, {}", origin, conversation_id, content)
@@ -102,7 +108,7 @@ class OEFAgent(ABC):
         :returns: `True` if agent is successfully added, `False` otherwise. Can fail if such an
         agent already exists in the OEF.
         """
-        self._connection.register_agent(agent_description)
+        return self._connection.register_agent(agent_description)
 
     def unregister_agent(self, agent_description: Description) -> bool:
         """
@@ -114,7 +120,7 @@ class OEFAgent(ABC):
         :returns: `True` if agent is successfully removed, `False` otherwise. Can fail if
         such an agent is not registered with the OEF.
         """
-        self._connection.unregister_agent(agent_description)
+        return self._connection.unregister_agent(agent_description)
 
     def register_service(self, service_description: Description):
         """
@@ -156,7 +162,8 @@ class OEFAgent(ABC):
         """
         self._connection.search_services(query)
 
-    def send_message(self, conversation_id: str,
+    def send_message(self,
+                     conversation_id: str,
                      destination: str,
                      msg: bytes):
         logger.debug("Agent {}: conversation_id={}, destination={}, msg={}"
@@ -167,7 +174,8 @@ class OEFAgent(ABC):
                      )
         self._connection.send_message(conversation_id, destination, msg)
 
-    def send_cfp(self, conversation_id: str,
+    def send_cfp(self,
+                 conversation_id: str,
                  destination: str,
                  query: CFP_TYPES,
                  msg_id: Optional[int] = 1,
@@ -180,9 +188,10 @@ class OEFAgent(ABC):
                              msg_id,
                              target)
                      )
-        self._connection.send_cfp(conversation_id, destination, query, msg_id,target)
+        self._connection.send_cfp(conversation_id, destination, query, msg_id, target)
 
-    def send_propose(self, conversation_id: str,
+    def send_propose(self,
+                     conversation_id: str,
                      destination: str,
                      proposals: PROPOSE_TYPES,
                      msg_id: int,

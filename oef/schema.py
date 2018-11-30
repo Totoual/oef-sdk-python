@@ -2,10 +2,28 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 import copy
+from abc import ABC, abstractmethod
 from typing import Union, Type, Optional, List, Dict
 
 import oef.agent_pb2 as agent_pb2
 import oef.query_pb2 as query_pb2
+
+
+class ProtobufSerializable(ABC):
+
+    @abstractmethod
+    def to_pb(self):
+        """Convert the object into a ProtoBuf object"""
+        raise NotImplementedError
+
+    @classmethod
+    @abstractmethod
+    def from_pb(cls, obj):
+        """Return the object from a ProtoBuf object"""
+        raise NotImplementedError
+
+    def serialize(self) -> str:
+        return self.to_pb().SerializeToString()
 
 
 """
@@ -36,7 +54,7 @@ def attribute_pb_to_type(attribute_type: query_pb2.Query.Attribute):
         return float
 
 
-class AttributeSchema(object):
+class AttributeSchema(ProtobufSerializable):
     """
     Description of a single element of datum of either a description or a service.
 
@@ -89,7 +107,7 @@ class AttributeInconsistencyException(Exception):
     pass
 
 
-class DataModel(object):
+class DataModel(ProtobufSerializable):
     def __init__(self,
                  name: str,
                  attribute_schemas: List[AttributeSchema],
@@ -144,7 +162,7 @@ def extract_value(value: query_pb2.Query.Value) -> ATTRIBUTE_TYPES:
         return value.f
 
 
-class Description(object):
+class Description(ProtobufSerializable):
     """
     Description of either a service or an agent so it can be understood by the OEF/ other agents.
 

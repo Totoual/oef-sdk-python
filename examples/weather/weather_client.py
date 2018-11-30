@@ -4,11 +4,11 @@
 
 import uuid
 
-from examples.weather.weather_schemas import WEATHER_DATA_MODEL, TEMPERATURE_ATTR, AIR_PRESSURE_ATTR, HUMIDITY_ATTR
+from examples.weather.weather_schema import WEATHER_DATA_MODEL, TEMPERATURE_ATTR, AIR_PRESSURE_ATTR, HUMIDITY_ATTR
 from oef.agents import OEFAgent
 
 from typing import List
-from oef.api import PROPOSE_TYPES
+from oef.proxy import PROPOSE_TYPES
 from oef.query import Eq, Constraint
 from oef.query import Query
 

@@ -1,21 +1,69 @@
 # Copyright (C) Fetch.ai 2018 - All Rights Reserved
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
+from abc import ABC
 from typing import Union, Tuple, List, Optional
 
 import oef.agent_pb2 as agent_pb2
 import oef.query_pb2 as query_pb2
 
-from oef.schema import ATTRIBUTE_TYPES, AttributeSchema, DataModel
+from oef.schema import ATTRIBUTE_TYPES, AttributeSchema, DataModel, ProtobufSerializable
+
+RANGE_TYPES = Union[Tuple[str, str], Tuple[int, int], Tuple[float, float]]
 
 
-class Relation(object):
+class ConstraintType(ProtobufSerializable, ABC):
+
+    @classmethod
+    def from_pb(cls, constraint_pb: query_pb2.Query.Constraint.ConstraintType):
+        constraint_case = constraint_pb.WhichOneof("constraint")
+        if constraint_case == "relation":
+            return Relation.from_pb(constraint_pb.relation)
+        elif constraint_case == "set_":
+            return Set.from_pb(constraint_pb.set_)
+        elif constraint_case == "range_":
+            return Range.from_pb(constraint_pb.range_)
+        elif constraint_case == "and_":
+            return And.from_pb(constraint_pb.and_)
+        elif constraint_case == "or_":
+            return Or.from_pb(constraint_pb.or_)
+        else:
+            raise Exception("No valid constraint type.")
+
+
+class Relation(ConstraintType):
+
     def __init__(self, value: ATTRIBUTE_TYPES) -> None:
         self.value = value
 
+    @property
+    def operator(self) -> query_pb2.Query.Relation:
+        raise NotImplementedError
+
+    @classmethod
+    def from_pb(cls, relation: query_pb2.Query.Relation):
+        relations_from_pb = {
+            query_pb2.Query.Relation.GTEQ: GtEq,
+            query_pb2.Query.Relation.GT: Gt,
+            query_pb2.Query.Relation.LTEQ: LtEq,
+            query_pb2.Query.Relation.LT: Lt,
+            query_pb2.Query.Relation.NOTEQ: NotEq,
+            query_pb2.Query.Relation.EQ: Eq
+        }
+
+        value_case = relation.val.WhichOneof("value")
+        if value_case == "s":
+            return relations_from_pb[relation.op](relation.val.s)
+        elif value_case == "b":
+            return relations_from_pb[relation.op](relation.val.b)
+        elif value_case == "i":
+            return relations_from_pb[relation.op](relation.val.i)
+        elif value_case == "f":
+            return relations_from_pb[relation.op](relation.val.f)
+
     def to_pb(self):
         relation = query_pb2.Query.Relation()
-        relation.op = self._to_pb()
+        relation.op = self.operator()
         query_value = query_pb2.Query.Value()
         if isinstance(self.value, bool):
             query_value.b = self.value
@@ -32,72 +80,42 @@ class Relation(object):
 
 
 class Eq(Relation):
-    def __init__(self, value: ATTRIBUTE_TYPES) -> None:
-        super().__init__(value)
 
-    def _to_pb(self):
+    def operator(self):
         return query_pb2.Query.Relation.EQ
 
 
 class NotEq(Relation):
-    def __init__(self, value: ATTRIBUTE_TYPES) -> None:
-        super().__init__(value)
 
-    def _to_pb(self):
+    def operator(self):
         return query_pb2.Query.Relation.NOTEQ
 
 
 class Lt(Relation):
-    def __init__(self, value: ATTRIBUTE_TYPES) -> None:
-        super().__init__(value)
 
-    def _to_pb(self):
+    def operator(self):
         return query_pb2.Query.Relation.LT
 
 
 class LtEq(Relation):
-    def __init__(self, value: ATTRIBUTE_TYPES) -> None:
-        super().__init__(value)
 
-    def _to_pb(self):
+    def operator(self):
         return query_pb2.Query.Relation.LTEQ
 
 
 class Gt(Relation):
-    def __init__(self, value: ATTRIBUTE_TYPES) -> None:
-        super().__init__(value)
 
-    def _to_pb(self):
+    def operator(self):
         return query_pb2.Query.Relation.GT
 
 
 class GtEq(Relation):
-    def __init__(self, value: ATTRIBUTE_TYPES) -> None:
-        super().__init__(value)
 
-    def _to_pb(self):
+    def operator(self):
         return query_pb2.Query.Relation.GTEQ
 
 
-def relation_from_pb(relation: query_pb2.Query.Relation) -> Relation:
-    relations_from_pb = {query_pb2.Query.Relation.GTEQ: GtEq, query_pb2.Query.Relation.GT: Gt,
-                         query_pb2.Query.Relation.LTEQ: LtEq, query_pb2.Query.Relation.LT: Lt,
-                         query_pb2.Query.Relation.NOTEQ: NotEq, query_pb2.Query.Relation.EQ: Eq}
-    value_case = relation.val.WhichOneof("value")
-    if value_case == "s":
-        return relations_from_pb[relation.op](relation.val.s)
-    elif value_case == "b":
-        return relations_from_pb[relation.op](relation.val.b)
-    elif value_case == "i":
-        return relations_from_pb[relation.op](relation.val.i)
-    elif value_case == "f":
-        return relations_from_pb[relation.op](relation.val.f)
-
-
-RANGE_TYPES = Union[Tuple[str, str], Tuple[int, int], Tuple[float, float]]
-
-
-class Range(object):
+class Range(ConstraintType):
     def __init__(self, values: RANGE_TYPES) -> None:
         self._values = values
 
@@ -131,19 +149,25 @@ class Range(object):
             values = (range_pb.i.first, range_pb.i.second)
         elif range_case == "f":
             values = (range_pb.f.first, range_pb.f.second)
+        else:
+            raise Exception("")
         return cls(values)
 
 
 SET_TYPES = Union[List[float], List[str], List[bool], List[int]]
 
 
-class Set(object):
+class Set(ConstraintType):
     def __init__(self, values: SET_TYPES) -> None:
         self._values = values
 
+    @property
+    def operator(self) -> query_pb2.Query.Set:
+        raise NotImplementedError
+
     def to_pb(self):
         set_ = query_pb2.Query.Set()
-        set_.op = self._to_pb()
+        set_.op = self.operator()
         if isinstance(self._values[0], str):
             values = query_pb2.Query.Set.Values.Strings()
             values.vals.extend(self._values)
@@ -164,54 +188,38 @@ class Set(object):
         constraint_type.set_.CopyFrom(set_)
         return constraint_type
 
+    @classmethod
+    def from_pb(cls, set_pb: query_pb2.Query.Set):
+        op_from_pb = {
+            query_pb2.Query.Set.IN: In,
+            query_pb2.Query.Set.NOTIN: NotIn
+        }
+        value_case = set_pb.vals.WhichOneof("values")
+        if value_case == "s":
+            return op_from_pb[set_pb.op](set_pb.vals.s.vals)
+        elif value_case == "b":
+            return op_from_pb[set_pb.op](set_pb.vals.b.vals)
+        elif value_case == "i":
+            return op_from_pb[set_pb.op](set_pb.vals.i.vals)
+        elif value_case == "f":
+            return op_from_pb[set_pb.op](set_pb.vals.f.vals)
+
 
 class In(Set):
-    def __init__(self, values: SET_TYPES) -> None:
-        super().__init__(values)
 
-    def _to_pb(self):
+    def operator(self):
         return query_pb2.Query.Set.IN
 
 
 class NotIn(Set):
-    def __init__(self, values: SET_TYPES) -> None:
-        super().__init__(values)
 
-    def _to_pb(self):
+    def operator(self):
         return query_pb2.Query.Set.NOTIN
-
-
-def set_from_pb(set_pb: query_pb2.Query.Set) -> Set:
-    op_from_pb = {query_pb2.Query.Set.IN: In, query_pb2.Query.Set.NOTIN: NotIn}
-    value_case = set_pb.vals.WhichOneof("values")
-    if value_case == "s":
-        return op_from_pb[set_pb.op](set_pb.vals.s.vals)
-    elif value_case == "b":
-        return op_from_pb[set_pb.op](set_pb.vals.b.vals)
-    elif value_case == "i":
-        return op_from_pb[set_pb.op](set_pb.vals.i.vals)
-    elif value_case == "f":
-        return op_from_pb[set_pb.op](set_pb.vals.f.vals)
-
-
-def constraint_type_from_pb(constraint_pb: query_pb2.Query.Constraint.ConstraintType):
-    constraint_case = constraint_pb.WhichOneof("constraint")
-    if constraint_case == "relation":
-        return relation_from_pb(constraint_pb.relation)
-    elif constraint_case == "set_":
-        return set_from_pb(constraint_pb.set_)
-    elif constraint_case == "range_":
-        return Range.from_pb(constraint_pb.range_)
-    elif constraint_case == "and_":
-        return And.from_pb(constraint_pb.and_)
-    elif constraint_case == "or_":
-        return Or.from_pb(constraint_pb.or_)
-
 
 CONSTRAINT_TYPES = Union[Relation, Range, Set]
 
 
-class And(object):
+class And(ConstraintType):
     def __init__(self, constraints: List[CONSTRAINT_TYPES]) -> None:
         self._constraints = constraints
 
@@ -224,11 +232,11 @@ class And(object):
 
     @classmethod
     def from_pb(cls, constraint_pb: query_pb2.Query.Constraint.ConstraintType.And):
-        expr = [constraint_type_from_pb(c) for c in constraint_pb.expr]
+        expr = [ConstraintType.from_pb(c) for c in constraint_pb.expr]
         return cls(expr)
 
 
-class Or(object):
+class Or(ConstraintType):
     def __init__(self, constraints: List[CONSTRAINT_TYPES]) -> None:
         self._constraints = constraints
 
@@ -241,7 +249,7 @@ class Or(object):
 
     @classmethod
     def from_pb(cls, constraint_pb: query_pb2.Query.Constraint.ConstraintType.Or):
-        expr = [constraint_type_from_pb(c) for c in constraint_pb.expr]
+        expr = [ConstraintType.from_pb(c) for c in constraint_pb.expr]
         return cls(expr)
 
 
@@ -263,8 +271,8 @@ class Constraint(object):
 
     @classmethod
     def from_pb(cls, constraint_pb: query_pb2.Query.Constraint):
-        constraint = constraint_type_from_pb(constraint_pb.constraint)
-        return cls(AttributeSchema.from_pb(constraint_pb.attribute), constraint)
+        constraint_type = ConstraintType.from_pb(constraint_pb.constraint)
+        return cls(AttributeSchema.from_pb(constraint_pb.attribute), constraint_type)
 
 
 class Query(object):
@@ -279,15 +287,15 @@ class Query(object):
         self._constraints = constraints
         self._model = model
 
-    def to_query_pb(self):
+    def to_pb(self):
         query = query_pb2.Query.Model()
         query.constraints.extend([constraint.to_pb() for constraint in self._constraints])
         if self._model is not None:
             query.model.CopyFrom(self._model.to_pb())
         return query
 
-    def to_pb(self):
-        query = self.to_query_pb()
+    def to_search_pb(self):
+        query = self.to_pb()
         agent_search = agent_pb2.AgentSearch()
         agent_search.query.CopyFrom(query)
         return agent_search

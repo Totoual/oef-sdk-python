@@ -91,9 +91,9 @@ To do so, run the following instructions at the beginning of your scripts:
 
 .. code-block:: python
 
-  import logging
-  from oef.logger import set_logger
-  set_logger("oef", logging.DEBUG)
+    import logging
+    from oef.logger import set_logger
+    set_logger("oef", logging.DEBUG)
 
 
 
@@ -122,18 +122,16 @@ In later examples we will see more complex protocol and how to implement the ass
 
 .. code-block:: python
 
-  from oef.agents import OEFAgent
+    from oef.agents import OEFAgent
 
-  class EchoServiceAgent(OEFAgent):
+    class EchoServiceAgent(OEFAgent):
 
-      def on_message(self, origin: str, conversation_id: str, content: bytes):
-          """ this method is called whenever a new message is sent to this agent.
-          We send the received message back to the origin"""
-
-          print("Received message: origin={}, conversation_id={}, content={}".format(origin, conversation_id, content))
-          print("Sending {} back to {}".format(content, origin))
-          self.send_message(conversation_id, origin, content)
-
+        def on_message(self, origin: str, dialogue_id: int, content: bytes):
+            """ this method is called whenever a new message is sent to this agent.
+            We send the received message back to the origin"""
+            print("Received message: origin={}, dialogue_id={}, content={}".format(origin, dialogue_id, content))
+            print("Sending {} back to {}".format(content, origin))
+            self.send_message(dialogue_id, origin, content)
 
 Connect to the OEF
 ``````````````````
@@ -148,9 +146,9 @@ instance running. If you followed the previous instructions, they should be ``12
 
 .. code-block:: python
 
-  # create agent and connect it to OEF
-  server_agent = EchoServiceAgent("echo_server", oef_addr="127.0.0.1", oef_port=3333)
-  server_agent.connect()
+    # create agent and connect it to OEF
+    server_agent = EchoServiceAgent("echo_server", oef_addr="127.0.0.1", oef_port=3333)
+    server_agent.connect()
 
 Define a Data Model and a Description
 ``````````````````````````````````````
@@ -161,9 +159,9 @@ In this way, other agents can find our service by making `queries` (defined over
 
 .. code-block:: python
 
-  from oef.schema import DataModel, Description
-  echo_model = DataModel("echo", [], "echo data service.")
-  echo_description = Description({}, echo_model)
+    from oef.schema import DataModel, Description
+    echo_model = DataModel("echo", [], "echo data service.")
+    echo_description = Description({}, echo_model)
 
 
 Our data model ``echo_model`` is very straightforward.
@@ -178,7 +176,7 @@ Now that we have a description for our service, let's register our service agent
 
 .. code-block:: python
 
-  server_agent.register_service(echo_description)
+    server_agent.register_service(echo_description)
 
 
 This instruction will notify the OEF Node that there is a new service available.
@@ -209,25 +207,24 @@ section.
 
 .. code-block:: python
 
-  import uuid
-  from typing import List
+      from typing import List
 
-  from oef.agents import OEFAgent
+      from oef.agents import OEFAgent
 
-  class EchoClientAgent(OEFAgent):
+      class EchoClientAgent(OEFAgent):
 
-      def on_message(self, origin: str, conversation_id: str, content: bytes):
-          print("Received message: origin={}, conversation_id={}, content={}".format(origin, conversation_id, content))
+          def on_message(self, origin: str, dialogue_id: int, content: bytes):
+              print("Received message: origin={}, dialogue_id={}, content={}".format(origin, dialogue_id, content))
 
-      def on_search_result(self, agents: List[str]):
-          if len(agents) > 0:
-              print("Agents found: ", agents)
-              msg = b"hello"
-              for agent in agents:
-                  print("Sending {} to {}".format(msg, agent))
-                  self.send_message(str(uuid.uuid4()), agent, msg)
-          else:
-              print("No agent found.")
+          def on_search_result(self, search_id: int, agents: List[str]):
+              if len(agents) > 0:
+                  print("Agents found: ", agents)
+                  msg = b"hello"
+                  for agent in agents:
+                      print("Sending {} to {}".format(msg, agent))
+                      self.send_message(0, agent, msg)
+              else:
+                  print("No agent found.")
 
 
 The ``on_message`` method has the same semantics of the one implemented in the ``EchoServiceAgent`` class. In this case,
@@ -246,8 +243,8 @@ Analogously to the previous section, we connect our client to the OEF.
 
 .. code-block:: python
 
-  client_agent = EchoClientAgent("echo_client", oef_addr="127.0.0.1", oef_port=3333)
-  client_agent.connect()
+    client_agent = EchoClientAgent("echo_client", oef_addr="127.0.0.1", oef_port=3333)
+    client_agent.connect()
 
 
 Make a query
@@ -261,11 +258,11 @@ our query just returns all the agents that are registered with the `echo` data m
 
 .. code-block:: python
 
-  # create a query for the echo data model
-  from oef.schema import DataModel
-  from oef.query import Query
-  echo_model = DataModel("echo", [], "Echo data service.")
-  echo_query = Query([], echo_model)
+    # create a query for the echo data model
+    from oef.schema import DataModel
+    from oef.query import Query
+    echo_model = DataModel("echo", [], "Echo data service.")
+    echo_query = Query([], echo_model)
 
 
 Search for services
@@ -275,7 +272,7 @@ Once we have a query, we can ask the OEF to returns all service agents that sati
 
 .. code-block:: python
 
-  client_agent.search_services(echo_query)
+    client_agent.search_services(echo_query)
 
 Wait for search results
 ```````````````````````
@@ -284,8 +281,8 @@ The client agent needs to wait for the search result from the OEF Node:
 
 .. code-block:: python
 
-  # wait for events
-  client_agent.run()
+    # wait for events
+    client_agent.run()
 
 
 Once the OEF Node computed the result, the ``on_search_result`` callback is called.
@@ -301,16 +298,17 @@ The output from the client agent should be:
 
 ::
 
-  Agents found:  ['echo_server']
-  Sending b'hello' to echo_server
-  Received message: origin=echo_server, conversation_id=573a6643-22c3-4a88-aede-77bf65859c5f, content=b'hello'
+    Make search to the OEF
+    Agents found:  ['echo_server']
+    Sending b'hello' to echo_server
+    Received message: origin=echo_server, dialogue_id=0, content=b'hello'
 
 Whereas, the one from the server agent is:
 
 ::
 
-  Received message: origin=echo_client, conversation_id=573a6643-22c3-4a88-aede-77bf65859c5f, content=b'hello'
-  Sending b'hello' back to echo_client
+    Received message: origin=echo_client, dialogue_id=0, content=b'hello'
+    Sending b'hello' back to echo_client
 
 
 The order of the exchanged message is the following:
@@ -358,14 +356,14 @@ wind speed:
 
 .. code-block:: python
 
-  from oef.schema import AttributeSchema
+    from oef.schema import AttributeSchema
 
-  WIND_SPEED_ATTR = AttributeSchema(
-      "wind_speed",
-      bool,
-      is_attribute_required=True,
-      attribute_description="Provides wind speed measurements."
-  )
+    WIND_SPEED_ATTR = AttributeSchema(
+        "wind_speed",
+        bool,
+        is_attribute_required=True,
+        attribute_description="Provides wind speed measurements."
+    )
 
 
 The ``AttributeSchema`` class constructor requires:
@@ -382,33 +380,33 @@ We can define other type of measurements as well:
 
 .. code-block:: python
 
-  TEMPERATURE_ATTR = AttributeSchema(
-      "temperature",
-      bool,
-      is_attribute_required=True,
-      attribute_description="Provides temperature measurements."
-  )
+    TEMPERATURE_ATTR = AttributeSchema(
+        "temperature",
+        bool,
+        is_attribute_required=True,
+        attribute_description="Provides temperature measurements."
+    )
 
-  AIR_PRESSURE_ATTR = AttributeSchema(
-      "air_pressure",
-      bool,
-      is_attribute_required=True,
-      attribute_description="Provides air pressure measurements."
-  )
+    AIR_PRESSURE_ATTR = AttributeSchema(
+        "air_pressure",
+        bool,
+        is_attribute_required=True,
+        attribute_description="Provides air pressure measurements."
+    )
 
-  HUMIDITY_ATTR = AttributeSchema(
-      "humidity",
-      bool,
-      is_attribute_required=True,
-      attribute_description="Provides humidity measurements."
-  )
+    HUMIDITY_ATTR = AttributeSchema(
+        "humidity",
+        bool,
+        is_attribute_required=True,
+        attribute_description="Provides humidity measurements."
+    )
 
-  PRICE_ATTR = AttributeSchema(
-      "price",
-      int,
-      is_attribute_required=True,
-      attribute_description="The price for a measurement."
-  )
+    PRICE_ATTR = AttributeSchema(
+        "price",
+        int,
+        is_attribute_required=True,
+        attribute_description="The price for a measurement."
+    )
 
 
 We will use the ``price`` attribute, an integer, to represents the price for any measurements.
@@ -417,17 +415,17 @@ Now we can define our data model:
 
 .. code-block:: python
 
-  from oef.schema import DataModel
+    from oef.schema import DataModel
 
-  WEATHER_DATA_MODEL = DataModel(
-      "weather_data",
-      [WIND_SPEED_ATTR,
-      TEMPERATURE_ATTR,
-      AIR_PRESSURE_ATTR,
-      HUMIDITY_ATTR,
-      PRICE_ATTR],
-      "All possible weather data."
-  )
+    WEATHER_DATA_MODEL = DataModel(
+        "weather_data",
+        [WIND_SPEED_ATTR,
+        TEMPERATURE_ATTR,
+        AIR_PRESSURE_ATTR,
+        HUMIDITY_ATTR,
+        PRICE_ATTR],
+        "All possible weather data."
+    )
 
 
 To define our data model ``WEATHER_DATA_MODEL`` we need a name and a list of attributes. We use the
@@ -441,16 +439,16 @@ Once we have the data model, we can provide an `instance` of that model. To do s
 
 .. code-block:: python
 
-  weather_service_description = Description(
-      {
-          "wind_speed": True,
-          "temperature": True,
-          "air_pressure": True,
-          "humidity": True,
-          "price": 50
-      },
-      WEATHER_DATA_MODEL
-  )
+    weather_service_description = Description(
+        {
+            "wind_speed": True,
+            "temperature": True,
+            "air_pressure": True,
+            "humidity": True,
+            "price": 50
+        },
+        WEATHER_DATA_MODEL
+    )
 
 The first argument is a dictionary where:
 
@@ -469,21 +467,21 @@ This is the code for our weather station:
 
 .. code-block:: python
 
-  class WeatherStation(OEFAgent):
+    class WeatherStation(OEFAgent):
 
 
-  def on_cfp(self,
-             origin: str,
-             conversation_id: str,
-             msg_id: int,
-             target: int,
-             query: CFP_TYPES):
-      print("Received cfp from {0} cif {1} msgId {2} target {3} query [{4}]"
-            .format(origin, conversation_id, msg_id, target, query))
+    def on_cfp(self,
+               origin: str,
+               dialogue_id: int,
+               msg_id: int,
+               target: int,
+               query: CFP_TYPES):
+        print("Received cfp from {0} cif {1} msgId {2} target {3} query [{4}]"
+              .format(origin, dialogue_id, msg_id, target, query))
 
-      # prepare a propose
-      proposal = self.weather_service_description
-      self.send_propose(conversation_id, origin, [proposal], msg_id + 1, target + 1)
+        # prepare a propose
+        proposal = self.weather_service_description
+        self.send_propose(dialogue_id, origin, [proposal], msg_id + 1, target + 1)
 
 
 And here is the code to run the agent:
@@ -491,10 +489,10 @@ And here is the code to run the agent:
 .. code-block:: python
 
 
-      agent = WeatherStation("weather_station", oef_addr="127.0.0.1", oef_port=3333)
-      agent.connect()
-      agent.register_service(agent.service_description)
-      agent.run()
+    agent = WeatherStation("weather_station", oef_addr="127.0.0.1", oef_port=3333)
+    agent.connect()
+    agent.register_service(agent.service_description)
+    agent.run()
 
 
 Weather Client Agent
@@ -504,23 +502,23 @@ This is the code for the client of the weather service:
 
 .. code-block:: python
 
-  class WeatherClient(OEFAgent):
-
-      def on_search_result(self, agents: List[str]):
-          print("Agent found: {0}".format(agents))
-          for agent in agents:
-              print("Sending to agent {0}".format(agent))
-              query = Query([Constraint(TEMPERATURE_ATTR, Eq(True)),
-                             Constraint(AIR_PRESSURE_ATTR, Eq(True)),
-                             Constraint(HUMIDITY_ATTR, Eq(True))],
-                            WEATHER_DATA_MODEL)
-              self.send_cfp(str(uuid.uuid4()), agent, query)
-
-      def on_propose(self, origin: str, conversation_id: str, msg_id: int, target: int, proposals: PROPOSE_TYPES):
-          print("Received propose from {0} cif {1} msgId {2} target {3} proposals {4}"
-                .format(origin, conversation_id, msg_id, target, proposals))
-          print("Price {0}".format(proposals[0]._values["price"]))
-          self.send_accept(conversation_id, origin, msg_id + 1, msg_id)
+    class WeatherClient(OEFAgent):
+    
+        def on_search_result(self, search_id: int, agents: List[str]):
+            print("Agent found: {0}".format(agents))
+            for agent in agents:
+                print("Sending to agent {0}".format(agent))
+                query = Query([Constraint(TEMPERATURE_ATTR, Eq(True)),
+                               Constraint(AIR_PRESSURE_ATTR, Eq(True)),
+                               Constraint(HUMIDITY_ATTR, Eq(True))],
+                              WEATHER_DATA_MODEL)
+                self.send_cfp(0, agent, query)
+    
+        def on_propose(self, origin: str, dialogue_id: int, msg_id: int, target: int, proposals: PROPOSE_TYPES):
+            print("Received propose from {0} cif {1} msgId {2} target {3} proposals {4}"
+                  .format(origin, dialogue_id, msg_id, target, proposals))
+            print("Price {0}".format(proposals[0]._values["price"]))
+            self.send_accept(dialogue_id, origin, msg_id + 1, msg_id)
 
 
 
@@ -528,16 +526,16 @@ And here's the code to run it:
 
 .. code-block:: python
 
-  agent = WeatherClient("weather_client", oef_addr="127.0.0.1", oef_port=3333)
-  agent.connect()
+    agent = WeatherClient("weather_client", oef_addr="127.0.0.1", oef_port=3333)
+    agent.connect()
 
-  query = Query([Constraint(TEMPERATURE_ATTR, Eq(True)),
-                 Constraint(AIR_PRESSURE_ATTR, Eq(True)),
-                 Constraint(HUMIDITY_ATTR, Eq(True))],
-                 WEATHER_DATA_MODEL)
+    query = Query([Constraint(TEMPERATURE_ATTR, Eq(True)),
+                   Constraint(AIR_PRESSURE_ATTR, Eq(True)),
+                   Constraint(HUMIDITY_ATTR, Eq(True))],
+                   WEATHER_DATA_MODEL)
 
-  agent.search_services(query)
-  agent.run()
+    agent.search_services(query)
+    agent.run()
 
 
 Message Exchange
@@ -548,18 +546,18 @@ The output from the client agent should be:
 
 ::
 
-  Agent found: ['weather_station']
-  Sending to agent weather_station
-  Received propose from weather_station cif 9f434859-4d2d-447e-82b6-94e3bbff4bc7 msgId 2 target 1 proposals [<oef.schema.Description object at 0x7f9988ae9d30>]
-  Price 50
+    Agent found: ['weather_station']
+    Sending to agent weather_station
+    Received propose from weather_station cif 0 msgId 2 target 1 proposals [<oef.schema.Description object at 0x7f94ad8ca278>]
+    Price 50
 
 
 Whereas, the one from the server agent is:
 
 ::
 
-  Received cfp from weather_client cif 9f434859-4d2d-447e-82b6-94e3bbff4bc7 msgId 1 target 0 query [<oef.query.Query object at 0x7f8fc68736d8>]
-  Received accept from weather_client cif 9f434859-4d2d-447e-82b6-94e3bbff4bc7 msgId 3 target 2
+    Received cfp from weather_client cif 0 msgId 1 target 0 query [<oef.query.Query object at 0x7fe00f674358>]
+    Received accept from weather_client cif 0 msgId 3 target 2
 
 
 The order of the exchanged message is the following:

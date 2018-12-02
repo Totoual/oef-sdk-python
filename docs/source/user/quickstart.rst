@@ -70,27 +70,25 @@ The ``GreetingsAgent`` does the following:
 
 .. code-block:: python
 
-  import uuid
-  from typing import List
+    from typing import List
+    from oef.agents import OEFAgent
 
-  from oef.agents import OEFAgent
+    class GreetingsAgent(OEFAgent):
 
-  class GreetingsAgent(OEFAgent):
+        def on_message(self, origin: str, dialogue_id: int, content: bytes):
+            print("{}: Received message: origin={}, dialogue_id={}, content={}"
+                  .format(self._pubkey, origin, dialogue_id, content))
+            if content == b"hello":
+                print("{}: Sending greetings message to {}".format(self._pubkey, origin))
+                self.send_message(dialogue_id, origin, b"greetings")
 
-      def on_message(self, origin: str, conversation_id: str, content: bytes):
-          print("{}: Received message: origin={}, conversation_id={}, content={}"
-                .format(self._pubkey, origin, conversation_id, content))
-          if content == b"hello":
-              print("{}: Sending greetings message to {}".format(self._pubkey, origin))
-              self.send_message(conversation_id, origin, b"greetings")
-
-      def on_search_result(self, agents: List[str]):
-          if len(agents) > 0:
-              print("{}, Agents found: {}".format(self._pubkey, agents))
-              for a in agents:
-                  self.send_message(str(uuid.uuid4()), a, b"hello")
-          else:
-              print("No agent found.")
+        def on_search_result(self, search_id: int, agents: List[str]):
+            if len(agents) > 0:
+                print("{}, Agents found: {}".format(self._pubkey, agents))
+                for a in agents:
+                    self.send_message(0, a, b"hello")
+            else:
+                print("No agent found.")
 
 
 

@@ -15,8 +15,8 @@ set_logger("oef", logging.DEBUG)
 
 class EchoClientAgent(OEFAgent):
 
-    def on_message(self, origin: str, conversation_id: str, content: bytes):
-        print("Received message: origin={}, conversation_id={}, content={}".format(origin, conversation_id, content))
+    def on_message(self, origin: str, dialogue_id: int, content: bytes):
+        print("Received message: origin={}, dialogue_id={}, content={}".format(origin, dialogue_id, content))
 
     def on_search_result(self, search_id: int, agents: List[str]):
         if len(agents) > 0:

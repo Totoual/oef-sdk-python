@@ -2,7 +2,7 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 import asyncio
-import uuid
+
 from typing import List
 
 from oef.agents import OEFAgent
@@ -19,11 +19,11 @@ class GreetingsAgent(OEFAgent):
             print("{}: Sending greetings message to {}".format(self._pubkey, origin))
             self.send_message(dialogue_id, origin, b"greetings")
 
-    def on_search_result(self, agents: List[str]):
+    def on_search_result(self, search_id: int, agents: List[str]):
         if len(agents) > 0:
             print("{}, Agents found: {}".format(self._pubkey, agents))
             for a in agents:
-                self.send_message(uuid.uuid4().time_low, a, b"hello")
+                self.send_message(0, a, b"hello")
         else:
             print("No agent found.")
 

@@ -53,7 +53,7 @@ class OEFAgent(AgentInterface):
                fipa_message_id: int,
                fipa_target: int,
                query: CFP_TYPES):
-        logger.info("on_cfp: {}, {}, {}, {}", origin, conversation_id, fipa_message_id, fipa_target, query)
+        logger.info("on_cfp: {}, {}, {}, {}", origin, dialogue_id, fipa_message_id, fipa_target, query)
         _warning_not_implemented_method(self.on_cfp.__name__)
 
     def on_accept(self,
@@ -61,7 +61,7 @@ class OEFAgent(AgentInterface):
                   dialogue_id: int,
                   fipa_message_id: int,
                   fipa_target: int, ):
-        logger.info("on_accept: {}, {}, {}, {}", origin, conversation_id, fipa_message_id, fipa_target)
+        logger.info("on_accept: {}, {}, {}, {}", origin, dialogue_id, fipa_message_id, fipa_target)
         _warning_not_implemented_method(self.on_accept.__name__)
 
     def on_decline(self,
@@ -69,7 +69,7 @@ class OEFAgent(AgentInterface):
                    dialogue_id: int,
                    fipa_message_id: int,
                    fipa_target: int, ):
-        logger.info("on_decline: {}, {}, {}, {}", origin, conversation_id, fipa_message_id, fipa_target)
+        logger.info("on_decline: {}, {}, {}, {}", origin, dialogue_id, fipa_message_id, fipa_target)
         _warning_not_implemented_method(self.on_decline.__name__)
 
     def on_propose(self,
@@ -78,21 +78,21 @@ class OEFAgent(AgentInterface):
                    fipa_message_id: int,
                    fipa_target: int,
                    proposal: PROPOSE_TYPES):
-        logger.info("on_propose: {}, {}, {}, {}, {}", origin, conversation_id, fipa_message_id, fipa_target, proposal)
+        logger.info("on_propose: {}, {}, {}, {}, {}", origin, dialogue_id, fipa_message_id, fipa_target, proposal)
         _warning_not_implemented_method(self.on_propose.__name__)
 
     def on_error(self,
                  operation: agent_pb2.Server.AgentMessage.Error.Operation,
                  dialogue_id: int,
                  message_id: int):
-        logger.info("on_error: {}, {}, {}", operation, conversation_id, message_id)
+        logger.info("on_error: {}, {}, {}", operation, dialogue_id, message_id)
         _warning_not_implemented_method(self.on_error.__name__)
 
     def on_message(self,
                    origin: str,
                    dialogue_id: int,
                    content: bytes):
-        logger.info("on_message: {}, {}, {}, {}", origin, conversation_id, content)
+        logger.info("on_message: {}, {}, {}, {}", origin, dialogue_id, content)
         _warning_not_implemented_method(self.on_message.__name__)
 
     def on_search_result(self, search_id: int, agents: List[str]):

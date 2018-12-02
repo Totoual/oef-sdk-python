@@ -49,7 +49,7 @@ class OEFAgent(AgentInterface):
 
     def on_cfp(self,
                origin: str,
-               conversation_id: str,
+               dialogue_id: int,
                fipa_message_id: int,
                fipa_target: int,
                query: CFP_TYPES):
@@ -58,7 +58,7 @@ class OEFAgent(AgentInterface):
 
     def on_accept(self,
                   origin: str,
-                  conversation_id: str,
+                  dialogue_id: int,
                   fipa_message_id: int,
                   fipa_target: int, ):
         logger.info("on_accept: {}, {}, {}, {}", origin, conversation_id, fipa_message_id, fipa_target)
@@ -66,7 +66,7 @@ class OEFAgent(AgentInterface):
 
     def on_decline(self,
                    origin: str,
-                   conversation_id: str,
+                   dialogue_id: int,
                    fipa_message_id: int,
                    fipa_target: int, ):
         logger.info("on_decline: {}, {}, {}, {}", origin, conversation_id, fipa_message_id, fipa_target)
@@ -74,7 +74,7 @@ class OEFAgent(AgentInterface):
 
     def on_propose(self,
                    origin: str,
-                   conversation_id: str,
+                   dialogue_id: int,
                    fipa_message_id: int,
                    fipa_target: int,
                    proposal: PROPOSE_TYPES):
@@ -83,19 +83,19 @@ class OEFAgent(AgentInterface):
 
     def on_error(self,
                  operation: agent_pb2.Server.AgentMessage.Error.Operation,
-                 conversation_id: str,
+                 dialogue_id: int,
                  message_id: int):
         logger.info("on_error: {}, {}, {}", operation, conversation_id, message_id)
         _warning_not_implemented_method(self.on_error.__name__)
 
     def on_message(self,
                    origin: str,
-                   conversation_id: str,
+                   dialogue_id: int,
                    content: bytes):
         logger.info("on_message: {}, {}, {}, {}", origin, conversation_id, content)
         _warning_not_implemented_method(self.on_message.__name__)
 
-    def on_search_result(self, agents: List[str]):
+    def on_search_result(self, search_id: int, agents: List[str]):
         logger.info("on_search_result: {}", agents)
         _warning_not_implemented_method(self.on_search_result.__name__)
 
@@ -110,7 +110,7 @@ class OEFAgent(AgentInterface):
         """
         return self._connection.register_agent(agent_description)
 
-    def unregister_agent(self, agent_description: Description) -> bool:
+    def unregister_agent(self) -> bool:
         """
         Removes the description of an agent from the OEF. This agent will no longer be queryable
         by other agents in the OEF. A conversation handler must be provided that allows the agent
@@ -120,7 +120,7 @@ class OEFAgent(AgentInterface):
         :returns: `True` if agent is successfully removed, `False` otherwise. Can fail if
         such an agent is not registered with the OEF.
         """
-        return self._connection.unregister_agent(agent_description)
+        return self._connection.unregister_agent()
 
     def register_service(self, service_description: Description):
         """
@@ -142,92 +142,93 @@ class OEFAgent(AgentInterface):
         """
         self._connection.unregister_service(service_description)
 
-    def search_agents(self, query: Query) -> None:
+    def search_agents(self, search_id: int, query: Query) -> None:
         """
         Allows an agent to search for other agents it is interested in communicating with. This can
         be useful when an agent wishes to directly proposition the provision of a service that it
         thinks another agent may wish to be able to offer it. All matching agents are returned
         (potentially including ourself)
+        :param search_id
         :param query: specifications of the constraints on the agents that are matched
         :returns: a list of the matching agents
         """
-        self._connection.search_agents(query)
+        self._connection.search_agents(search_id, query)
 
-    def search_services(self, query: Query) -> None:
+    def search_services(self, search_id: int, query: Query) -> None:
         """
         Allows an agent to search for a particular service. This allows constrained search of all
         services that have been registered with the OEF. All matching services will be returned
         (potentially including services offered by ourself)
         :param query: the constraint on the matching services
         """
-        self._connection.search_services(query)
+        self._connection.search_services(search_id, query)
 
     def send_message(self,
-                     conversation_id: str,
+                     dialogue_id: int,
                      destination: str,
                      msg: bytes):
-        logger.debug("Agent {}: conversation_id={}, destination={}, msg={}"
+        logger.debug("Agent {}: dialogue_id={}, destination={}, msg={}"
                      .format(self._pubkey,
-                             conversation_id,
+                             dialogue_id,
                              destination,
                              msg)
                      )
-        self._connection.send_message(conversation_id, destination, msg)
+        self._connection.send_message(dialogue_id, destination, msg)
 
     def send_cfp(self,
-                 conversation_id: str,
+                 dialogue_id: int,
                  destination: str,
                  query: CFP_TYPES,
                  msg_id: Optional[int] = 1,
                  target: Optional[int] = 0):
-        logger.debug("Agent {}: conversation_id={}, destination={}, query={}, msg_id={}, target={}"
+        logger.debug("Agent {}: dialogue_id={}, destination={}, query={}, msg_id={}, target={}"
                      .format(self._pubkey,
-                             conversation_id,
+                             dialogue_id,
                              destination,
                              query,
                              msg_id,
                              target)
                      )
-        self._connection.send_cfp(conversation_id, destination, query, msg_id, target)
+        self._connection.send_cfp(dialogue_id, destination, query, msg_id, target)
 
     def send_propose(self,
-                     conversation_id: str,
+                     dialogue_id: int,
                      destination: str,
                      proposals: PROPOSE_TYPES,
                      msg_id: int,
                      target: Optional[int] = None):
-        logger.debug("Agent {}: conversation_id={}, destination={}, proposals={}, msg_id={}, target={}"
+        logger.debug("Agent {}: dialogue_id={}, destination={}, proposals={}, msg_id={}, target={}"
                      .format(self._pubkey,
-                             conversation_id,
+                             dialogue_id,
                              destination,
                              proposals,
                              msg_id,
                              target)
                      )
-        self._connection.send_propose(conversation_id, destination, proposals, msg_id, target)
+        self._connection.send_propose(dialogue_id, destination, proposals, msg_id, target)
 
-    def send_accept(self, conversation_id: str,
+    def send_accept(self, dialogue_id: int,
                     destination: str,
                     msg_id: int,
                     target: Optional[int] = None):
-        logger.debug("Agent {}: conversation_id={}, destination={}, msg_id={}, target={}"
+        logger.debug("Agent {}: dialogue_id={}, destination={}, msg_id={}, target={}"
                      .format(self._pubkey,
-                             conversation_id,
+                             dialogue_id,
                              destination,
                              msg_id,
                              target)
                      )
-        self._connection.send_accept(conversation_id, destination, msg_id, target)
+        self._connection.send_accept(dialogue_id, destination, msg_id, target)
 
-    def send_decline(self, conversation_id: str,
+    def send_decline(self, dialogue_id: int,
                      destination: str,
                      msg_id: int,
                      target: Optional[int] = None):
-        logger.debug("Agent {}: conversation_id={}, destination={}, msg_id={}, target={}"
+        logger.debug("Agent {}: dialogue_id={}, destination={}, msg_id={}, target={}"
                      .format(self._pubkey,
-                             conversation_id,
+                             dialogue_id,
                              destination,
                              msg_id,
                              target)
                      )
-        self._connection.send_decline(conversation_id, destination, msg_id, target)
+        self._connection.send_decline(dialogue_id, destination, msg_id, target)

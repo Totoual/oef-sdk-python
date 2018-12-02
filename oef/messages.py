@@ -25,7 +25,7 @@ class Message(ABC):
 
     def to_envelope(self) -> agent_pb2.Envelope:
         envelope = agent_pb2.Envelope()
-        envelope.message.CopyFrom(self.msg)
+        envelope.send_message.CopyFrom(self.msg)
         return envelope
 
 
@@ -36,11 +36,11 @@ class AgentMessage(Message):
 class SimpleMessage(Message):
 
     def _build_msg(self,
-                   conversation_id: str,
+                   dialogue_id: int,
                    destination: str,
                    msg: bytes):
         agent_msg = agent_pb2.Agent.Message()
-        agent_msg.conversation_id = conversation_id
+        agent_msg.dialogue_id = dialogue_id
         agent_msg.destination = destination
         agent_msg.content = msg
         return agent_msg
@@ -49,7 +49,7 @@ class SimpleMessage(Message):
 class CFP(Message):
 
     def _build_msg(self,
-                   conversation_id: str,
+                   dialogue_id: int,
                    destination: str,
                    query: CFP_TYPES,
                    msg_id: Optional[int] = 1,
@@ -68,7 +68,7 @@ class CFP(Message):
             cfp.content = query
         fipa_msg.cfp.CopyFrom(cfp)
         agent_msg = agent_pb2.Agent.Message()
-        agent_msg.conversation_id = conversation_id
+        agent_msg.dialogue_id = dialogue_id
         agent_msg.destination = destination
         agent_msg.fipa.CopyFrom(fipa_msg)
 
@@ -78,7 +78,7 @@ class CFP(Message):
 class Propose(Message):
 
     def _build_msg(self,
-                   conversation_id: str,
+                   dialogue_id: int,
                    destination: str,
                    proposals: PROPOSE_TYPES,
                    msg_id: int,
@@ -96,7 +96,7 @@ class Propose(Message):
             propose.proposals.CopyFrom(proposals_pb)
         fipa_msg.propose.CopyFrom(propose)
         agent_msg = agent_pb2.Agent.Message()
-        agent_msg.conversation_id = conversation_id
+        agent_msg.dialogue_id = dialogue_id
         agent_msg.destination = destination
         agent_msg.fipa.CopyFrom(fipa_msg)
 
@@ -106,7 +106,7 @@ class Propose(Message):
 class Accept(Message):
 
     def _build_msg(self,
-                   conversation_id: str,
+                   dialogue_id: int,
                    destination: str,
                    msg_id: int,
                    target: Optional[int] = None):
@@ -116,7 +116,7 @@ class Accept(Message):
         accept = fipa_pb2.Fipa.Accept()
         fipa_msg.accept.CopyFrom(accept)
         agent_msg = agent_pb2.Agent.Message()
-        agent_msg.conversation_id = conversation_id
+        agent_msg.dialogue_id = dialogue_id
         agent_msg.destination = destination
         agent_msg.fipa.CopyFrom(fipa_msg)
 
@@ -126,7 +126,7 @@ class Accept(Message):
 class Decline(Message):
 
     def _build_msg(self,
-                   conversation_id: str,
+                   dialogue_id: int,
                    destination: str,
                    msg_id: int,
                    target: Optional[int] = None):
@@ -136,7 +136,7 @@ class Decline(Message):
         decline = fipa_pb2.Fipa.Decline()
         fipa_msg.accept.CopyFrom(decline)
         agent_msg = agent_pb2.Agent.Message()
-        agent_msg.conversation_id = conversation_id
+        agent_msg.dialogue_id = dialogue_id
         agent_msg.destination = destination
         agent_msg.fipa.CopyFrom(fipa_msg)
 

@@ -294,11 +294,6 @@ class Query(object):
             query.model.CopyFrom(self._model.to_pb())
         return query
 
-    def to_search_pb(self):
-        query = self.to_pb()
-        agent_search = agent_pb2.AgentSearch()
-        agent_search.query.CopyFrom(query)
-        return agent_search
 
     @classmethod
     def from_pb(cls, query: query_pb2.Query.Model):

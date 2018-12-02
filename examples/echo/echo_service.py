@@ -13,10 +13,10 @@ set_logger("oef", logging.DEBUG)
 
 class EchoServiceAgent(OEFAgent):
 
-    def on_message(self, origin: str, conversation_id: str, content: bytes):
-        print("Received message: origin={}, conversation_id={}, content={}".format(origin, conversation_id, content))
+    def on_message(self, origin: str, dialogue_id: int, content: bytes):
+        print("Received message: origin={}, dialogue_id={}, content={}".format(origin, dialogue_id, content))
         print("Sending {} back to {}".format(content, origin))
-        self.send_message(conversation_id, origin, content)
+        self.send_message(dialogue_id, origin, content)
 
 
 if __name__ == '__main__':

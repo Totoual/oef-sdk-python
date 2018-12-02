@@ -36,7 +36,7 @@ class AgentInterface(ABC):
 
     @abstractmethod
     def on_cfp(self, origin: str,
-               conversation_id: str,
+               dialogue_id: int,
                fipa_message_id: int,
                fipa_target: int,
                query: CFP_TYPES):
@@ -44,21 +44,21 @@ class AgentInterface(ABC):
 
     @abstractmethod
     def on_accept(self, origin: str,
-                  conversation_id: str,
+                  dialogue_id: int,
                   fipa_message_id: int,
                   fipa_target: int, ):
         raise NotImplementedError
 
     @abstractmethod
     def on_decline(self, origin: str,
-                   conversation_id: str,
+                   dialogue_id: int,
                    fipa_message_id: int,
                    fipa_target: int, ):
         raise NotImplementedError
 
     @abstractmethod
     def on_propose(self, origin: str,
-                   conversation_id: str,
+                   dialogue_id: int,
                    fipa_message_id: int,
                    fipa_target: int,
                    proposal: PROPOSE_TYPES):
@@ -66,18 +66,18 @@ class AgentInterface(ABC):
 
     @abstractmethod
     def on_error(self, operation: agent_pb2.Server.AgentMessage.Error.Operation,
-                 conversation_id: str,
+                 dialogue_id: int,
                  message_id: int):
         raise NotImplementedError
 
     @abstractmethod
     def on_message(self, origin: str,
-                   conversation_id: str,
+                   dialogue_id: int,
                    content: bytes):
         raise NotImplementedError
 
     @abstractmethod
-    def on_search_result(self, agents: List[str]):
+    def on_search_result(self, search_id: int, agents: List[str]):
         raise NotImplementedError
 
 
@@ -111,29 +111,31 @@ class OEFProxy(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def search_agents(self, query: Query) -> None:
+    def search_agents(self, search_id: int, query: Query) -> None:
         """
         Allows an agent to search for other agents it is interested in communicating with. This can
         be useful when an agent wishes to directly proposition the provision of a service that it
         thinks another agent may wish to be able to offer it. All matching agents are returned
         (potentially including ourself)
+        :param search_id:
         :param query: specifications of the constraints on the agents that are matched
         :returns: a list of the matching agents
         """
         raise NotImplementedError
 
     @abstractmethod
-    def search_services(self, query: Query) -> None:
+    def search_services(self, search_id: int, query: Query) -> None:
         """
         Allows an agent to search for a particular service. This allows constrained search of all
         services that have been registered with the OEF. All matching services will be returned
         (potentially including services offered by ourself)
+        :param search_id:
         :param query: the constraint on the matching services
         """
         raise NotImplementedError
 
     @abstractmethod
-    def unregister_agent(self, agent_description: Description) -> bool:
+    def unregister_agent(self) -> bool:
         """
         Removes the description of an agent from the OEF. This agent will no longer be queryable
         by other agents in the OEF. A conversation handler must be provided that allows the agent
@@ -157,26 +159,26 @@ class OEFProxy(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def send_message(self, conversation_id: str, destination: str, msg: bytes):
+    def send_message(self, dialogue_id: int, destination: str, msg: bytes):
         raise NotImplementedError
 
     @abstractmethod
-    def send_cfp(self, conversation_id: str, destination: str, query: CFP_TYPES, msg_id: Optional[int] = 1,
+    def send_cfp(self, dialogue_id: int, destination: str, query: CFP_TYPES, msg_id: Optional[int] = 1,
                  target: Optional[int] = 0):
         raise NotImplementedError
 
     @abstractmethod
-    def send_propose(self, conversation_id: str, destination: str, proposals: PROPOSE_TYPES, msg_id: int,
+    def send_propose(self, dialogue_id: int, destination: str, proposals: PROPOSE_TYPES, msg_id: int,
                      target: Optional[int] = None):
         raise NotImplementedError
 
     @abstractmethod
-    def send_accept(self, conversation_id: str, destination: str, msg_id: int,
+    def send_accept(self, dialogue_id: int, destination: str, msg_id: int,
                     target: Optional[int] = None):
         raise NotImplementedError
 
     @abstractmethod
-    def send_decline(self, conversation_id: str, destination: str, msg_id: int,
+    def send_decline(self, dialogue_id: int, destination: str, msg_id: int,
                      target: Optional[int] = None):
         raise NotImplementedError
 
@@ -268,7 +270,7 @@ class OEFNetworkProxy(object):
         agent already exists in the OEF.
         """
         envelope = agent_pb2.Envelope()
-        envelope.description.CopyFrom(agent_description.to_pb())
+        envelope.register_description.CopyFrom(agent_description.to_pb())
         self._send(envelope)
 
     def register_service(self, service_description: Description):
@@ -280,10 +282,10 @@ class OEFNetworkProxy(object):
         service already exists in the OEF.
         """
         envelope = agent_pb2.Envelope()
-        envelope.register.CopyFrom(service_description.to_pb())
+        envelope.register_service.CopyFrom(service_description.to_pb())
         self._send(envelope)
 
-    def unregister_agent(self, agent_description: Description) -> bool:
+    def unregister_agent(self) -> bool:
         """
         Removes the description of an agent from the OEF. This agent will no longer be queryable
         by other agents in the OEF. A conversation handler must be provided that allows the agent
@@ -293,7 +295,9 @@ class OEFNetworkProxy(object):
         :returns: `True` if agent is successfully removed, `False` otherwise. Can fail if
         such an agent is not registered with the OEF.
         """
-        pass
+        envelope = agent_pb2.Envelope()
+        envelope.unregister_description.CopyFrom(agent_pb2.Envelope.Nothing())
+        self._send(envelope)
 
     def unregister_service(self, service_description: Description) -> None:
         """
@@ -304,63 +308,67 @@ class OEFNetworkProxy(object):
         service already exists in the OEF.
         """
         envelope = agent_pb2.Envelope()
-        envelope.unregister.CopyFrom(service_description.to_pb())
+        envelope.unregister_service.CopyFrom(service_description.to_pb())
         self._send(envelope)
 
-    def search_agents(self, query: Query) -> None:
+    def search_agents(self, search_id: int, query: Query) -> None:
         """
         Allows an agent to search for other agents it is interested in communicating with. This can
         be useful when an agent wishes to directly proposition the provision of a service that it
         thinks another agent may wish to be able to offer it. All matching agents are returned
         (potentially including ourself)
+        :param search_id
         :param query: specifications of the constraints on the agents that are matched
         :returns: a list of the matching agents
         """
         envelope = agent_pb2.Envelope()
-        envelope.search.CopyFrom(query.to_search_pb())
+        envelope.search_agents.query.CopyFrom(query.to_pb())
+        envelope.search_agents.search_id = search_id
         self._send(envelope)
 
-    def search_services(self, query: Query) -> None:
+    def search_services(self, search_id: int, query: Query) -> None:
         """
         Allows an agent to search for a particular service. This allows constrained search of all
         services that have been registered with the OEF. All matching services will be returned
         (potentially including services offered by ourself)
+        :param search_id
         :param query: the constraint on the matching services
         """
         envelope = agent_pb2.Envelope()
-        envelope.query.CopyFrom(query.to_search_pb())
+        envelope.search_services.query.CopyFrom(query.to_pb())
+        envelope.search_services.search_id = search_id
         self._send(envelope)
 
-    def send_message(self, conversation_id: str, destination: str, msg: bytes):
-        msg = SimpleMessage(conversation_id, destination, msg)
+    def send_message(self, dialogue_id: int, destination: str, msg: bytes):
+        msg = SimpleMessage(dialogue_id, destination, msg)
         self._send(msg.to_envelope())
 
     def send_cfp(self,
-                 conversation_id: str,
+                 dialogue_id: int,
                  destination: str,
                  query: CFP_TYPES,
                  msg_id: Optional[int] = 1,
                  target: Optional[int] = 0):
-        msg = CFP(conversation_id, destination, query, msg_id, target)
+        msg = CFP(dialogue_id, destination, query, msg_id, target)
         self._send(msg.to_envelope())
 
-    def send_propose(self, conversation_id: str, destination: str, proposals: PROPOSE_TYPES, msg_id: int,
+    def send_propose(self, dialogue_id: int, destination: str, proposals: PROPOSE_TYPES, msg_id: int,
                      target: Optional[int] = None):
 
-        msg = Propose(conversation_id, destination, proposals, msg_id, target)
+        msg = Propose(dialogue_id, destination, proposals, msg_id, target)
         self._send(msg.to_envelope())
 
-    def send_accept(self, conversation_id: str, destination: str, msg_id: int,
+    def send_accept(self, dialogue_id: int, destination: str, msg_id: int,
                     target: Optional[int] = None):
-        msg = Accept(conversation_id, destination, msg_id, target)
+        msg = Accept(dialogue_id, destination, msg_id, target)
         self._send(msg.to_envelope())
 
     def send_decline(self,
-                     conversation_id: str,
+                     dialogue_id: int,
                      destination: str,
                      msg_id: int,
                      target: Optional[int] = None):
-        msg = Decline(conversation_id, destination, msg_id, target)
+        msg = Decline(dialogue_id, destination, msg_id, target)
         self._send(msg.to_envelope())
 
     def close(self) -> None:
@@ -379,14 +387,14 @@ class OEFNetworkProxy(object):
             case = msg.WhichOneof("payload")
             logger.debug("loop {0}".format(case))
             if case == "agents":
-                agent.on_search_result(msg.agents.agents)
+                agent.on_search_result(msg.agents.search_id, msg.agents.agents)
             elif case == "error":
-                agent.on_error(msg.error.operation, msg.error.conversation_id, msg.error.msgid)
+                agent.on_error(msg.error.operation, msg.error.dialogue_id, msg.error.msgid)
             elif case == "content":
                 content_case = msg.content.WhichOneof("payload")
                 logger.debug("msg content {0}".format(content_case))
                 if content_case == "content":
-                    agent.on_message(msg.content.origin, msg.content.conversation_id, msg.content.content)
+                    agent.on_message(msg.content.origin, msg.content.dialogue_id, msg.content.content)
                 elif content_case == "fipa":
                     fipa = msg.content.fipa
                     fipa_case = fipa.WhichOneof("msg")
@@ -400,19 +408,19 @@ class OEFNetworkProxy(object):
                             query = Query.from_pb(fipa.cfp.query)
                         else:
                             raise Exception("Query type not valid.")
-                        agent.on_cfp(msg.content.origin, msg.content.conversation_id, fipa.msg_id, fipa.target, query)
+                        agent.on_cfp(msg.content.origin, msg.content.dialogue_id, fipa.msg_id, fipa.target, query)
                     elif fipa_case == "propose":
                         propose_case = fipa.propose.WhichOneof("payload")
                         if propose_case == "content":
                             proposals = fipa.propose.content
                         else:
                             proposals = [Description.from_pb(propose) for propose in fipa.propose.proposals.objects]
-                        agent.on_propose(msg.content.origin, msg.content.conversation_id, fipa.msg_id, fipa.target,
+                        agent.on_propose(msg.content.origin, msg.content.dialogue_id, fipa.msg_id, fipa.target,
                                         proposals)
                     elif fipa_case == "accept":
-                        agent.on_accept(msg.content.origin, msg.content.conversation_id, fipa.msg_id, fipa.target)
+                        agent.on_accept(msg.content.origin, msg.content.dialogue_id, fipa.msg_id, fipa.target)
                     elif fipa_case == "decline":
-                        agent.on_decline(msg.content.origin, msg.content.conversation_id, fipa.msg_id, fipa.target)
+                        agent.on_decline(msg.content.origin, msg.content.dialogue_id, fipa.msg_id, fipa.target)
                     else:
                         logger.warning("Not implemented yet: fipa {0}".format(fipa_case))
 

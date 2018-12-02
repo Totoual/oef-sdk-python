@@ -12,18 +12,18 @@ from oef.query import Query
 
 class GreetingsAgent(OEFAgent):
 
-    def on_message(self, origin: str, conversation_id: str, content: bytes):
-        print("{}: Received message: origin={}, conversation_id={}, content={}"
-              .format(self._pubkey, origin, conversation_id, content))
+    def on_message(self, origin: str, dialogue_id: int, content: bytes):
+        print("{}: Received message: origin={}, dialogue_id={}, content={}"
+              .format(self._pubkey, origin, dialogue_id, content))
         if content == b"hello":
             print("{}: Sending greetings message to {}".format(self._pubkey, origin))
-            self.send_message(conversation_id, origin, b"greetings")
+            self.send_message(dialogue_id, origin, b"greetings")
 
     def on_search_result(self, agents: List[str]):
         if len(agents) > 0:
             print("{}, Agents found: {}".format(self._pubkey, agents))
             for a in agents:
-                self.send_message(str(uuid.uuid4()), a, b"hello")
+                self.send_message(uuid.uuid4().time_low, a, b"hello")
         else:
             print("No agent found.")
 
@@ -45,7 +45,7 @@ if __name__ == '__main__':
 
     # the client executes the search for greetings services
     query = Query([], greetings_model)
-    client_agent.search_services(query)
+    client_agent.search_services(0, query)
 
     # run both agents concurrently
     loop = asyncio.get_event_loop()

@@ -34,6 +34,7 @@ DEFAULT_OEF_NODE_PORT = 3333
 
 class AgentInterface(ABC):
 
+    @abstractmethod
     def on_cfp(self, origin: str,
                conversation_id: str,
                fipa_message_id: int,
@@ -41,18 +42,21 @@ class AgentInterface(ABC):
                query: CFP_TYPES):
         raise NotImplementedError
 
+    @abstractmethod
     def on_accept(self, origin: str,
                   conversation_id: str,
                   fipa_message_id: int,
                   fipa_target: int, ):
         raise NotImplementedError
 
+    @abstractmethod
     def on_decline(self, origin: str,
                    conversation_id: str,
                    fipa_message_id: int,
                    fipa_target: int, ):
         raise NotImplementedError
 
+    @abstractmethod
     def on_propose(self, origin: str,
                    conversation_id: str,
                    fipa_message_id: int,
@@ -60,16 +64,19 @@ class AgentInterface(ABC):
                    proposal: PROPOSE_TYPES):
         raise NotImplementedError
 
+    @abstractmethod
     def on_error(self, operation: agent_pb2.Server.AgentMessage.Error.Operation,
                  conversation_id: str,
                  message_id: int):
         raise NotImplementedError
 
+    @abstractmethod
     def on_message(self, origin: str,
                    conversation_id: str,
                    content: bytes):
         raise NotImplementedError
 
+    @abstractmethod
     def on_search_result(self, agents: List[str]):
         raise NotImplementedError
 

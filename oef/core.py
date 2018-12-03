@@ -126,7 +126,7 @@ class AgentInterface(ABC):
         raise NotImplementedError
 
 
-class OEFProxy(ABC):
+class OEFMethods(ABC):
 
     @abstractmethod
     def register_agent(self, agent_description: Description) -> bool:
@@ -160,7 +160,7 @@ class OEFProxy(ABC):
         thinks another agent may wish to be able to offer it. All matching agents are returned
         (potentially including ourself)
 
-        :param search_id:
+        :param search_id: the identifier of the search to whom the result is answering.
         :param query: specifications of the constraints on the agents that are matched
         :returns: a list of the matching agents
         """
@@ -173,7 +173,7 @@ class OEFProxy(ABC):
         services that have been registered with the OEF. All matching services will be returned
         (potentially including services offered by ourself)
 
-        :param search_id:
+        :param search_id: the identifier of the search to whom the result is answering.
         :param query: the constraint on the matching services
         """
         raise NotImplementedError
@@ -228,7 +228,6 @@ class OEFProxy(ABC):
         :return:
         """
 
-
         raise NotImplementedError
 
     @abstractmethod
@@ -272,6 +271,21 @@ class OEFProxy(ABC):
         :param target: the identifier of the message to whom this message is answering.
         :return:
         """
+        raise NotImplementedError
+
+
+class OEFProxy(OEFMethods):
+
+    def __init__(self, public_key):
+        self._public_key = public_key
+
+    @property
+    def public_key(self) -> str:
+        return self._public_key
+
+    @abstractmethod
+    def connect(self):
+        """Connect to the OEF Node."""
         raise NotImplementedError
 
     @abstractmethod

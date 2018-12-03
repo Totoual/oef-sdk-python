@@ -8,8 +8,8 @@ import logging
 from typing import List, Optional
 
 from oef import agent_pb2
-from oef.proxy import OEFNetworkProxy, PROPOSE_TYPES, CFP_TYPES
-from oef.core import AgentInterface, OEFProxy
+from oef.proxy import OEFNetworkProxy, PROPOSE_TYPES, CFP_TYPES, OEFLocalProxy
+from oef.core import AgentInterface, OEFProxy, OEFMethods
 from oef.schema import Description
 from oef.query import Query
 
@@ -20,33 +20,14 @@ def _warning_not_implemented_method(method_name):
     logger.warning("You should implement {} in your OEFAgent class.", method_name)
 
 
-class OEFAgent(AgentInterface):
-    """The abstract definition of an agent."""
+class AbstractAgent(AgentInterface, OEFMethods):
 
-    def __init__(self, public_key: str, oef_addr: str, oef_port: int = 3333) -> None:
-        self._pubkey = public_key
-        self._oef_addr = oef_addr
-        self._oef_port = oef_port
+    @property
+    def public_key(self):
+        return self.oef_proxy.public_key
 
-        self._loop = asyncio.get_event_loop()
-        self._connection = None  # type: OEFProxy
-
-    def connect(self) -> None:
-        """Connect the agent to the OEF Node specified by _oef_addr and _oef_port"""
-        logger.debug("{}: Start connection to {}:{}".format(self._pubkey, self._oef_addr, self._oef_port))
-        self._connection = self._get_connection()
-        logger.debug("{}: Connection established to {}:{}".format(self._pubkey, self._oef_addr, self._oef_port))
-
-    def _get_connection(self) -> OEFNetworkProxy:
-        connection = OEFNetworkProxy(self._pubkey, str(self._oef_addr), self._oef_port)
-        self._loop.run_until_complete(connection.connect())
-        return connection
-
-    def run(self):
-        self._loop.run_until_complete(self.async_run())
-
-    async def async_run(self):
-        await self._connection.loop(self)
+    def __init__(self, oef_proxy: OEFProxy):
+        self.oef_proxy = oef_proxy
 
     def on_cfp(self,
                origin: str,
@@ -101,80 +82,34 @@ class OEFAgent(AgentInterface):
         _warning_not_implemented_method(self.on_search_result.__name__)
 
     def register_agent(self, agent_description: Description) -> bool:
-        """
-        Adds a description of an agent to the OEF so that it can be understood/ queried by
-        other agents in the OEF.
-
-        :param agent_description: description of the agent to add
-        :returns: `True` if agent is successfully added, `False` otherwise. Can fail if such an
-        agent already exists in the OEF.
-        """
-        return self._connection.register_agent(agent_description)
+        return self.oef_proxy.register_agent(agent_description)
 
     def unregister_agent(self) -> bool:
-        """
-        Removes the description of an agent from the OEF. This agent will no longer be queryable
-        by other agents in the OEF. A conversation handler must be provided that allows the agent
-        to receive and manage conversations from other agents wishing to communicate with it.
-
-        :param agent_description: description of the agent to remove
-        :returns: `True` if agent is successfully removed, `False` otherwise. Can fail if
-        such an agent is not registered with the OEF.
-        """
-        return self._connection.unregister_agent()
+        return self.oef_proxy.unregister_agent()
 
     def register_service(self, service_description: Description):
-        """
-        Adds a description of the respective service so that it can be understood/ queried by
-        other agents in the OEF.
-        :param service_description: description of the services to add
-        :returns: `True` if service is successfully added, `False` otherwise. Can fail if such an
-        service already exists in the OEF.
-        """
-        self._connection.register_service(service_description)
+        self.oef_proxy.register_service(service_description)
 
     def unregister_service(self, service_description: Description) -> None:
-        """
-        Adds a description of the respective service so that it can be understood/ queried by
-        other agents in the OEF.
-        :param service_description: description of the services to add
-        :returns: `True` if service is successfully added, `False` otherwise. Can fail if such an
-        service already exists in the OEF.
-        """
-        self._connection.unregister_service(service_description)
+        self.oef_proxy.unregister_service(service_description)
 
     def search_agents(self, search_id: int, query: Query) -> None:
-        """
-        Allows an agent to search for other agents it is interested in communicating with. This can
-        be useful when an agent wishes to directly proposition the provision of a service that it
-        thinks another agent may wish to be able to offer it. All matching agents are returned
-        (potentially including ourself)
-        :param search_id
-        :param query: specifications of the constraints on the agents that are matched
-        :returns: a list of the matching agents
-        """
-        self._connection.search_agents(search_id, query)
+        self.oef_proxy.search_agents(search_id, query)
 
     def search_services(self, search_id: int, query: Query) -> None:
-        """
-        Allows an agent to search for a particular service. This allows constrained search of all
-        services that have been registered with the OEF. All matching services will be returned
-        (potentially including services offered by ourself)
-        :param query: the constraint on the matching services
-        """
-        self._connection.search_services(search_id, query)
+        self.oef_proxy.search_services(search_id, query)
 
     def send_message(self,
                      dialogue_id: int,
                      destination: str,
                      msg: bytes):
         logger.debug("Agent {}: dialogue_id={}, destination={}, msg={}"
-                     .format(self._pubkey,
+                     .format(self.public_key,
                              dialogue_id,
                              destination,
                              msg)
                      )
-        self._connection.send_message(dialogue_id, destination, msg)
+        self.oef_proxy.send_message(dialogue_id, destination, msg)
 
     def send_cfp(self,
                  dialogue_id: int,
@@ -183,14 +118,14 @@ class OEFAgent(AgentInterface):
                  msg_id: Optional[int] = 1,
                  target: Optional[int] = 0):
         logger.debug("Agent {}: dialogue_id={}, destination={}, query={}, msg_id={}, target={}"
-                     .format(self._pubkey,
+                     .format(self.public_key,
                              dialogue_id,
                              destination,
                              query,
                              msg_id,
                              target)
                      )
-        self._connection.send_cfp(dialogue_id, destination, query, msg_id, target)
+        self.oef_proxy.send_cfp(dialogue_id, destination, query, msg_id, target)
 
     def send_propose(self,
                      dialogue_id: int,
@@ -199,37 +134,76 @@ class OEFAgent(AgentInterface):
                      msg_id: int,
                      target: Optional[int] = None):
         logger.debug("Agent {}: dialogue_id={}, destination={}, proposals={}, msg_id={}, target={}"
-                     .format(self._pubkey,
+                     .format(self.public_key,
                              dialogue_id,
                              destination,
                              proposals,
                              msg_id,
                              target)
                      )
-        self._connection.send_propose(dialogue_id, destination, proposals, msg_id, target)
+        self.oef_proxy.send_propose(dialogue_id, destination, proposals, msg_id, target)
 
     def send_accept(self, dialogue_id: int,
                     destination: str,
                     msg_id: int,
                     target: Optional[int] = None):
         logger.debug("Agent {}: dialogue_id={}, destination={}, msg_id={}, target={}"
-                     .format(self._pubkey,
+                     .format(self.public_key,
                              dialogue_id,
                              destination,
                              msg_id,
                              target)
                      )
-        self._connection.send_accept(dialogue_id, destination, msg_id, target)
+        self.oef_proxy.send_accept(dialogue_id, destination, msg_id, target)
 
     def send_decline(self, dialogue_id: int,
                      destination: str,
                      msg_id: int,
                      target: Optional[int] = None):
         logger.debug("Agent {}: dialogue_id={}, destination={}, msg_id={}, target={}"
-                     .format(self._pubkey,
+                     .format(self.public_key,
                              dialogue_id,
                              destination,
                              msg_id,
                              target)
                      )
-        self._connection.send_decline(dialogue_id, destination, msg_id, target)
+        self.oef_proxy.send_decline(dialogue_id, destination, msg_id, target)
+
+
+class OEFAgent(AbstractAgent):
+    """Agent that interacts with an OEFNode on the network."""
+
+    def __init__(self, public_key: str, oef_addr: str, oef_port: int = 3333) -> None:
+        self._oef_addr = oef_addr
+        self._oef_port = oef_port
+        super().__init__(OEFNetworkProxy(public_key, str(self._oef_addr), self._oef_port))
+
+        self._loop = asyncio.get_event_loop()
+
+    def connect(self) -> None:
+        """Connect the agent to the OEF Node specified by _oef_addr and _oef_port"""
+        logger.debug("{}: Start connection to {}:{}".format(self.public_key, self._oef_addr, self._oef_port))
+        self._loop.run_until_complete(self.oef_proxy.connect())
+        logger.debug("{}: Connection established to {}:{}".format(self.public_key, self._oef_addr, self._oef_port))
+
+    def run(self):
+        self._loop.run_until_complete(self.async_run())
+
+    async def async_run(self):
+        await self.oef_proxy.loop(self)
+
+
+class LocalAgent(AbstractAgent):
+
+    def __init__(self, public_key: str, local_node: OEFLocalProxy.LocalNode):
+        super().__init__(OEFLocalProxy(public_key, local_node))
+
+    def connect(self):
+        self.oef_proxy.connect()
+
+    def run(self):
+        asyncio.get_event_loop().run_until_complete(self.async_run())
+
+    async def async_run(self):
+        await self.oef_proxy.loop(self)
+

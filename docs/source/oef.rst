@@ -12,13 +12,54 @@ oef.agents module
     :undoc-members:
     :show-inheritance:
 
-oef.api module
---------------
+oef.core module
+---------------
 
-.. automodule:: oef.api
+.. automodule:: oef.core
     :members:
     :undoc-members:
     :show-inheritance:
+
+oef.logger module
+-----------------
+
+.. automodule:: oef.logger
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+oef.messages module
+-------------------
+
+.. automodule:: oef.messages
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+oef.proxy module
+----------------
+
+.. automodule:: oef.proxy
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+oef.query module
+----------------
+
+.. automodule:: oef.query
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+oef.schema module
+-----------------
+
+.. automodule:: oef.schema
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------

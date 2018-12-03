@@ -8,7 +8,8 @@ import logging
 from typing import List, Optional
 
 from oef import agent_pb2
-from oef.proxy import OEFNetworkProxy, PROPOSE_TYPES, CFP_TYPES, OEFProxy, AgentInterface
+from oef.proxy import OEFNetworkProxy, PROPOSE_TYPES, CFP_TYPES
+from oef.core import AgentInterface, OEFProxy
 from oef.schema import Description
 from oef.query import Query
 
@@ -50,35 +51,35 @@ class OEFAgent(AgentInterface):
     def on_cfp(self,
                origin: str,
                dialogue_id: int,
-               fipa_message_id: int,
-               fipa_target: int,
+               msg_id: int,
+               target: int,
                query: CFP_TYPES):
-        logger.info("on_cfp: {}, {}, {}, {}", origin, dialogue_id, fipa_message_id, fipa_target, query)
+        logger.info("on_cfp: {}, {}, {}, {}", origin, dialogue_id, msg_id, target, query)
         _warning_not_implemented_method(self.on_cfp.__name__)
 
     def on_accept(self,
                   origin: str,
                   dialogue_id: int,
-                  fipa_message_id: int,
-                  fipa_target: int, ):
-        logger.info("on_accept: {}, {}, {}, {}", origin, dialogue_id, fipa_message_id, fipa_target)
+                  msg_id: int,
+                  target: int, ):
+        logger.info("on_accept: {}, {}, {}, {}", origin, dialogue_id, msg_id, target)
         _warning_not_implemented_method(self.on_accept.__name__)
 
     def on_decline(self,
                    origin: str,
                    dialogue_id: int,
-                   fipa_message_id: int,
-                   fipa_target: int, ):
-        logger.info("on_decline: {}, {}, {}, {}", origin, dialogue_id, fipa_message_id, fipa_target)
+                   msg_id: int,
+                   target: int, ):
+        logger.info("on_decline: {}, {}, {}, {}", origin, dialogue_id, msg_id, target)
         _warning_not_implemented_method(self.on_decline.__name__)
 
     def on_propose(self,
                    origin: str,
                    dialogue_id: int,
-                   fipa_message_id: int,
-                   fipa_target: int,
+                   msg_id: int,
+                   target: int,
                    proposal: PROPOSE_TYPES):
-        logger.info("on_propose: {}, {}, {}, {}, {}", origin, dialogue_id, fipa_message_id, fipa_target, proposal)
+        logger.info("on_propose: {}, {}, {}, {}, {}", origin, dialogue_id, msg_id, target, proposal)
         _warning_not_implemented_method(self.on_propose.__name__)
 
     def on_error(self,

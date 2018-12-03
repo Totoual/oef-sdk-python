@@ -10,16 +10,18 @@ Initialization
 --------------
 
 
-Setup a OEF Node
+Setup an OEF Node
 ~~~~~~~~~~~~~~~~
 
-To be able to follow the following examples, we need to set up an OEF Node. It will manage the discovery of agents
+To be able to follow the following examples, we need to set up an OEF Node.
+This node will manage the discovery of agents
 and the communications between agents.
 
 Using Docker
 ````````````
 
-You can use a Docker image provided by the `OEFCore <https://github.com/uvue-git/OEFCore.git>`_,
+We recommend you use the Docker image provided by
+the `OEFCore <https://github.com/uvue-git/OEFCore.git>`_,
 by following these steps:
 
 * Clone OEFCore
@@ -40,13 +42,15 @@ by following these steps:
 
   ./oef-core-image/scripts/docker-run.sh -p 3333:3333 --
 
-This will busy your current terminal. If you want to run the OEF node in background, add the ``-d`` flag:
+Your terminal will be busy while the Docker image is running.
+If you would prefer to run the OEF node in the background, add the ``-d`` flag:
 
 .. code-block:: bash
 
   ./oef-core-image/scripts/docker-run.sh -p 3333:3333 -d --
 
-Once done with the tutorial, you can stop the container as follows
+After you have completed this tutorial,
+you can exit the Docker container by running the following line:
 
 .. code-block:: bash
 
@@ -106,19 +110,23 @@ with the same message.
 First, we define the service agent that implements the echo service.
 Then, we implement other client agents to interact with the echo service.
 
-`Here <https://github.com/uvue-git/OEFCorePython/tree/master/examples/echo>`_
-you can find the full code of the examples.
+The code for the examples can be found
+`here <https://github.com/uvue-git/OEFCorePython/tree/master/examples/echo>`_.
 
 Echo Agent service
 ~~~~~~~~~~~~~~~~~~
 
-Let's start to implement the echo service agent. To do so, we define a new class, ``EchoServiceAgent``, that extends
-``OEFAgent`` class and redefine the behaviour of the ``on_message`` method.
+Let's start to implement the echo service agent.
+To do so, we define a new class, ``EchoServiceAgent``, which extends
+the ``OEFAgent`` class and redefines the behaviour of the ``on_message`` method.
 
-The ``on_message`` method of an agent is called whenever a simple message is destined to him.
-In this case, we just send the message back to the source of the message, through the OEF.
+The ``on_message`` method of an agent is called whenever
+the agent is one of the intended recipients of the message.
+In this case, we just send the message back
+to the sender through the OEF.
 
-In later examples we will see more complex protocol and how to implement the associated callbacks.
+In later examples we will see a more complex protocol and
+how to implement the associated callbacks.
 
 .. code-block:: python
 
@@ -141,8 +149,10 @@ In order to connect a (service) agent to the OEF, we need to specify:
 * A unique identifier for the agent;
 * The IP address and port of the OEF Node on which we want to register;
 
-As identifier we will use ``echo_server``. As IP address and port pair, choose the one according to your OEFNode
-instance running. If you followed the previous instructions, they should be ``127.0.0.1`` and ``3333`` respectively.
+We will use ``echo_server`` as the identifier.
+Choose the IP address and port pair provided by the OEFNode instance.
+In this example, the IP address and port pair will be
+``127.0.0.1`` and ``3333``, respectively.
 
 .. code-block:: python
 
@@ -153,7 +163,7 @@ instance running. If you followed the previous instructions, they should be ``12
 Define a Data Model and a Description
 ``````````````````````````````````````
 
-In order to make our agent discoverable from other agents, we need to define a `description` (instance of a schema),
+In order to make our agent discoverable to other agents, we need to define a `description` (instance of a schema),
 which refers to a `data model` (abstract definition of the schema).
 In this way, other agents can find our service by making `queries` (defined over the same data model) to the OEF.
 
@@ -165,14 +175,15 @@ In this way, other agents can find our service by making `queries` (defined over
 
 
 Our data model ``echo_model`` is very straightforward.
-It has an empty list of `attribute schema`, just for make the example simpler.
+It has an empty list of `attribute schema`, just to make the example simpler.
 
-The ``echo_description``, that is the instantiation of our abstract data model ``echo``, is defined accordingly.
+The ``echo_description`` is the instantiation of our abstract
+data model ``echo`` and defined accordingly.
 
 Register the service
 ````````````````````
 
-Now that we have a description for our service, let's register our service agent to the OEF:
+Now that we have a description of our service, let's register our service agent to the OEF:
 
 .. code-block:: python
 
@@ -181,8 +192,9 @@ Now that we have a description for our service, let's register our service agent
 
 This instruction will notify the OEF Node that there is a new service available.
 
-When another agent will make a query on the ``echo_model``, if ``echo_description`` satisfies the constraint of that
-query, our agent will be one of the result of that query.
+When another agent makes a query on the ``echo_model``, if the ``echo_description``
+satisfies the constraint of that query,
+then our agent will be one of the results of that query.
 
 
 Run the agent
@@ -196,14 +208,15 @@ To run the agent waiting for events:
 
 The ``run()`` method is blocking, so you have to switch to another terminal/console to launch the client.
 
-For some particular use cases, you may want to use the associated ``async`` method, that is ``async_run()``.
+For some particular use cases,
+you may want to use ``async_run()``, which is the associated ``async`` method.
 
 
 Echo Agent client
 ~~~~~~~~~~~~~~~~~
 
-The `EchoClientAgent` implements our `echo client`, that is the consumer of the service we implemented in the previous
-section.
+The `EchoClientAgent` implements our `echo client`, which is
+the consumer of the service we implemented in the previous section.
 
 .. code-block:: python
 
@@ -227,10 +240,12 @@ section.
                   print("No agent found.")
 
 
-The ``on_message`` method has the same semantics of the one implemented in the ``EchoServiceAgent`` class. In this case,
+The ``on_message`` method has the same semantics as the one implemented
+in the ``EchoServiceAgent`` class. In this case,
 we don't implement any complex behavior (we just print the received message).
 
-The ``on_search_result`` callback is called whenever the agent receives a search result followed by a search query with
+The ``on_search_result`` callback is called whenever the agent receives
+a search result of a search query with
 ``search_agents()`` or ``search_services()`` methods.
 
 In our case, the agent just sends a ``"hello"`` message (in bytes) to every discovered service,
@@ -250,7 +265,7 @@ Analogously to the previous section, we connect our client to the OEF.
 Make a query
 ````````````
 
-Now we need to search for agents who provides the ``echo` service.
+Now we need to search for agents who provide the ``echo` service.
 
 To do so, we create a ``Query`` referring to the ``echo`` data model. The first parameter is a list
 of *constraints* over the attributes of the data model. However, since our data model is trivial,
@@ -268,7 +283,9 @@ our query just returns all the agents that are registered with the `echo` data m
 Search for services
 ```````````````````
 
-Once we have a query, we can ask the OEF to returns all service agents that satisfy those constraints.
+Once we have a query,
+we can ask the OEF to return
+all service agents that satisfy the given constraints.
 
 .. code-block:: python
 
@@ -277,7 +294,7 @@ Once we have a query, we can ask the OEF to returns all service agents that sati
 Wait for search results
 ```````````````````````
 
-The client agent needs to wait for the search result from the OEF Node:
+The client agent needs to wait for search results from the OEF Node:
 
 .. code-block:: python
 
@@ -285,7 +302,7 @@ The client agent needs to wait for the search result from the OEF Node:
     client_agent.run()
 
 
-Once the OEF Node computed the result, the ``on_search_result`` callback is called.
+Once the OEF Node computes the results, the ``on_search_result`` callback is called.
 
 
 Message Exchange
@@ -313,13 +330,17 @@ Whereas, the one from the server agent is:
 
 The order of the exchanged message is the following:
 
-- The server notify the OEF Node that it is able to serve other agents;
-- The ``echo_client`` make a query to the OEF Node;
-- The OEF Node sends back the list of agents who satisfy the condition in the query (the only agent is ``echo_server``);
-- The client sends ``"hello"`` message to the OEF Node, destined to the ``echo_server``;
-- The OEF Node dispatch the message from ``echo_client`` to ``echo_server``;
-- The ``echo_server`` receives the message and sends back a new message, destined to ``echo_client``, to the OEF Node;
-- The OEF Node dispatch the message from ``echo_server`` to ``echo_client``;
+- The server notifies the OEF Node that it is able to serve other agents
+- The ``echo_client`` queries to the OEF Node
+- The OEF Node sends back the list of agents who satisfy
+  the query constraints. In this trivial example,
+  the only agent returned is the ``echo_server`.
+- The client sends a ``"hello"`` message to the OEF Node,
+  which targets the ``echo_server``
+- The OEF Node dispatches the message from ``echo_client`` to ``echo_server``
+- The ``echo_server`` receives the message and sends a new message (with the same content)
+  to the OEF Node, which targets the ``echo_client``
+- The OEF Node dispatch the message from ``echo_server`` to ``echo_client``
 - The ``echo_client`` receives the echo message.
 
 
@@ -328,13 +349,15 @@ Second example: Weather Station
 
 In this second example, consider the following scenario:
 
-* A `weather station` that provides measurements of some physical quantity (e.g. wind speed, temperature, air pressure)
-* A `weather client` interested in these measurements.
+* A `weather station` provides measurements of
+  some physical quantity (e.g. wind speed, temperature, air pressure)
+* A `weather client` is interested in these measurements.
 
-However, the owner fo the weather station wants to sell the data it measure. In the next sections, we describe a
-protocol that allow the agents to:
+The owner of the weather station wants to sell the data it measure.
+In the following sections, we describe a
+protocol that allows the agents to:
 
-* request for resources (physical assets, services, informations etc.)
+* request resources (physical assets, services, information etc.)
 * make price proposals on the negotiated resources
 * accept/decline proposals.
 

@@ -28,7 +28,8 @@ Install
   python setup.py install
 
 
-* For other platforms and other details, please follow the installation guide: :ref:`install`.
+* For other platforms and additional details,
+please follow the installation guide: :ref:`install`.
 
 
 Run a OEF Node
@@ -47,7 +48,7 @@ In a separate terminal:
   # run the image
   ./oef-core-image/scripts/docker-run.sh -p 3333:3333 -d --
 
-When finished, to stop the image:
+When finished, you can stop the image by running the following:
 
 .. code-block:: bash
 
@@ -64,8 +65,10 @@ Write Agents
 
 The ``GreetingsAgent`` does the following:
 
-* ``on_search_result``: Once the agent receives a search result, send a ``hello`` message to each agent discovered.
-* ``on_message``: whenever the agent receives a ``hello`` message, it answers with a ``greetings``.
+* ``on_search_result``: Once the agent receives results from its search,
+the agent sends a ``hello`` message to each agent discovered.
+* ``on_message``: whenever the agent receives a ``hello`` message,
+it answers with ine if its greetings.
 
 
 .. code-block:: python
@@ -109,7 +112,7 @@ Start Communications
   client_agent.connect()
   server_agent.connect()
 
-* The server agent register itself as a greetings service on the OEF
+* The server agent registers itself as a greetings service on the OEF
 
 .. code-block:: python
 

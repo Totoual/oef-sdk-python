@@ -8,17 +8,17 @@ For now, we only support installation from source.
 Protobuf Compiler
 -----------------
 
-The ``oef`` package requires that the `Google Protocol Buffers <https://developers.google.com/protocol-buffers/>`_
-compiler is installed on your local machine (version >= 2.0.0).
+The ``oef`` package requires the `Google Protocol Buffers <https://developers.google.com/protocol-buffers/>`_
+compiler (version >= 2.0.0).
 
-In order to check if you already have it, run:
+In order to check if it is installed on your machine, run:
 
 ::
 
   protoc
 
 
-If you get ``Missing input file.``, then you have already it.
+If you get ``Missing input file.``, then you already have it.
 
 Otherwise, you can install it in several  ways, depending on your platform.
 

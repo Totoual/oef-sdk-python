@@ -3,8 +3,6 @@
 Introduction
 ============
 
-In this page we ex
-
 What is Fetch
 -------------
 
@@ -37,7 +35,7 @@ Overview
 **To access Fetch world**, AEAs (or just agents from now on) need to connect to a Fetch node that deploys the OEF.
 
 The OEF-core is the part of the OEF that manages primitive operations:
-agents connections, registrations, search, and queries.
+agent connections, registrations, search, and queries.
 It implements the core concepts and protocols needed to allow agents
 to live, interact and advance in the Fetch world.
 It is also the interface to the ledger.
@@ -51,13 +49,13 @@ the data service along with the agent ID will be stored in the ServiceDirectory.
 
 .. image:: https://github.com/uvue-git/OEFCorePython/wiki/imgs/oef-core.png
    :target: https://github.com/uvue-git/OEFCorePython/wiki/imgs/oef-core.png
-   :alt: OEF-Core
+   :alt: OEF-core
 
 
 Agent life-cycle
 ~~~~~~~~~~~~~~~~
 
-A typical agent life on the Fetch world consists in:
+A typical agent life-cycle on the OEF consists of:
 
 1. Connect to the OEF-core
 2. Register a DataService, query for a DataService, or search for agents
@@ -68,8 +66,8 @@ A typical agent life on the Fetch world consists in:
 Agent-to-OEF core interactions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**1.** To be able to be part of the Fetch world, an agent needs to connect and identify
-itself (using its public key) first to a Fetch node through the OEF-Core.
+**1.** To be part of the Fetch world, an agent first needs to connect to a Fetch node on the OEF-Core
+ and identify itself using its public key.
 
 
 .. image:: https://github.com/uvue-git/OEFCorePython/wiki/imgs/operation-connect-2.png
@@ -80,7 +78,7 @@ itself (using its public key) first to a Fetch node through the OEF-Core.
 This *session* object will be used to directly communicate with the OEF-core as well as
 with other agents.
 
-Once connected and correctly identified, an agent can:
+Once a session is in place, an agent can:
 - Register a DataService: propose a DataService by registering a data model (a description) and wait for interested agents to contact it. Note that the actual data is not sent
 
 .. image:: https://github.com/uvue-git/OEFCorePython/wiki/imgs/operation-register.png
@@ -103,12 +101,12 @@ Once connected and correctly identified, an agent can:
 Agent-to-agent interactions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-An agent spend almost all of its life time in the Fetch world
-interacting with other agents. An interaction is intiated by either contacting
+An agent spends nearly its entire life-time in the Fetch world
+interacting with other agents. An interaction is initiated by either contacting
 an agent (using the ID received from a query or a search) or receiving a message
-from one (in answer to a registred data service or based on registred property list).
-In that sense, the previous operations were only preliminaries for agents interactions by providing discovery.
-
+from one (in response to a registered data service or based on registered property list).
+The previous operations thus served as preliminary steps in agent-to-agent interactions
+by providing a mechanism for discovery.
 
 Interactions between agents are implemented using *Conversation* objects.
 A Conversation object maintains a communication channel between a pair or a group of agents through their Sessions.
@@ -119,8 +117,8 @@ A pair of agents can have multiple Conversation objects (i.e. parallel communica
    :alt: Conversations
 
 A Conversation object is created on-the-fly the first time a message is received
-with a new conversation ID. The first time an agent want to contact another agent
-it have to create a new conversation object to that agent.
+with a new conversation ID. The first time an agent wants to contact another agent
+it has to create a new conversation object to that agent.
 Once a conversation is created, the agent can use it to send and receive message
 directly to/from the participating agents.
 A newly created agent Session can be seen as a Session with an implicit Conversation object
@@ -153,14 +151,15 @@ Messages must be objects of types ``InMessage`` or ``OutMessage``.
 
 
 The ``content`` field is where the actual message content is stored
-and from where it will be accecced when received on the other end.
-The message content representation and communication protocol are completely
-free to negociate and agree upon by participating agents,
-at the start of the conversation for example.
+and from where it will be accessed when received by the other participant in the conversation.
+
+Agents are free to negotiate and agree upon a communication protocol
+and message content representation at the start of a conversation.
 Nonetheless, Fetch Agent layer offers a default for both, available for agents to use at will.
 
-For message content representation, it offers a ``Data`` type that can be serialized
-to ``bytes`` and stored in the ``content`` field of an ``OutMessage``, and repectively on the other side can be read
+Regarding message content representation, there is a default ``Data`` type
+that can be serialized to ``bytes`` and stored in the ``content`` field
+of an ``OutMessage``, and respectively on the other side can be read
 from the ``content`` field of an ``InMessage`` and deserialized to a ``Data`` object.
 
 .. code-block:: proto

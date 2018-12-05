@@ -1,16 +1,21 @@
 # Copyright (C) Fetch.ai 2018 - All Rights Reserved
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
+
+
 import asyncio
+import logging
 
 from typing import List
 
-from oef.agents import OEFAgent
+from oef.agents import OEFAgent, LocalAgent
+from oef.logger import set_logger
+from oef.proxy import OEFLocalProxy
 from oef.schema import DataModel, Description
 from oef.query import Query
 
 
-class GreetingsAgent(OEFAgent):
+class GreetingsAgent(LocalAgent):
 
     def on_message(self, origin: str, dialogue_id: int, content: bytes):
         print("{}: Received message: origin={}, dialogue_id={}, content={}"
@@ -29,10 +34,13 @@ class GreetingsAgent(OEFAgent):
 
 
 if __name__ == '__main__':
+    set_logger("oef", level=logging.DEBUG)
+
+    local_node = OEFLocalProxy.LocalNode()
 
     # create agents
-    client_agent = GreetingsAgent("greetings_client", oef_addr="127.0.0.1", oef_port=3333)
-    server_agent = GreetingsAgent("greetings_server", oef_addr="127.0.0.1", oef_port=3333)
+    client_agent = GreetingsAgent("greetings_client", local_node)
+    server_agent = GreetingsAgent("greetings_server", local_node)
 
     # connect the agents to the OEF
     client_agent.connect()
@@ -45,8 +53,9 @@ if __name__ == '__main__':
 
     # the client executes the search for greetings services
     query = Query([], greetings_model)
-    client_agent.search_services(0, query)
+    # client_agent.search_services(0, query)
 
+    client_agent.send_message(0, "greetings_server", b"hello")
     # run both agents concurrently
     loop = asyncio.get_event_loop()
     loop.run_until_complete(asyncio.gather(

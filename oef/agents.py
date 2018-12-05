@@ -20,7 +20,7 @@ def _warning_not_implemented_method(method_name):
     logger.warning("You should implement {} in your OEFAgent class.", method_name)
 
 
-class AbstractAgent(AgentInterface, OEFMethods):
+class AbstractAgent(AgentInterface):
 
     @property
     def public_key(self):
@@ -179,6 +179,7 @@ class OEFAgent(AbstractAgent):
         super().__init__(OEFNetworkProxy(public_key, str(self._oef_addr), self._oef_port))
 
         self._loop = asyncio.get_event_loop()
+        self._task = None
 
     def connect(self) -> None:
         """Connect the agent to the OEF Node specified by _oef_addr and _oef_port"""
@@ -190,20 +191,23 @@ class OEFAgent(AbstractAgent):
         self._loop.run_until_complete(self.async_run())
 
     async def async_run(self):
-        await self.oef_proxy.loop(self)
+        self._task = asyncio.ensure_future(self.oef_proxy.loop(self))
+        await self._task
 
 
 class LocalAgent(AbstractAgent):
 
     def __init__(self, public_key: str, local_node: OEFLocalProxy.LocalNode):
         super().__init__(OEFLocalProxy(public_key, local_node))
+        self._task = None
+        self._loop = asyncio.get_event_loop()
 
     def connect(self):
         self.oef_proxy.connect()
 
     def run(self):
-        asyncio.get_event_loop().run_until_complete(self.async_run())
+        self._loop.run_until_complete(self.async_run())
 
     async def async_run(self):
-        await self.oef_proxy.loop(self)
-
+        self._task = asyncio.ensure_future(self.oef_proxy.loop(self))
+        await self._task

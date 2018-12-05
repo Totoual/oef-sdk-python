@@ -294,9 +294,12 @@ class Query(object):
             query.model.CopyFrom(self._model.to_pb())
         return query
 
-
     @classmethod
     def from_pb(cls, query: query_pb2.Query.Model):
         constraints = [Constraint.from_pb(constraint_pb) for constraint_pb in query.constraints]
         return cls(constraints, DataModel.from_pb(query.model) if query.HasField("model") else None)
 
+    def __eq__(self, other):
+        if type(other) != Query:
+            return False
+        return self._constraints == other._constraints and self._model == other._model

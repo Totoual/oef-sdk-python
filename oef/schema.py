@@ -111,7 +111,7 @@ class DataModel(ProtobufSerializable):
     def __init__(self,
                  name: str,
                  attribute_schemas: List[AttributeSchema],
-                 description: Optional[str] = None) -> None:
+                 description: Optional[str] = "") -> None:
         self.name = name
         self.attribute_schemas = copy.deepcopy(attribute_schemas)  # what for ?
         self.description = description
@@ -135,11 +135,11 @@ class DataModel(ProtobufSerializable):
         if type(other) != DataModel:
             return False
         return self.name == other.name and \
-            self.attribute_schemas == other.attribute_schema and \
+            self.attribute_schemas == other.attribute_schemas and \
             self.description == other.description
 
 
-def generate_schema(model_name, attribute_values):
+def generate_schema(model_name, attribute_values) -> DataModel:
     """
     Will generate a schema that matches the values stored in this description.
 
@@ -254,3 +254,7 @@ class Description(ProtobufSerializable):
                         raise AttributeInconsistencyException(
                             "Attribute {} has unallowed type".format(schema.name))
 
+    def __eq__(self, other):
+        if type(other) != Description:
+            return False
+        return self._values == other._values and self._data_model == other._data_model

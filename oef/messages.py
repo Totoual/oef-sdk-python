@@ -134,7 +134,7 @@ class Decline(Message):
         fipa_msg.msg_id = msg_id
         fipa_msg.target = target if target is not None else (msg_id - 1)
         decline = fipa_pb2.Fipa.Decline()
-        fipa_msg.accept.CopyFrom(decline)
+        fipa_msg.decline.CopyFrom(decline)
         agent_msg = agent_pb2.Agent.Message()
         agent_msg.dialogue_id = dialogue_id
         agent_msg.destination = destination

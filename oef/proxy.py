@@ -16,7 +16,7 @@ import struct
 
 from typing import Optional, Awaitable, Tuple, Dict
 
-from oef.core import AgentInterface, OEFProxy, OEFMethods
+from oef.core import OEFProxy
 from oef.messages import SimpleMessage, CFP_TYPES, PROPOSE_TYPES, CFP, Propose, Accept, Decline, Message
 from oef.schema import Description
 from oef.query import Query
@@ -174,58 +174,6 @@ class OEFNetworkProxy(OEFProxy):
         """
         self._server_writer.close()
 
-    async def loop(self, agent: AgentInterface) -> None:    # noqa: C901
-        """
-        Event loop to wait for messages and to dispatch the arrived messages to the proper handler.
-
-        :param agent: the implementation of the message handlers specified in AgentInterface.
-        :return:
-        """
-
-        while True:
-            data = await self._receive()
-            msg = agent_pb2.Server.AgentMessage()
-            msg.ParseFromString(data)
-            case = msg.WhichOneof("payload")
-            logger.debug("loop {0}".format(case))
-            if case == "agents":
-                agent.on_search_result(msg.agents.search_id, msg.agents.agents)
-            elif case == "error":
-                agent.on_error(msg.error.operation, msg.error.dialogue_id, msg.error.msgid)
-            elif case == "content":
-                content_case = msg.content.WhichOneof("payload")
-                logger.debug("msg content {0}".format(content_case))
-                if content_case == "content":
-                    agent.on_message(msg.content.origin, msg.content.dialogue_id, msg.content.content)
-                elif content_case == "fipa":
-                    fipa = msg.content.fipa
-                    fipa_case = fipa.WhichOneof("msg")
-                    if fipa_case == "cfp":
-                        cfp_case = fipa.cfp.WhichOneof("payload")
-                        if cfp_case == "nothing":
-                            query = None
-                        elif cfp_case == "content":
-                            query = fipa.cfp.content
-                        elif cfp_case == "query":
-                            query = Query.from_pb(fipa.cfp.query)
-                        else:
-                            raise Exception("Query type not valid.")
-                        agent.on_cfp(msg.content.origin, msg.content.dialogue_id, fipa.msg_id, fipa.target, query)
-                    elif fipa_case == "propose":
-                        propose_case = fipa.propose.WhichOneof("payload")
-                        if propose_case == "content":
-                            proposals = fipa.propose.content
-                        else:
-                            proposals = [Description.from_pb(propose) for propose in fipa.propose.proposals.objects]
-                        agent.on_propose(msg.content.origin, msg.content.dialogue_id, fipa.msg_id, fipa.target,
-                                        proposals)
-                    elif fipa_case == "accept":
-                        agent.on_accept(msg.content.origin, msg.content.dialogue_id, fipa.msg_id, fipa.target)
-                    elif fipa_case == "decline":
-                        agent.on_decline(msg.content.origin, msg.content.dialogue_id, fipa.msg_id, fipa.target)
-                    else:
-                        logger.warning("Not implemented yet: fipa {0}".format(fipa_case))
-
 
 class OEFLocalProxy(OEFProxy):
     """
@@ -261,9 +209,13 @@ class OEFLocalProxy(OEFProxy):
             self._lock.release()
 
         def search_agents(self, public_key: str, search_id: int, query: Query) -> None:
+            """Since the agent directory and the instance checking are not implemented,
+            just send a dummy search result message, returning all the connected agents."""
             raise NotImplementedError
 
         def search_services(self, public_key: str, search_id: int, query: Query) -> None:
+            """Since the service directory and the instance checking are not implemented,
+            just send a dummy search result message, returning all the connected agents."""
             raise NotImplementedError
 
         def unregister_agent(self, public_key: str) -> bool:
@@ -361,49 +313,3 @@ class OEFLocalProxy(OEFProxy):
     async def _receive(self):
         data = await self.read_queue.get()
         return data
-
-    async def loop(self, agent: AgentInterface):
-        while True:
-            data = await self._receive()
-            msg = agent_pb2.Server.AgentMessage()
-            msg.ParseFromString(data)
-            case = msg.WhichOneof("payload")
-            logger.debug("loop {0}".format(case))
-            if case == "agents":
-                agent.on_search_result(msg.agents.search_id, msg.agents.agents)
-            elif case == "error":
-                agent.on_error(msg.error.operation, msg.error.dialogue_id, msg.error.msgid)
-            elif case == "content":
-                content_case = msg.content.WhichOneof("payload")
-                logger.debug("msg content {0}".format(content_case))
-                if content_case == "content":
-                    agent.on_message(msg.content.origin, msg.content.dialogue_id, msg.content.content)
-                elif content_case == "fipa":
-                    fipa = msg.content.fipa
-                    fipa_case = fipa.WhichOneof("msg")
-                    if fipa_case == "cfp":
-                        cfp_case = fipa.cfp.WhichOneof("payload")
-                        if cfp_case == "nothing":
-                            query = None
-                        elif cfp_case == "content":
-                            query = fipa.cfp.content
-                        elif cfp_case == "query":
-                            query = Query.from_pb(fipa.cfp.query)
-                        else:
-                            raise Exception("Query type not valid.")
-                        agent.on_cfp(msg.content.origin, msg.content.dialogue_id, fipa.msg_id, fipa.target, query)
-                    elif fipa_case == "propose":
-                        propose_case = fipa.propose.WhichOneof("payload")
-                        if propose_case == "content":
-                            proposals = fipa.propose.content
-                        else:
-                            proposals = [Description.from_pb(propose) for propose in fipa.propose.proposals.objects]
-                        agent.on_propose(msg.content.origin, msg.content.dialogue_id, fipa.msg_id, fipa.target,
-                                        proposals)
-                    elif fipa_case == "accept":
-                        agent.on_accept(msg.content.origin, msg.content.dialogue_id, fipa.msg_id, fipa.target)
-                    elif fipa_case == "decline":
-                        agent.on_decline(msg.content.origin, msg.content.dialogue_id, fipa.msg_id, fipa.target)
-                    else:
-                        logger.warning("Not implemented yet: fipa {0}".format(fipa_case))
-

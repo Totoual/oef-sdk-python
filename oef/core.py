@@ -1,6 +1,8 @@
 # Copyright (C) Fetch.ai 2018 - All Rights Reserved
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
+import asyncio
+import logging
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
@@ -8,6 +10,8 @@ from oef import agent_pb2 as agent_pb2
 from oef.messages import CFP_TYPES, PROPOSE_TYPES
 from oef.query import Query
 from oef.schema import Description
+
+logger = logging.getLogger(__name__)
 
 
 class AgentInterface(ABC):
@@ -284,16 +288,70 @@ class OEFProxy(OEFMethods):
         return self._public_key
 
     @abstractmethod
-    def connect(self):
+    async def connect(self):
         """Connect to the OEF Node."""
         raise NotImplementedError
 
     @abstractmethod
-    def loop(self, agent: AgentInterface):
+    async def _receive(self) -> bytes:
+        """
+        Receive a message from the OEF Node.
+
+        :return: the bytes received from the communication channel.
+        """
+        raise NotImplementedError
+
+    async def loop(self, agent: AgentInterface):
         """
         Event loop to wait for messages and to dispatch the arrived messages to the proper handler.
 
         :param agent: the implementation of the message handlers specified in AgentInterface.
         :return:
         """
-        raise NotImplementedError
+        while True:
+            try:
+                data = await self._receive()
+            except asyncio.CancelledError:
+                logger.debug("Proxy {}: loop cancelled".format(self.public_key))
+                break
+            msg = agent_pb2.Server.AgentMessage()
+            msg.ParseFromString(data)
+            case = msg.WhichOneof("payload")
+            logger.debug("loop {0}".format(case))
+            if case == "agents":
+                agent.on_search_result(msg.agents.search_id, msg.agents.agents)
+            elif case == "error":
+                agent.on_error(msg.error.operation, msg.error.dialogue_id, msg.error.msgid)
+            elif case == "content":
+                content_case = msg.content.WhichOneof("payload")
+                logger.debug("msg content {0}".format(content_case))
+                if content_case == "content":
+                    agent.on_message(msg.content.origin, msg.content.dialogue_id, msg.content.content)
+                elif content_case == "fipa":
+                    fipa = msg.content.fipa
+                    fipa_case = fipa.WhichOneof("msg")
+                    if fipa_case == "cfp":
+                        cfp_case = fipa.cfp.WhichOneof("payload")
+                        if cfp_case == "nothing":
+                            query = None
+                        elif cfp_case == "content":
+                            query = fipa.cfp.content
+                        elif cfp_case == "query":
+                            query = Query.from_pb(fipa.cfp.query)
+                        else:
+                            raise Exception("Query type not valid.")
+                        agent.on_cfp(msg.content.origin, msg.content.dialogue_id, fipa.msg_id, fipa.target, query)
+                    elif fipa_case == "propose":
+                        propose_case = fipa.propose.WhichOneof("payload")
+                        if propose_case == "content":
+                            proposals = fipa.propose.content
+                        else:
+                            proposals = [Description.from_pb(propose) for propose in fipa.propose.proposals.objects]
+                        agent.on_propose(msg.content.origin, msg.content.dialogue_id, fipa.msg_id, fipa.target,
+                                        proposals)
+                    elif fipa_case == "accept":
+                        agent.on_accept(msg.content.origin, msg.content.dialogue_id, fipa.msg_id, fipa.target)
+                    elif fipa_case == "decline":
+                        agent.on_decline(msg.content.origin, msg.content.dialogue_id, fipa.msg_id, fipa.target)
+                    else:
+                        logger.warning("Not implemented yet: fipa {0}".format(fipa_case))

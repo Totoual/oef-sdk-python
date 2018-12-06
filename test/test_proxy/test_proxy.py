@@ -136,7 +136,7 @@ def test_on_propose(oef_network_node, is_local):
 @pytest.mark.parametrize("is_local", [True, False], ids=["local", "networked"])
 def test_on_accept(oef_network_node, is_local):
     """
-    Test that an agent can send a Propose to another agent, with different types of proposals.
+    Test that an agent can send an Accept to another agent, with different types of proposals.
     """
 
     agents = _init_n_agents(2, is_local)
@@ -156,7 +156,7 @@ def test_on_accept(oef_network_node, is_local):
 @pytest.mark.parametrize("is_local", [True, False], ids=["local", "networked"])
 def test_on_decline(oef_network_node, is_local):
     """
-    Test that an agent can send a Propose to another agent, with different types of proposals.
+    Test that an agent can send a Decline to another agent, with different types of proposals.
     """
 
     agents = _init_n_agents(2, is_local)

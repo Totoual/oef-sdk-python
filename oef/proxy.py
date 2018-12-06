@@ -306,7 +306,7 @@ class OEFLocalProxy(OEFProxy):
     def send_decline(self, dialogue_id: int, destination: str, msg_id: int, target: Optional[int] = None):
         self.local_node.send_decline(self.public_key, dialogue_id, destination, msg_id, target)
 
-    def connect(self):
+    async def connect(self):
         queue = self.local_node.connect(self.public_key)
         self.read_queue = queue
 

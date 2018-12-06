@@ -8,6 +8,7 @@ pylint
 pydocstyle
 flake8
 mypy
+GitPython
 
 #docs
 sphinx

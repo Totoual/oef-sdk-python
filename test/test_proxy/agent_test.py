@@ -33,7 +33,7 @@ class AgentTest(Agent):
         self._process_message((origin, dialogue_id, content))
 
     def on_search_result(self, search_id: int, agents: List[str]):
-        pass
+        self._process_message((search_id, sorted(agents)))
 
     def on_cfp(self,
                origin: str,

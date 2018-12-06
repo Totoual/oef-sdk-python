@@ -14,7 +14,7 @@ import oef.agent_pb2 as agent_pb2
 
 import struct
 
-from typing import Optional, Awaitable, Tuple, Dict
+from typing import Optional, Awaitable, Tuple, Dict, List
 
 from oef.core import OEFProxy
 from oef.messages import SimpleMessage, CFP_TYPES, PROPOSE_TYPES, CFP, Propose, Accept, Decline, Message
@@ -211,12 +211,12 @@ class OEFLocalProxy(OEFProxy):
         def search_agents(self, public_key: str, search_id: int, query: Query) -> None:
             """Since the agent directory and the instance checking are not implemented,
             just send a dummy search result message, returning all the connected agents."""
-            raise NotImplementedError
+            self._send_search_result(public_key, search_id, sorted(self.agents.keys()))
 
         def search_services(self, public_key: str, search_id: int, query: Query) -> None:
             """Since the service directory and the instance checking are not implemented,
             just send a dummy search result message, returning all the connected agents."""
-            raise NotImplementedError
+            self._send_search_result(public_key, search_id, sorted(self.services.keys()))
 
         def unregister_agent(self, public_key: str) -> bool:
             self.loop.run_until_complete(self._lock.acquire())
@@ -225,10 +225,34 @@ class OEFLocalProxy(OEFProxy):
 
         def unregister_service(self, public_key: str, service_description: Description) -> None:
             self.loop.run_until_complete(self._lock.acquire())
-            self.agents[public_key].remove(service_description)
+            self.services[public_key].remove(service_description)
+            if len(self.services[public_key]) == 0:
+                self.services.pop(public_key)
             self._lock.release()
 
-        def _send(self, public_key: str, msg: Message):
+        def send_message(self, public_key: str, dialogue_id: int, destination: str, msg: bytes) -> None:
+            msg = SimpleMessage(dialogue_id, destination, msg)
+            self._send_agent_message(public_key, msg)
+
+        def send_cfp(self, public_key: str, dialogue_id: int, destination: str, query: CFP_TYPES, msg_id: Optional[int] = 1,
+                     target: Optional[int] = 0) -> None:
+            msg = CFP(dialogue_id, destination, query, msg_id, target)
+            self._send_agent_message(public_key, msg)
+
+        def send_propose(self, public_key: str, dialogue_id: int, destination: str, proposals: PROPOSE_TYPES, msg_id: int,
+                         target: Optional[int] = None):
+            msg = Propose(dialogue_id, destination, proposals, msg_id, target)
+            self._send_agent_message(public_key, msg)
+
+        def send_accept(self, public_key: str, dialogue_id: int, destination: str, msg_id: int, target: Optional[int] = None):
+            msg = Accept(dialogue_id, destination, msg_id, target)
+            self._send_agent_message(public_key, msg)
+
+        def send_decline(self, public_key: str, dialogue_id: int, destination: str, msg_id: int, target: Optional[int] = None):
+            msg = Decline(dialogue_id, destination, msg_id, target)
+            self._send_agent_message(public_key, msg)
+
+        def _send_agent_message(self, public_key: str, msg: Message):
             e = msg.to_envelope()
             destination = e.send_message.destination
 
@@ -244,27 +268,11 @@ class OEFLocalProxy(OEFProxy):
 
             self.queues[destination].put_nowait(new_msg.SerializeToString())
 
-        def send_message(self, public_key: str, dialogue_id: int, destination: str, msg: bytes) -> None:
-            msg = SimpleMessage(dialogue_id, destination, msg)
-            self._send(public_key, msg)
-
-        def send_cfp(self, public_key: str, dialogue_id: int, destination: str, query: CFP_TYPES, msg_id: Optional[int] = 1,
-                     target: Optional[int] = 0) -> None:
-            msg = CFP(dialogue_id, destination, query, msg_id, target)
-            self._send(public_key, msg)
-
-        def send_propose(self, public_key: str, dialogue_id: int, destination: str, proposals: PROPOSE_TYPES, msg_id: int,
-                         target: Optional[int] = None):
-            msg = Propose(dialogue_id, destination, proposals, msg_id, target)
-            self._send(public_key, msg)
-
-        def send_accept(self, public_key: str, dialogue_id: int, destination: str, msg_id: int, target: Optional[int] = None):
-            msg = Accept(dialogue_id, destination, msg_id, target)
-            self._send(public_key, msg)
-
-        def send_decline(self, public_key: str, dialogue_id: int, destination: str, msg_id: int, target: Optional[int] = None):
-            msg = Decline(dialogue_id, destination, msg_id, target)
-            self._send(public_key, msg)
+        def _send_search_result(self, public_key: str, search_id: int, agents: List[str]):
+            msg = agent_pb2.Server.AgentMessage()
+            msg.agents.search_id = search_id
+            msg.agents.agents.extend(agents)
+            self.queues[public_key].put_nowait(msg.SerializeToString())
 
     def __init__(self, public_key: str, local_node: LocalNode):
         super().__init__(public_key)

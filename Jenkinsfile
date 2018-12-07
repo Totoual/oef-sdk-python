@@ -31,7 +31,10 @@ pipeline {
                         }
                         stage('Test') {
                             steps {
-                                sh 'python3 setup_test.py'
+                                dir ("OEFCore"){
+                                    git url: 'https://github.com/uvue-git/OEFCore.git'
+                                }
+                                sh 'cd OEFCore && mkdir build && cd build && cmake .. && make -j4'
                                 sh 'pytest --verbose --cov=oef ./test'
                             }
                         }

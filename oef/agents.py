@@ -34,6 +34,11 @@ class Agent(AgentInterface):
     def run(self):
         self._loop.run_until_complete(self.async_run())
 
+    def stop(self):
+        if self._task:
+            self._task.cancel()
+
+
     async def async_run(self):
         self._task = asyncio.ensure_future(self.oef_proxy.loop(self))
         await self._task

@@ -321,7 +321,7 @@ class OEFProxy(OEFMethods):
             if case == "agents":
                 agent.on_search_result(msg.agents.search_id, msg.agents.agents)
             elif case == "error":
-                agent.on_error(msg.error.operation, msg.error.dialogue_id, msg.error.msgid)
+                agent.on_error(msg.error.operation, msg.error.dialogue_id, msg.error.msg_id)
             elif case == "content":
                 content_case = msg.content.WhichOneof("payload")
                 logger.debug("msg content {0}".format(content_case))

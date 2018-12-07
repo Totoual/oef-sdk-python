@@ -36,7 +36,7 @@ To run the tests, first do:
     
 Then, you need to clone the [OEFCore](https://github.com/uvue-git/OEFCore) repository and build the project:
 
-    python setup_test.py
+    python scripts/setup_test.py
     
 Finally:
 

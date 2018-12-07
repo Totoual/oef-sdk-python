@@ -1,6 +1,9 @@
-# Copyright (C) Fetch.ai 2018 - All Rights Reserved
+# Copyright (C)  - All Rights Reserved
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
+"""This module defines classes to deal with data models and their instances."""
+
+
 import copy
 from abc import ABC, abstractmethod
 from typing import Union, Type, Optional, List, Dict
@@ -13,13 +16,13 @@ class ProtobufSerializable(ABC):
 
     @abstractmethod
     def to_pb(self):
-        """Convert the object into a ProtoBuf object"""
+        """Convert the object into a Protobuf object"""
         raise NotImplementedError
 
     @classmethod
     @abstractmethod
     def from_pb(cls, obj):
-        """Return the object from a ProtoBuf object"""
+        """Return the object from a Protobuf object"""
         raise NotImplementedError
 
     def serialize(self) -> str:
@@ -30,28 +33,6 @@ class ProtobufSerializable(ABC):
 The allowable types that an Attribute can have
 """
 ATTRIBUTE_TYPES = Union[float, str, bool, int]
-
-
-def attribute_type_to_pb(attribute_type: Type[ATTRIBUTE_TYPES]):
-    if attribute_type == bool:
-        return query_pb2.Query.Attribute.BOOL
-    elif attribute_type == int:
-        return query_pb2.Query.Attribute.INT
-    elif attribute_type == float:
-        return query_pb2.Query.Attribute.FLOAT
-    elif attribute_type == str:
-        return query_pb2.Query.Attribute.STRING
-
-
-def attribute_pb_to_type(attribute_type: query_pb2.Query.Attribute):
-    if attribute_type == query_pb2.Query.Attribute.BOOL:
-        return bool
-    elif attribute_type == query_pb2.Query.Attribute.STRING:
-        return str
-    elif attribute_type == query_pb2.Query.Attribute.INT:
-        return int
-    elif attribute_type == query_pb2.Query.Attribute.FLOAT:
-        return float
 
 
 class AttributeSchema(ProtobufSerializable):
@@ -65,7 +46,7 @@ class AttributeSchema(ProtobufSerializable):
                  attribute_name: str,
                  attribute_type: Type[ATTRIBUTE_TYPES],
                  is_attribute_required: bool,
-                 attribute_description: Optional[str] = None) -> None:
+                 attribute_description: Optional[str] = "") -> None:
         """
         :param attribute_name: the name of this attribute
         :param attribute_type: the type of this attribute, must be a type in ATTRIBUTE_TYPES
@@ -75,18 +56,12 @@ class AttributeSchema(ProtobufSerializable):
         self.name = attribute_name
         self.type = attribute_type
         self.required = is_attribute_required
-        self.description = attribute_description or ""
-
-    def __eq__(self, other):
-        if isinstance(other, AttributeSchema):
-            return (self.name == other.name and self.type == other.type and
-                    self.required == other.required and self.description == other.description)
-        return False
+        self.description = attribute_description
 
     def to_pb(self):
         attribute = query_pb2.Query.Attribute()
         attribute.name = self.name
-        attribute.type = attribute_type_to_pb(self.type)
+        attribute.type = self.attribute_type_to_pb(self.type)
         attribute.required = self.required
         if self.description is not None:
             attribute.description = self.description
@@ -94,7 +69,36 @@ class AttributeSchema(ProtobufSerializable):
 
     @classmethod
     def from_pb(cls, attribute: query_pb2.Query.Attribute):
-        return cls(attribute.name, attribute_pb_to_type(attribute.type), attribute.required, attribute.description)
+        return cls(attribute.name, cls.attribute_pb_to_type(attribute.type), attribute.required, attribute.description)
+
+
+    @staticmethod
+    def attribute_type_to_pb(attribute_type: Type[ATTRIBUTE_TYPES]):
+        if attribute_type == bool:
+            return query_pb2.Query.Attribute.BOOL
+        elif attribute_type == int:
+            return query_pb2.Query.Attribute.INT
+        elif attribute_type == float:
+            return query_pb2.Query.Attribute.FLOAT
+        elif attribute_type == str:
+            return query_pb2.Query.Attribute.STRING
+
+    @staticmethod
+    def attribute_pb_to_type(attribute_type: query_pb2.Query.Attribute):
+        if attribute_type == query_pb2.Query.Attribute.BOOL:
+            return bool
+        elif attribute_type == query_pb2.Query.Attribute.STRING:
+            return str
+        elif attribute_type == query_pb2.Query.Attribute.INT:
+            return int
+        elif attribute_type == query_pb2.Query.Attribute.FLOAT:
+            return float
+
+    def __eq__(self, other):
+        if isinstance(other, AttributeSchema):
+            return (self.name == other.name and self.type == other.type and
+                    self.required == other.required and self.description == other.description)
+        return False
 
 
 class AttributeInconsistencyException(Exception):
@@ -108,12 +112,16 @@ class AttributeInconsistencyException(Exception):
 
 
 class DataModel(ProtobufSerializable):
+    """
+    This class represents a data model (a.k.a. schema) of the OEFCore.
+    """
+
     def __init__(self,
                  name: str,
                  attribute_schemas: List[AttributeSchema],
                  description: Optional[str] = "") -> None:
         self.name = name
-        self.attribute_schemas = copy.deepcopy(attribute_schemas)  # what for ?
+        self.attribute_schemas = copy.deepcopy(attribute_schemas)
         self.description = description
 
     @classmethod
@@ -139,32 +147,23 @@ class DataModel(ProtobufSerializable):
             self.description == other.description
 
 
-def generate_schema(model_name, attribute_values) -> DataModel:
+def generate_schema(model_name: str, attribute_values: Dict[str, ATTRIBUTE_TYPES]) -> DataModel:
     """
-    Will generate a schema that matches the values stored in this description.
+    Generate a schema that matches the values stored in this description.
+    That is, for each attribute (name, value), generate an AttributeSchema.
+    It is assumed that each attribute is required.
 
-    For each attribute (name, value), we generate an AttributeSchema:
-        AttributeInconsistencyException(name, type(value), false, "")
-    Note that it is assumed that each attribute is required.
+    :param model_name: the name of the model.
+    :param attribute_values: the values of each attribute
+    :return: the schema compliant with the values specified.
     """
-    return DataModel(model_name, [AttributeSchema(k, type(v), True, "") for k, v in attribute_values.items()])
 
-
-def extract_value(value: query_pb2.Query.Value) -> ATTRIBUTE_TYPES:
-    value_case = value.WhichOneof("value")
-    if value_case == "s":
-        return value.s
-    elif value_case == "b":
-        return value.b
-    elif value_case == "i":
-        return value.i
-    elif value_case == "f":
-        return value.f
+    return DataModel(model_name, [AttributeSchema(k, type(v), True) for k, v in attribute_values.items()])
 
 
 class Description(ProtobufSerializable):
     """
-    Description of either a service or an agent so it can be understood by the OEF/ other agents.
+    Description of either a service or an agent so it can be understood by the OEF and other agents.
 
     Contains values of the description, and an optional schema for checking format of values.
 
@@ -176,10 +175,12 @@ class Description(ProtobufSerializable):
                  attribute_values: Dict[str, ATTRIBUTE_TYPES],
                  data_model: DataModel = None) -> None:
         """
+        Initialize a description.
+
         :param attribute_values: the values of each attribute in the description. This is a
         dictionary from attribute name to attribute value, each attribute value must have a type
         in ATTRIBUTE_TYPES.
-        :param attribute_schemas: optional schema of this description. If none is provided
+        :param data_model: optional schema of this description. If none is provided
         then the attribute values will not be checked against a schema. Schemas are extremely useful
         for preventing hard to debug problems, and are highly recommended.
         """
@@ -191,13 +192,31 @@ class Description(ProtobufSerializable):
             # TODO: choose a default name for the data model
             self._data_model = generate_schema("", attribute_values)
 
+    @staticmethod
+    def _extract_value(value: query_pb2.Query.Value) -> ATTRIBUTE_TYPES:
+        """
+        From protobuf query value to attribute type.
+        :param value: an instance of query_pb2.Query.Value.
+        :return: the associated attribute type.
+        """
+        value_case = value.WhichOneof("value")
+        if value_case == "s":
+            return value.s
+        elif value_case == "b":
+            return value.b
+        elif value_case == "i":
+            return value.i
+        elif value_case == "f":
+            return value.f
+
     @classmethod
     def from_pb(cls, query_instance: query_pb2.Query.Instance):
         model = DataModel.from_pb(query_instance.model)
-        values = dict([(attr.key, extract_value(attr.value)) for attr in query_instance.values])
+        values = dict([(attr.key, cls._extract_value(attr.value)) for attr in query_instance.values])
         return cls(values, model)
 
-    def _to_key_value_pb(self, key: str, value: ATTRIBUTE_TYPES):
+    @staticmethod
+    def _to_key_value_pb(key: str, value: ATTRIBUTE_TYPES):
         kv = query_pb2.Query.KeyValue()
         kv.key = key
         if isinstance(value, bool):
@@ -228,6 +247,7 @@ class Description(ProtobufSerializable):
         If an attribute_schemas has been provided, values are checked against that. If no attribute
         schema has been provided then minimal checking is performed based on the values in the
         provided attribute_value dictionary.
+
         :raises AttributeInconsistencyException: if values do not meet the schema, or if no schema
         is present if they have disallowed types.
         """

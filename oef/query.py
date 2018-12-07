@@ -2,9 +2,9 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 from abc import ABC
+from enum import Enum
 from typing import Union, Tuple, List, Optional
 
-import oef.agent_pb2 as agent_pb2
 import oef.query_pb2 as query_pb2
 
 from oef.schema import ATTRIBUTE_TYPES, AttributeSchema, DataModel, ProtobufSerializable
@@ -158,8 +158,14 @@ SET_TYPES = Union[List[float], List[str], List[bool], List[int]]
 
 
 class Set(ConstraintType):
-    def __init__(self, values: SET_TYPES) -> None:
+
+    class Operator(Enum):
+        IN = 0
+        NOT_IN = 1
+
+    def __init__(self, values: SET_TYPES, operator: Operator) -> None:
         self._values = values
+        self._operator = operator
 
     @property
     def operator(self) -> query_pb2.Query.Set:
@@ -207,14 +213,21 @@ class Set(ConstraintType):
 
 class In(Set):
 
+    def __init__(self, values: SET_TYPES):
+        super().__init__(values, Set.Operator.IN)
+
     def operator(self):
         return query_pb2.Query.Set.IN
 
 
 class NotIn(Set):
 
+    def __init__(self, values: SET_TYPES):
+        super().__init__(values, Set.Operator.NOT_IN)
+
     def operator(self):
         return query_pb2.Query.Set.NOTIN
+
 
 CONSTRAINT_TYPES = Union[Relation, Range, Set]
 

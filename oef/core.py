@@ -1,6 +1,7 @@
 # Copyright (C) Fetch.ai 2018 - All Rights Reserved
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
+"""The core module that contains the main abstraction of the package."""
 import asyncio
 import logging
 from abc import ABC, abstractmethod
@@ -14,9 +15,157 @@ from oef.schema import Description
 logger = logging.getLogger(__name__)
 
 
-class AgentInterface(ABC):
+class OEFMethods(ABC):
+    """Methods to interact with an OEF node."""
+
+    @abstractmethod
+    def register_agent(self, agent_description: Description) -> bool:
+        """
+        Adds a description of an agent to the OEF so that it can be understood/ queried by
+        other agents in the OEF.
+
+        :param agent_description: description of the agent to add
+        :returns: | `True` if agent is successfully added, `False` otherwise. Can fail if such an
+                  | agent already exists in the OEF.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def register_service(self, service_description: Description):
+        """
+        Adds a description of the respective service so that it can be understood/ queried by
+        other agents in the OEF.
+
+        :param service_description: description of the services to add
+        :returns: `True` if service is successfully added, `False` otherwise. Can fail if such an
+                  service already exists in the OEF.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def search_agents(self, search_id: int, query: Query) -> None:
+        """
+        Allows an agent to search for other agents it is interested in communicating with. This can
+        be useful when an agent wishes to directly proposition the provision of a service that it
+        thinks another agent may wish to be able to offer it. All matching agents are returned
+        (potentially including ourself)
+
+        :param search_id: the identifier of the search to whom the result is answering.
+        :param query: specifications of the constraints on the agents that are matched
+        :returns: a list of the matching agents
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def search_services(self, search_id: int, query: Query) -> None:
+        """
+        Allows an agent to search for a particular service. This allows constrained search of all
+        services that have been registered with the OEF. All matching services will be returned
+        (potentially including services offered by ourself)
+
+        :param search_id: the identifier of the search to whom the result is answering.
+        :param query: the constraint on the matching services
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def unregister_agent(self) -> bool:
+        """
+        Removes the description of an agent from the OEF. This agent will no longer be queryable
+        by other agents in the OEF. A conversation handler must be provided that allows the agent
+        to receive and manage conversations from other agents wishing to communicate with it.
+
+        :returns: `True` if agent is successfully removed, `False` otherwise. Can fail if
+                  such an agent is not registered with the OEF.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def unregister_service(self, service_description: Description) -> None:
+        """
+        Adds a description of the respective service so that it can be understood/ queried by
+        other agents in the OEF.
+
+        :param service_description: description of the services to add
+        :returns: `True` if service is successfully added, `False` otherwise. Can fail if such an
+                  service already exists in the OEF.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def send_message(self, dialogue_id: int, destination: str, msg: bytes) -> None:
+        """
+        Send a simple message.
+
+        :param dialogue_id: the identifier of the dialogue in which the message is sent.
+        :param destination: the agent identifier to whom the message is sent.
+        :param msg: the message (in bytes).
+        :return:
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def send_cfp(self, dialogue_id: int, destination: str, query: CFP_TYPES, msg_id: Optional[int] = 1,
+                 target: Optional[int] = 0) -> None:
+        """
+        Send a Call-For-Proposals.
+
+        :param dialogue_id: the identifier of the dialogue in which the message is sent.
+        :param destination: the agent identifier to whom the message is sent.
+        :param query: the query associated with the Call For Proposals.
+        :param msg_id: the message identifier for the dialogue.
+        :param target: the identifier of the message to whom this message is answering.
+        :return:
+        """
+
+        raise NotImplementedError
+
+    @abstractmethod
+    def send_propose(self, dialogue_id: int, destination: str, proposals: PROPOSE_TYPES, msg_id: int,
+                     target: Optional[int] = None) -> None:
+        """
+        Send a Propose.
+
+        :param dialogue_id: the identifier of the dialogue in which the message is sent.
+        :param destination: the agent identifier to whom the message is sent.
+        :param proposals:
+        :param msg_id: the message identifier for the dialogue.
+        :param target: the identifier of the message to whom this message is answering.
+        :return:
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def send_accept(self, dialogue_id: int, destination: str, msg_id: int,
+                    target: Optional[int] = None) -> None:
+        """
+        Send an Accept.
+
+        :param dialogue_id: the identifier of the dialogue in which the message is sent.
+        :param destination: the agent identifier to whom the message is sent.
+        :param msg_id: the message identifier for the dialogue.
+        :param target: the identifier of the message to whom this message is answering.
+        :return:
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def send_decline(self, dialogue_id: int, destination: str, msg_id: int,
+                     target: Optional[int] = None) -> None:
+        """
+        Send a Decline.
+
+        :param dialogue_id: the identifier of the dialogue in which the message is sent.
+        :param destination: the agent identifier to whom the message is sent.
+        :param msg_id: the message identifier for the dialogue.
+        :param target: the identifier of the message to whom this message is answering.
+        :return:
+        """
+        raise NotImplementedError
+
+
+class DialogueInterface(ABC):
     """
-    An interface that every agent should implement.
     The methods of this interface are the callbacks that are called from the OEFProxy
     when a certain message is sent to the agent.
     The names of the method match the pattern "on_" followed by the name of the message.
@@ -130,155 +279,13 @@ class AgentInterface(ABC):
         raise NotImplementedError
 
 
-class OEFMethods(ABC):
-
-    @abstractmethod
-    def register_agent(self, agent_description: Description) -> bool:
-        """
-        Adds a description of an agent to the OEF so that it can be understood/ queried by
-        other agents in the OEF.
-
-        :param agent_description: description of the agent to add
-        :returns: | `True` if agent is successfully added, `False` otherwise. Can fail if such an
-                  | agent already exists in the OEF.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def register_service(self, service_description: Description):
-        """
-        Adds a description of the respective service so that it can be understood/ queried by
-        other agents in the OEF.
-
-        :param service_description: description of the services to add
-        :returns: `True` if service is successfully added, `False` otherwise. Can fail if such an
-        service already exists in the OEF.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def search_agents(self, search_id: int, query: Query) -> None:
-        """
-        Allows an agent to search for other agents it is interested in communicating with. This can
-        be useful when an agent wishes to directly proposition the provision of a service that it
-        thinks another agent may wish to be able to offer it. All matching agents are returned
-        (potentially including ourself)
-
-        :param search_id: the identifier of the search to whom the result is answering.
-        :param query: specifications of the constraints on the agents that are matched
-        :returns: a list of the matching agents
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def search_services(self, search_id: int, query: Query) -> None:
-        """
-        Allows an agent to search for a particular service. This allows constrained search of all
-        services that have been registered with the OEF. All matching services will be returned
-        (potentially including services offered by ourself)
-
-        :param search_id: the identifier of the search to whom the result is answering.
-        :param query: the constraint on the matching services
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def unregister_agent(self) -> bool:
-        """
-        Removes the description of an agent from the OEF. This agent will no longer be queryable
-        by other agents in the OEF. A conversation handler must be provided that allows the agent
-        to receive and manage conversations from other agents wishing to communicate with it.
-
-        :returns: `True` if agent is successfully removed, `False` otherwise. Can fail if
-                  such an agent is not registered with the OEF.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def unregister_service(self, service_description: Description) -> None:
-        """
-        Adds a description of the respective service so that it can be understood/ queried by
-        other agents in the OEF.
-
-        :param service_description: description of the services to add
-        :returns: `True` if service is successfully added, `False` otherwise. Can fail if such an
-                  service already exists in the OEF.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def send_message(self, dialogue_id: int, destination: str, msg: bytes) -> None:
-        """
-        Send a simple message.
-
-        :param dialogue_id: the identifier of the dialogue in which the message is sent.
-        :param destination: the agent identifier to whom the message is sent.
-        :param msg: the message (in bytes).
-        :return:
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def send_cfp(self, dialogue_id: int, destination: str, query: CFP_TYPES, msg_id: Optional[int] = 1,
-                 target: Optional[int] = 0) -> None:
-        """
-        Send a Call-For-Proposals.
-
-        :param dialogue_id: the identifier of the dialogue in which the message is sent.
-        :param destination: the agent identifier to whom the message is sent.
-        :param query: the query associated with the Call For Proposals.
-        :param msg_id: the message identifier for the dialogue.
-        :param target: the identifier of the message to whom this message is answering.
-        :return:
-        """
-
-        raise NotImplementedError
-
-    @abstractmethod
-    def send_propose(self, dialogue_id: int, destination: str, proposals: PROPOSE_TYPES, msg_id: int,
-                     target: Optional[int] = None):
-        """
-        Send a Propose.
-
-        :param dialogue_id: the identifier of the dialogue in which the message is sent.
-        :param destination: the agent identifier to whom the message is sent.
-        :param proposals:
-        :param msg_id: the message identifier for the dialogue.
-        :param target: the identifier of the message to whom this message is answering.
-        :return:
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def send_accept(self, dialogue_id: int, destination: str, msg_id: int,
-                    target: Optional[int] = None):
-        """
-        Send an Accept.
-
-        :param dialogue_id: the identifier of the dialogue in which the message is sent.
-        :param destination: the agent identifier to whom the message is sent.
-        :param msg_id: the message identifier for the dialogue.
-        :param target: the identifier of the message to whom this message is answering.
-        :return:
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def send_decline(self, dialogue_id: int, destination: str, msg_id: int,
-                     target: Optional[int] = None):
-        """
-        Send a Decline.
-
-        :param dialogue_id: the identifier of the dialogue in which the message is sent.
-        :param destination: the agent identifier to whom the message is sent.
-        :param msg_id: the message identifier for the dialogue.
-        :param target: the identifier of the message to whom this message is answering.
-        :return:
-        """
-        raise NotImplementedError
+class AgentInterface(DialogueInterface, OEFMethods, ABC):
+    """Interface to be implemented by agents."""
+    pass
 
 
 class OEFProxy(OEFMethods):
+    """Abstract definition of an OEF Proxy."""
 
     def __init__(self, public_key):
         self._public_key = public_key
@@ -301,7 +308,7 @@ class OEFProxy(OEFMethods):
         """
         raise NotImplementedError
 
-    async def loop(self, agent: AgentInterface):
+    async def loop(self, agent: DialogueInterface):
         """
         Event loop to wait for messages and to dispatch the arrived messages to the proper handler.
 

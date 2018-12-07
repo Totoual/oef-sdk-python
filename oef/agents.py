@@ -9,7 +9,7 @@ from typing import List, Optional
 
 from oef import agent_pb2
 from oef.proxy import OEFNetworkProxy, PROPOSE_TYPES, CFP_TYPES, OEFLocalProxy
-from oef.core import AgentInterface, OEFProxy, OEFMethods
+from oef.core import DialogueInterface, OEFProxy, OEFMethods
 from oef.schema import Description
 from oef.query import Query
 
@@ -20,7 +20,7 @@ def _warning_not_implemented_method(method_name):
     logger.warning("You should implement {} in your OEFAgent class.", method_name)
 
 
-class Agent(AgentInterface):
+class Agent(DialogueInterface):
 
     @property
     def public_key(self):
@@ -35,9 +35,11 @@ class Agent(AgentInterface):
         self._loop.run_until_complete(self.async_run())
 
     def stop(self):
+        """Stop the agent. Specifically, if `run()` or `async_run()` have been called, then
+        this method will cancel the previously instantiated task.
+        The agent will be stopped as soon as possible, depending on the proxy loop."""
         if self._task:
             self._task.cancel()
-
 
     async def async_run(self):
         self._task = asyncio.ensure_future(self.oef_proxy.loop(self))

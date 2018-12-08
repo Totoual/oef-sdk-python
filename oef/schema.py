@@ -46,19 +46,19 @@ class AttributeSchema(ProtobufSerializable):
                  attribute_name: str,
                  attribute_type: Type[ATTRIBUTE_TYPES],
                  is_attribute_required: bool,
-                 attribute_description: Optional[str] = "") -> None:
+                 attribute_description: Optional[str] = None) -> None:
         """
-        :param attribute_name: the name of this attribute
-        :param attribute_type: the type of this attribute, must be a type in ATTRIBUTE_TYPES
-        :param is_attribute_required: does this attribute have to be included
-        :param attribute_description: optional description of this attribute
+        :param attribute_name: the name of this attribute.
+        :param attribute_type: the type of this attribute, must be a type in ATTRIBUTE_TYPES.
+        :param is_attribute_required: does this attribute have to be included.
+        :param attribute_description: optional description of this attribute.
         """
         self.name = attribute_name
         self.type = attribute_type
         self.required = is_attribute_required
         self.description = attribute_description
 
-    def to_pb(self):
+    def to_pb(self) -> query_pb2.Query.Attribute:
         attribute = query_pb2.Query.Attribute()
         attribute.name = self.name
         attribute.type = self.attribute_type_to_pb(self.type)
@@ -69,8 +69,10 @@ class AttributeSchema(ProtobufSerializable):
 
     @classmethod
     def from_pb(cls, attribute: query_pb2.Query.Attribute):
-        return cls(attribute.name, cls.attribute_pb_to_type(attribute.type), attribute.required, attribute.description)
-
+        return cls(attribute.name,
+                   cls.attribute_pb_to_type(attribute.type),
+                   attribute.required,
+                   attribute.description if attribute.description else None)
 
     @staticmethod
     def attribute_type_to_pb(attribute_type: Type[ATTRIBUTE_TYPES]):
@@ -95,10 +97,10 @@ class AttributeSchema(ProtobufSerializable):
             return float
 
     def __eq__(self, other):
-        if isinstance(other, AttributeSchema):
-            return (self.name == other.name and self.type == other.type and
-                    self.required == other.required and self.description == other.description)
-        return False
+        if type(other) != AttributeSchema:
+            return False
+        else:
+            return self.name == other.name and self.type == other.type and self.required == other.required
 
 
 class AttributeInconsistencyException(Exception):
@@ -119,7 +121,7 @@ class DataModel(ProtobufSerializable):
     def __init__(self,
                  name: str,
                  attribute_schemas: List[AttributeSchema],
-                 description: Optional[str] = "") -> None:
+                 description: Optional[str] = None) -> None:
         self.name = name
         self.attribute_schemas = copy.deepcopy(attribute_schemas)
         self.description = description
@@ -142,9 +144,8 @@ class DataModel(ProtobufSerializable):
     def __eq__(self, other):
         if type(other) != DataModel:
             return False
-        return self.name == other.name and \
-            self.attribute_schemas == other.attribute_schemas and \
-            self.description == other.description
+        else:
+            return self.name == other.name and self.attribute_schemas == other.attribute_schemas
 
 
 def generate_schema(model_name: str, attribute_values: Dict[str, ATTRIBUTE_TYPES]) -> DataModel:
@@ -203,7 +204,7 @@ class Description(ProtobufSerializable):
         if value_case == "s":
             return value.s
         elif value_case == "b":
-            return value.b
+            return bool(value.b)
         elif value_case == "i":
             return value.i
         elif value_case == "f":
@@ -277,4 +278,5 @@ class Description(ProtobufSerializable):
     def __eq__(self, other):
         if type(other) != Description:
             return False
-        return self._values == other._values and self._data_model == other._data_model
+        else:
+            return self._values == other._values and self._data_model == other._data_model

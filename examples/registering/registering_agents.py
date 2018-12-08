@@ -15,5 +15,5 @@ if __name__ == '__main__':
     print("Agent registered to the OEF Node.")
 
     agent.unregister_agent()
-    print("Agent {} unregistered".format(agent._pubkey))
+    print("Agent {} unregistered".format(agent.public_key))
 

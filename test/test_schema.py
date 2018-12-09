@@ -12,7 +12,7 @@ from oef.schema import AttributeSchema, ATTRIBUTE_TYPES, DataModel, AttributeInc
     generate_schema
 
 from test.hypothesis import attribute_schema_types, not_attribute_schema_types, _value_type_pairs, descriptions, \
-    data_models, attributes_schema
+    data_models, attributes_schema, is_correct_attribute_value, attribute_schema_values
 
 
 def check_inconsistency_checker(schema: List[AttributeSchema], values: Dict[str, ATTRIBUTE_TYPES], exception_string):
@@ -136,10 +136,9 @@ def test_description_extract_value(value_type_pair):
         assert attr_value == expected_value
 
 
-@given(text(), attribute_schema_types.flatmap(lambda x: from_type(x)))
+@given(text(), attribute_schema_values)
 def test_description_to_key_value(key: str, value: ATTRIBUTE_TYPES):
 
-    value = 0xFFFFFFFF & value if type(value) == int else value
     kv = Description._to_key_value_pb(key, value)  # type: query_pb2.Query.KeyValue
 
     expected_key = kv.key

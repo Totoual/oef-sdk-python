@@ -3,32 +3,35 @@
 # Proprietary and confidential
 
 import logging
+from typing import List
 
 _DEFAULT_LOG_FORMAT = '[%(asctime)s][%(name)s][%(funcName)s][%(levelname)s] %(message)s'
 
 
-def set_logger(name="oef", level=logging.INFO, handler: logging.Handler=None):
+def set_logger(level=logging.INFO, handlers: List[logging.Handler]=None):
     """
     Utility to set up a logger for the `oef` package.
-    :param name: the name of the module you want to activate the logger.
     :param level: the logging level
-    :param handler: the logging handler. If None, then a default handler is provided, printing to standard error.
+    :param handlers: a list of logging handlers. If None, then a default StreamHandler is provided,
+                     printing to standard error.
     :return: the logger.
     """
 
-    # Make the logger
-    logger = logging.getLogger(name)
+    # Make the logger for the oef package.
+    # This configuration will propagate to the child modules.
+    logger = logging.getLogger("oef")
 
-    # Set its level.
+    # Set the level.
     logger.setLevel(level)
 
     # Make the handler and attach it.
-    if not handler:
+    if handlers is None:
         handler = logging.StreamHandler()
         formatter = logging.Formatter(_DEFAULT_LOG_FORMAT)
         handler.setFormatter(formatter)
+        handlers = [handler]
 
     # Make the handler the unique handler for the logger.
-    logger.handlers = [handler]
+    logger.handlers = handlers
 
     return logger

@@ -1,6 +1,10 @@
 # Copyright (C) Fetch.ai 2018 - All Rights Reserved
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
+"""This module contains Hypothesis strategies for some of the package data types
+(e.g. AttributeSchema, DataModel, Description, ...)"""
+
+
 import typing
 from typing import List
 

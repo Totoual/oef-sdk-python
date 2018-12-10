@@ -25,7 +25,11 @@ class Agent(AgentInterface, ABC):
         self._task = None
         self._loop = asyncio.get_event_loop()
 
-    def run(self):
+    def run(self) -> None:
+        """
+        Run the agent synchronously. That is, until self.stop() is not called.
+        :return:
+        """
         self._loop.run_until_complete(self.async_run())
 
     def stop(self):
@@ -66,7 +70,7 @@ class Agent(AgentInterface, ABC):
     def send_message(self,
                      dialogue_id: int,
                      destination: str,
-                     msg: bytes):
+                     msg: bytes) -> None:
         logger.debug("Agent {}: dialogue_id={}, destination={}, msg={}"
                      .format(self.public_key,
                              dialogue_id,
@@ -79,7 +83,7 @@ class Agent(AgentInterface, ABC):
                  destination: str,
                  query: CFP_TYPES,
                  msg_id: Optional[int] = 1,
-                 target: Optional[int] = 0):
+                 target: Optional[int] = 0) -> None:
         logger.debug("Agent {}: dialogue_id={}, destination={}, query={}, msg_id={}, target={}"
                      .format(self.public_key,
                              dialogue_id,
@@ -94,7 +98,7 @@ class Agent(AgentInterface, ABC):
                      destination: str,
                      proposals: PROPOSE_TYPES,
                      msg_id: int,
-                     target: Optional[int] = None):
+                     target: Optional[int] = None) -> None:
         logger.debug("Agent {}: dialogue_id={}, destination={}, proposals={}, msg_id={}, target={}"
                      .format(self.public_key,
                              dialogue_id,
@@ -107,7 +111,7 @@ class Agent(AgentInterface, ABC):
     def send_accept(self, dialogue_id: int,
                     destination: str,
                     msg_id: int,
-                    target: Optional[int] = None):
+                    target: Optional[int] = None) -> None:
         logger.debug("Agent {}: dialogue_id={}, destination={}, msg_id={}, target={}"
                      .format(self.public_key,
                              dialogue_id,
@@ -119,7 +123,7 @@ class Agent(AgentInterface, ABC):
     def send_decline(self, dialogue_id: int,
                      destination: str,
                      msg_id: int,
-                     target: Optional[int] = None):
+                     target: Optional[int] = None) -> None:
         logger.debug("Agent {}: dialogue_id={}, destination={}, msg_id={}, target={}"
                      .format(self.public_key,
                              dialogue_id,

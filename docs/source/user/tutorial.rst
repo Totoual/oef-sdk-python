@@ -97,8 +97,7 @@ To do so, run the following instructions at the beginning of your scripts:
 
     import logging
     from oef.logger import set_logger
-    set_logger("oef", logging.DEBUG)
-
+    set_logger("oef.agents", logging.DEBUG)
 
 
 First example: Echo agent
@@ -330,18 +329,18 @@ Whereas, the one from the server agent is:
 
 The order of the exchanged message is the following:
 
-- The server notifies the OEF Node that it is able to serve other agents
-- The ``echo_client`` queries to the OEF Node
-- The OEF Node sends back the list of agents who satisfy
-  the query constraints. In this trivial example,
-  the only agent returned is the ``echo_server`.
-- The client sends a ``"hello"`` message to the OEF Node,
-  which targets the ``echo_server``
-- The OEF Node dispatches the message from ``echo_client`` to ``echo_server``
-- The ``echo_server`` receives the message and sends a new message (with the same content)
-  to the OEF Node, which targets the ``echo_client``
-- The OEF Node dispatch the message from ``echo_server`` to ``echo_client``
-- The ``echo_client`` receives the echo message.
+1. The server notifies the OEF Node that it is able to serve other agents
+2. The ``echo_client`` queries to the OEF Node
+3. The OEF Node sends back the list of agents who satisfy
+   the query constraints. In this trivial example,
+   the only agent returned is the ``echo_server`.
+4. The client sends a ``"hello"`` message to the OEF Node,
+   which targets the ``echo_server``
+5. The OEF Node dispatches the message from ``echo_client`` to ``echo_server``
+6. The ``echo_server`` receives the message and sends a new message (with the same content)
+   to the OEF Node, which targets the ``echo_client``
+7. The OEF Node dispatch the message from ``echo_server`` to ``echo_client``
+8. The ``echo_client`` receives the echo message.
 
 
 Second example: Weather Station

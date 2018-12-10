@@ -29,7 +29,7 @@ Install
 
 
 * For other platforms and additional details,
-please follow the installation guide: :ref:`install`.
+  please follow the installation guide: :ref:`install`.
 
 
 Run a OEF Node
@@ -66,9 +66,9 @@ Write Agents
 The ``GreetingsAgent`` does the following:
 
 * ``on_search_result``: Once the agent receives results from its search,
-the agent sends a ``hello`` message to each agent discovered.
+  the agent sends a ``hello`` message to each agent discovered.
 * ``on_message``: whenever the agent receives a ``hello`` message,
-it answers with ine if its greetings.
+  it answers with ine if its greetings.
 
 
 .. code-block:: python
@@ -79,20 +79,19 @@ it answers with ine if its greetings.
     class GreetingsAgent(OEFAgent):
 
         def on_message(self, origin: str, dialogue_id: int, content: bytes):
-            print("{}: Received message: origin={}, dialogue_id={}, content={}"
-                  .format(self._pubkey, origin, dialogue_id, content))
+            print("[{}]: Received message: origin={}, dialogue_id={}, content={}"
+                  .format(self.public_key, origin, dialogue_id, content))
             if content == b"hello":
-                print("{}: Sending greetings message to {}".format(self._pubkey, origin))
+                print("[{}]: Sending greetings message to {}".format(self.public_key, origin))
                 self.send_message(dialogue_id, origin, b"greetings")
 
         def on_search_result(self, search_id: int, agents: List[str]):
             if len(agents) > 0:
-                print("{}, Agents found: {}".format(self._pubkey, agents))
+                print("[{}]: Agents found: {}".format(self.public_key, agents))
                 for a in agents:
                     self.send_message(0, a, b"hello")
             else:
-                print("No agent found.")
-
+                print("[{}]: No agent found.".format(self.public_key))
 
 
 Start Communications
@@ -105,14 +104,14 @@ Start Communications
   client_agent = GreetingsAgent("greetings_client", oef_addr="127.0.0.1", oef_port=3333)
   server_agent = GreetingsAgent("greetings_server", oef_addr="127.0.0.1", oef_port=3333)
 
-* Connect them to the OEF
+* Connect them to the OEF:
 
 .. code-block:: python
 
   client_agent.connect()
   server_agent.connect()
 
-* The server agent registers itself as a greetings service on the OEF
+* The server agent registers itself as a greetings service on the OEF:
 
 .. code-block:: python
 
@@ -121,7 +120,7 @@ Start Communications
   greetings_description = Description({}, greetings_model)
   server_agent.register_service(greetings_description)
 
-* The client agent executes the search for greetings services
+* The client agent executes the search for greetings services:
 
 .. code-block:: python
 
@@ -148,12 +147,13 @@ The output should be:
 
 ::
 
-  greetings_client, Agents found: ['greetings_server']
-  greetings_server: Received message: origin=greetings_client, conversation_id=8d79deba-1043-4679-918c-a899c863ac49, content=b'hello'
-  greetings_server: Sending greetings message to greetings_client
-  greetings_client: Received message: origin=greetings_server, conversation_id=8d79deba-1043-4679-918c-a899c863ac49, content=b'greetings'
+    [greetings_client]: Agents found: ['greetings_server']
+    [greetings_server]: Received message: origin=greetings_client, dialogue_id=0, content=b'hello'
+    [greetings_server]: Sending greetings message to greetings_client
+    [greetings_client]: Received message: origin=greetings_server, dialogue_id=0, content=b'greetings'
 
 
-You can find the sources at `this link <https://github.com/uvue-git/OEFCorePython/tree/develop/examples/greetings/greetings_example.py>`_.
+You can find the sources at
+`this link <https://github.com/uvue-git/OEFCorePython/tree/develop/examples/greetings/greetings_example.py>`_.
 
 In :ref:`tutorial` you might find all the details and how to implement more complex behaviours.

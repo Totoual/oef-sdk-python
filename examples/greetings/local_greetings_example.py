@@ -18,19 +18,20 @@ from oef.query import Query
 class GreetingsAgent(LocalAgent):
 
     def on_message(self, origin: str, dialogue_id: int, content: bytes):
-        print("{}: Received message: origin={}, dialogue_id={}, content={}"
+        print("[{}]: Received message: origin={}, dialogue_id={}, content={}"
               .format(self.public_key, origin, dialogue_id, content))
         if content == b"hello":
-            print("{}: Sending greetings message to {}".format(self.public_key, origin))
+            print("[{}]: Sending greetings message to {}".format(self.public_key, origin))
             self.send_message(dialogue_id, origin, b"greetings")
 
     def on_search_result(self, search_id: int, agents: List[str]):
         if len(agents) > 0:
-            print("{}, Agents found: {}".format(self.public_key, agents))
+            print("[{}]: Agents found: {}".format(self.public_key, agents))
             for a in agents:
                 self.send_message(0, a, b"hello")
         else:
-            print("No agent found.")
+            print("[{}]: No agent found.".format(self.public_key))
+
 
 
 if __name__ == '__main__':
@@ -53,13 +54,13 @@ if __name__ == '__main__':
 
     # the client executes the search for greetings services
     query = Query([], greetings_model)
-    # client_agent.search_services(0, query)
+    client_agent.search_services(0, query)
 
-    client_agent.send_message(0, "greetings_server", b"hello")
     # run both agents concurrently
     loop = asyncio.get_event_loop()
     loop.run_until_complete(asyncio.gather(
         client_agent.async_run(),
         server_agent.async_run(),
+        local_node.run()
       )
     )

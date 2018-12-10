@@ -6,12 +6,17 @@ import logging
 from abc import ABC
 from typing import Optional
 
+from oef import agent_pb2
 from oef.core import OEFProxy, AgentInterface
 from oef.proxy import OEFNetworkProxy, PROPOSE_TYPES, CFP_TYPES, OEFLocalProxy
 from oef.query import Query
 from oef.schema import Description
 
 logger = logging.getLogger(__name__)
+
+
+def _warning_not_implemented_method(method_name):
+    logger.warning("You should implement {} in your OEFAgent class.", method_name)
 
 
 class Agent(AgentInterface, ABC):
@@ -28,23 +33,34 @@ class Agent(AgentInterface, ABC):
     def run(self) -> None:
         """
         Run the agent synchronously. That is, until self.stop() is not called.
-        :return:
+        :return: None
         """
         self._loop.run_until_complete(self.async_run())
 
-    def stop(self):
-        """Stop the agent. Specifically, if ``run()`` or ``async_run()`` have been called, then
-        this method will cancel the previously instantiated task.
-        The agent will be stopped as soon as possible, depending on the proxy loop."""
+    async def async_run(self) -> None:
+        """
+        Run the agent asynchronously.
+        :return: None
+        """
         if self._task:
-            self._task.cancel()
-
-    async def async_run(self):
+            logger.warning("Agent {} already scheduled for running.".format(self.public_key))
         self._task = asyncio.ensure_future(self.oef_proxy.loop(self))
         await self._task
 
+    def stop(self) -> None:
+        """
+        Stop the agent. Specifically, if ``run()`` or ``async_run()`` have been called, then
+        this method will cancel the previously instantiated task.
+        The task that manages the agent-loop is hence scheduled for cancellation.
+        """
+        if self._task:
+            self._task.cancel()
+            self._task = None
+
     def connect(self) -> None:
-        """Connect the agent to the OEF Node specified by ``oef_addr`` and ``_oef_port``"""
+        """
+        Connect the agent to the OEF Node specified by ``oef_addr`` and ``_oef_port``.
+        """
         logger.debug("{}: Connecting...".format(self.public_key))
         self._loop.run_until_complete(self.oef_proxy.connect())
         logger.debug("{}: Connection established.".format(self.public_key))
@@ -131,6 +147,62 @@ class Agent(AgentInterface, ABC):
                              msg_id,
                              target))
         self.oef_proxy.send_decline(dialogue_id, destination, msg_id, target)
+
+    def on_cfp(self, origin: str,
+               dialogue_id: int,
+               msg_id: int,
+               target: int,
+               query: CFP_TYPES):
+        """
+
+        :param origin:
+        :param dialogue_id:
+        :param msg_id:
+        :param target:
+        :param query:
+        :return:
+        """
+        logger.info("on_cfp: {}, {}, {}, {}", origin, dialogue_id, msg_id, target, query)
+        _warning_not_implemented_method(self.on_cfp.__name__)
+
+    def on_accept(self,
+                  origin: str,
+                  dialogue_id: int,
+                  msg_id: int,
+                  target: int, ):
+        logger.info("on_accept: {}, {}, {}, {}", origin, dialogue_id, msg_id, target)
+        _warning_not_implemented_method(self.on_accept.__name__)
+
+    def on_decline(self,
+                   origin: str,
+                   dialogue_id: int,
+                   msg_id: int,
+                   target: int, ):
+        logger.info("on_decline: {}, {}, {}, {}", origin, dialogue_id, msg_id, target)
+        _warning_not_implemented_method(self.on_decline.__name__)
+
+    def on_propose(self,
+                   origin: str,
+                   dialogue_id: int,
+                   msg_id: int,
+                   target: int,
+                   proposal: PROPOSE_TYPES):
+        logger.info("on_propose: {}, {}, {}, {}, {}", origin, dialogue_id, msg_id, target, proposal)
+        _warning_not_implemented_method(self.on_propose.__name__)
+
+    def on_error(self,
+                 operation: agent_pb2.Server.AgentMessage.Error.Operation,
+                 dialogue_id: int,
+                 message_id: int):
+        logger.info("on_error: {}, {}, {}", operation, dialogue_id, message_id)
+        _warning_not_implemented_method(self.on_error.__name__)
+
+    def on_message(self,
+                   origin: str,
+                   dialogue_id: int,
+                   content: bytes):
+        logger.info("on_message: {}, {}, {}, {}", origin, dialogue_id, content)
+        _warning_not_implemented_method(self.on_message.__name__)
 
 
 class OEFAgent(Agent):

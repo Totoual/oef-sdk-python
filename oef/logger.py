@@ -8,9 +8,11 @@ from typing import List
 _DEFAULT_LOG_FORMAT = '[%(asctime)s][%(name)s][%(funcName)s][%(levelname)s] %(message)s'
 
 
-def set_logger(level=logging.INFO, handlers: List[logging.Handler]=None):
+def set_logger(name, level=logging.INFO, handlers: List[logging.Handler]=None):
     """
-    Utility to set up a logger for the `oef` package.
+    Utility to set up a logger, for a given module.
+    :param name: the name of the module to audit.
+           This can be the name of the package (e.g. ``oef``) or any child module (e.g. ``oef.agents``).
     :param level: the logging level
     :param handlers: a list of logging handlers. If None, then a default StreamHandler is provided,
                      printing to standard error.
@@ -19,7 +21,7 @@ def set_logger(level=logging.INFO, handlers: List[logging.Handler]=None):
 
     # Make the logger for the oef package.
     # This configuration will propagate to the child modules.
-    logger = logging.getLogger("oef")
+    logger = logging.getLogger(name)
 
     # Set the level.
     logger.setLevel(level)

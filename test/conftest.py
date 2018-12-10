@@ -14,15 +14,12 @@ FULL_PATH = [OUR_DIRECTORY, ROOT_DIR, "OEFCore", "build", "apps", "node", "Node"
 PATH_TO_NODE_EXEC = os.path.join(*FULL_PATH)
 
 
-@pytest.fixture(scope="function")
-def oef_network_node(request):
+@pytest.fixture(scope="session")
+def oef_network_node():
     """Set up an instance of the OEF Node.
     It assumes that the OEFCore repository has been cloned in the root folder of the project."""
     FNULL = open(os.devnull, 'w')
     p = subprocess.Popen(PATH_TO_NODE_EXEC, stdout=FNULL, stderr=subprocess.STDOUT)
     time.sleep(0.01)
-
-    def teardown():
-        p.kill()
-
-    request.addfinalizer(teardown)
+    yield
+    p.kill()

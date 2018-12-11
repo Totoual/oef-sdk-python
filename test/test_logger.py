@@ -11,7 +11,7 @@ from oef.logger import set_logger
 @pytest.mark.parametrize("handlers", [[StreamHandler()], [NullHandler()], None])
 def test_set_logger(logging_level, handlers):
     """Test that the ``set_logger`` utility function behaves as expected."""
-    logger = set_logger(level=logging_level, handlers=handlers)
+    logger = set_logger("oef", level=logging_level, handlers=handlers)
 
     assert isinstance(logger, Logger)
     assert logging_level == logger.level

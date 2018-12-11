@@ -70,6 +70,11 @@ The ``GreetingsAgent`` does the following:
 * ``on_message``: whenever the agent receives a ``hello`` message,
   it answers with ine if its greetings.
 
+.. code-block:: python
+
+    >>> a = "a"
+    >>> a
+    'a'
 
 .. code-block:: python
 
@@ -135,13 +140,10 @@ When the ``client_agent`` receives a search result from the OEF, the ``on_search
 
 .. code-block:: python
 
-  import asyncio
-  loop = asyncio.get_event_loop()
-  loop.run_until_complete(asyncio.gather(
-    client_agent.async_run(),
-    server_agent.async_run(),
-    )
-  )
+    import asyncio
+    loop.run_until_complete(asyncio.gather(
+        client_agent.async_run(),
+        server_agent.async_run()))
 
 The output should be:
 
@@ -153,7 +155,10 @@ The output should be:
     [greetings_client]: Received message: origin=greetings_server, dialogue_id=0, content=b'greetings'
 
 
-You can find the sources at
-`this link <https://github.com/uvue-git/OEFCorePython/tree/develop/examples/greetings/greetings_example.py>`_.
+You can find the full script at
+`this link <https://github.com/uvue-git/OEFCorePython/tree/master/examples/greetings/greetings_example.py>`_.
+
+You can also try another version that uses the local implementation of an OEF Node:
+`link <https://github.com/uvue-git/OEFCorePython/tree/master/examples/greetings/local_greetings_example.py>`_.
 
 In :ref:`tutorial` you might find all the details and how to implement more complex behaviours.

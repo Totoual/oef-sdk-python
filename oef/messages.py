@@ -14,16 +14,44 @@ CFP_TYPES = Union[Query, bytes, NoneType]
 PROPOSE_TYPES = Union[bytes, List[Description]]
 
 
-class Message(ABC):
+class BaseMessage(ABC):
+    """
+    An abstract class to represent the messages exchanged with the OEF.
+    Every subclass must implement the :func:`~oef.messages.to_envelope` method
+    that serialize the data into a protobuf message.
+
+    >>> BaseMessage()
+    Traceback (most recent call last):
+      ...
+    TypeError: Can't instantiate abstract class BaseMessage with abstract methods to_envelope
+    >>>
+
+    """
 
     @abstractmethod
     def to_envelope(self) -> agent_pb2.Envelope:
+        """
+        Pack the message into a protobuf message.
+
+        :return: the envelope.
+        """
         raise NotImplementedError
 
 
-class RegisterDescription(Message):
+class RegisterDescription(BaseMessage):
+    """
+    This message is used for registering a new agent  in the Agent Directory of an OEF Node.
+    The agent is described by a :class:`~oef.schema.Description` object.
+
+    It is used in the method :func:`~oef.core.OEFCoreInterface.register_agent`.
+    """
 
     def __init__(self, agent_description: Description):
+        """
+        Initialize a RegisterDescription message.
+
+        :param agent_description: the agent's description.
+        """
         self.agent_description = agent_description
 
     def to_envelope(self) -> agent_pb2.Envelope:
@@ -32,9 +60,20 @@ class RegisterDescription(Message):
         return envelope
 
 
-class RegisterService(Message):
+class RegisterService(BaseMessage):
+    """
+    This message is used for registering a new agent in the Service Directory of an OEF Node.
+    The service agent is described by a :class:`~oef.schema.Description` object.
+
+    It is used in the method :func:`~oef.core.OEFCoreInterface.register_service`.
+    """
 
     def __init__(self, service_description: Description):
+        """
+        Initialize a RegisterService message.
+
+        :param agent_description: the service agent's description.
+        """
         self.service_description = service_description
 
     def to_envelope(self) -> agent_pb2.Envelope:
@@ -43,9 +82,15 @@ class RegisterService(Message):
         return envelope
 
 
-class UnregisterDescription(Message):
+class UnregisterDescription(BaseMessage):
+    """
+    This message is used for unregistering an agent in the Agent Directory of an OEF Node.
+
+    It is used in the method :func:`~oef.core.OEFCoreInterface.unregister_agent`.
+    """
 
     def __init__(self):
+        """Initialize a UnregisterDescription message."""
         pass
 
     def to_envelope(self) -> agent_pb2.Envelope:
@@ -54,9 +99,20 @@ class UnregisterDescription(Message):
         return envelope
 
 
-class UnregisterService(Message):
+class UnregisterService(BaseMessage):
+    """
+    This message is used for unregistering a `(service agent, description)` in the Service Directory of an OEF Node.
+    The service agent is described by a :class:`~oef.schema.Description` object.
+
+    It is used in the method :func:`~oef.core.OEFCoreInterface.unregister_service`.
+    """
 
     def __init__(self, service_description):
+        """
+        Initialize a UnregisterService message.
+
+        :param service_description: the service agent's description.
+        """
         self.service_description = service_description
 
     def to_envelope(self) -> agent_pb2.Envelope:
@@ -65,8 +121,28 @@ class UnregisterService(Message):
         return envelope
 
 
-class SearchAgents(Message):
+class SearchAgents(BaseMessage):
+    """
+    This message is used for searching agents in the Agent Directory of an OEF Node.
+    It contains:
+
+    * a search id, that identifies the search query. This id will be used
+      by the sender in order to distinguish different incoming search results.
+    * a query, i.e. a list of constraints defined over a data model.
+
+    If everything works correctly, eventually, the sender of the message will receive a
+    search result message and the agent's :func:`~oef.core.OEFCoreInterface.on_search_result` will be executed.
+
+    It is used in the method :func:`~oef.core.OEFCoreInterface.search_agents`.
+    """
+
     def __init__(self, search_id: int, query: Query):
+        """
+        Initialize a SearchAgents message.
+
+        :param search_id: the search identifier.
+        :param query: the query that describe the agent we are looking for.
+        """
         self.search_id = search_id
         self.query = query
 
@@ -77,9 +153,28 @@ class SearchAgents(Message):
         return envelope
 
 
-class SearchServices(Message):
+class SearchServices(BaseMessage):
+    """
+    This message is used for searching services in the Service Directory of an OEF Node.
+    It contains:
+
+    * a search id, that identifies the search query. This id will be used
+      by the sender in order to distinguish different incoming search results.
+    * a query, i.e. a list of constraints defined over a data model.
+
+    If everything works correctly, eventually, the sender of the message will receive a
+    search result message and the agent's :func:`~oef.core.OEFCoreInterface.on_search_result` is executed.
+
+    It is used in the method :func:`~oef.core.OEFCoreInterface.search_services`.
+    """
 
     def __init__(self, search_id: int, query: Query):
+        """
+        Initialize a SearchServices message.
+
+        :param search_id: the search identifier.
+        :param query: the query that describe the agent we are looking for.
+        """
         self.search_id = search_id
         self.query = query
 
@@ -89,22 +184,59 @@ class SearchServices(Message):
         envelope.search_services.search_id = self.search_id
         return envelope
 
-
-class AgentMessage(Message, ABC):
-    pass
+# TODO: ErrorMessage
 
 
-class SimpleMessage(AgentMessage):
+class AgentMessage(BaseMessage, ABC):
+    """
+    This type of message is used for interacting with other agents, via an OEF Node.
+    There are five different type of agent messages:
+
+    1. :class:`.Message`, to convey a generic message (that is, a sequence of bytes).
+    2. :class:`.CFP`, to make a `Call For Proposals` for some resources.
+    3. :class:`.Propose`, to make a `Proposal` about a specific resource.
+    4. :class:`.Accept`, to accept a previous `Proposal`.
+    5. :class:`.Decline`, to decline the negotiation.
+
+    Using message 1 is the most generic way to interact with other OEF agent. It is flexible, but requires
+    extra development efforts to come up with a working protocol.
+
+    Messages 2-5 are used in the negotiation protocol, where some agents are buyers and other are sellers.
+    The protocol is compliant with FIPA specifications.
+    """
+
+
+class Message(AgentMessage):
+    """
+    This message is used to send a generic message to other agents.
+    It contains:
+
+    * a dialogue id, that identifies the dialogue in which the message is sent.
+    * a destination, that is the public key of the recipient of the message.
+    * a sequence of bytes, that is the content of the message.
+
+    If everything works correctly, eventually, the recipient will receive the content of the message
+     and the recipient's :func:`~oef.core.OEFCoreInterface.on_message` is executed.
+
+    It is used in the method :func:`~oef.core.OEFCoreInterface.send_message`.
+    """
 
     def __init__(self,
                  dialogue_id: int,
                  destination: str,
                  msg: bytes):
+        """
+        Initialize a simple message.
+
+        :param dialogue_id: the identifier of the dialogue.
+        :param destination: the public key of the recipient agent.
+        :param msg: the content of the message.
+        """
         self.dialogue_id = dialogue_id
         self.destination = destination
         self.msg = msg
 
-    def to_envelope(self):
+    def to_envelope(self) -> agent_pb2.Envelope:
         agent_msg = agent_pb2.Agent.Message()
         agent_msg.dialogue_id = self.dialogue_id
         agent_msg.destination = self.destination
@@ -116,6 +248,21 @@ class SimpleMessage(AgentMessage):
 
 
 class CFP(AgentMessage):
+    """
+    This message is used to send a `Call For Proposals`.
+    It contains:
+
+    * a dialogue id, that identifies the dialogue in which the message is sent.
+    * a destination, that is the public key of the recipient of the message.
+    * a query, that describes the resources the sender is interested in.
+    * a message id, that is an unique identifier for a message, given dialogue.
+    * a target id, that is, the identifier of the message to whom this message is targeting, in a given dialogue.
+
+    If everything works correctly, eventually, the recipient will receive the content of the message
+    and the recipient's :func:`~oef.core.OEFCoreInterface.on_cfp` is executed.
+
+    It is used in the method :func:`~oef.core.OEFCoreInterface.send_cfp`.
+    """
 
     def __init__(self,
                  dialogue_id: int,
@@ -123,6 +270,15 @@ class CFP(AgentMessage):
                  query: CFP_TYPES,
                  msg_id: Optional[int] = 1,
                  target: Optional[int] = 0):
+        """
+        Initialize a `Call For Proposal` message.
+
+        :param dialogue_id: the identifier of the dialogue.
+        :param destination: the public key of the recipient agent.
+        :param query: the query, an instance of `~oef.schema.Query`, ``bytes``, or ``None``.
+        :param msg_id: the unique identifier of the message in the dialogue denoted by ``dialogue_id``.
+        :param target: the identifier of the message to whom this message is targeting.
+        """
         self.dialogue_id = dialogue_id
         self.destination = destination
         self.query = query
@@ -153,6 +309,21 @@ class CFP(AgentMessage):
 
 
 class Propose(AgentMessage):
+    """
+    This message is used to send a `Proposal`.
+    It contains:
+
+    * a dialogue id, that identifies the dialogue in which the message is sent.
+    * a destination, that is the public key of the recipient of the message.
+    * a list of proposals describing the resources that the seller proposes.
+    * the message id, that is an unique identifier for a message, given dialogue.
+    * target, that is, the identifier of the message to whom this message is targeting.
+
+    If everything works correctly, eventually, the recipient will receive the content of the message
+    and the recipient's :func:`~oef.core.OEFCoreInterface.on_propose` is executed.
+
+    It is used in the method :func:`~oef.core.OEFCoreInterface.send_propose`.
+    """
 
     def __init__(self,
                  dialogue_id: int,
@@ -160,6 +331,16 @@ class Propose(AgentMessage):
                  proposals: PROPOSE_TYPES,
                  msg_id: int,
                  target: Optional[int] = None):
+        """
+        Initialize a `Propose` message.
+
+        :param dialogue_id: the identifier of the dialogue.
+        :param destination: the public key of the recipient agent.
+        :param proposals: a list of proposals. A proposal can be a `~oef.schema.Description` or ``bytes``.
+        :param msg_id: the unique identifier of the message in the dialogue denoted by ``dialogue_id``.
+        :param target: the identifier of the message to whom this message is targeting.
+        """
+
         self.dialogue_id = dialogue_id
         self.destination = destination
         self.proposals = proposals
@@ -189,12 +370,34 @@ class Propose(AgentMessage):
 
 
 class Accept(AgentMessage):
+    """
+    This message is used to send an `Accept`.
+    It contains:
+
+    * a dialogue id, that identifies the dialogue in which the message is sent.
+    * a destination, that is the public key of the recipient of the message.
+    * the message id, that is an unique identifier for a message, given dialogue.
+    * target, that is, the identifier of the message to whom this message is targeting.
+
+    If everything works correctly, eventually, the recipient will receive the content of the message
+    and the recipient's :func:`~oef.core.OEFCoreInterface.on_accept` is executed.
+
+    It is used in the method :func:`~oef.core.OEFCoreInterface.send_accept`.
+    """
 
     def __init__(self,
                  dialogue_id: int,
                  destination: str,
                  msg_id: int,
                  target: Optional[int] = None):
+        """
+        Initialize an `Accept` message.
+
+        :param dialogue_id: the identifier of the dialogue.
+        :param destination: the public key of the recipient agent.
+        :param msg_id: the unique identifier of the message in the dialogue denoted by ``dialogue_id``.
+        :param target: the identifier of the message to whom this message is targeting.
+        """
 
         self.dialogue_id = dialogue_id
         self.destination = destination
@@ -218,12 +421,34 @@ class Accept(AgentMessage):
 
 
 class Decline(AgentMessage):
+    """
+    This message is used to send an `Decline`.
+    It contains:
+
+    * a dialogue id, that identifies the dialogue in which the message is sent.
+    * a destination, that is the public key of the recipient of the message.
+    * the message id, that is an unique identifier for a message, given dialogue.
+    * target, that is, the identifier of the message to whom this message is targeting.
+
+    If everything works correctly, eventually, the recipient will receive the content of the message
+    and the recipient's :func:`~oef.core.OEFCoreInterface.on_decline` is executed.
+
+    It is used in the method :func:`~oef.core.OEFCoreInterface.send_decline`.
+    """
 
     def __init__(self,
                  dialogue_id: int,
                  destination: str,
                  msg_id: int,
                  target: Optional[int] = None):
+        """
+        Initialize a `Decline` message.
+
+        :param dialogue_id: the identifier of the dialogue.
+        :param destination: the public key of the recipient agent.
+        :param msg_id: the unique identifier of the message in the dialogue denoted by ``dialogue_id``.
+        :param target: the identifier of the message to whom this message is targeting.
+        """
 
         self.dialogue_id = dialogue_id
         self.destination = destination

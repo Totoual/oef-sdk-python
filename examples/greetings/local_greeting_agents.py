@@ -40,6 +40,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    # Instead of having an OEF Node running somewhere, we can use a in-process instance of an OEF Node.
+    # It will run and process messages concurrently with the other agents.
     local_node = OEFLocalProxy.LocalNode()
     client_proxy = OEFLocalProxy("greetings_client", local_node)
     server_proxy = OEFLocalProxy("greetings_server", local_node)

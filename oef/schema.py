@@ -22,7 +22,12 @@ class ProtobufSerializable(ABC):
     @classmethod
     @abstractmethod
     def from_pb(cls, obj):
-        """Return the object from a Protobuf object"""
+        """
+        Return the object from a Protobuf object
+        :param obj:
+        :return:
+        """
+
         raise NotImplementedError
 
     def serialize(self) -> str:
@@ -48,6 +53,8 @@ class AttributeSchema(ProtobufSerializable):
                  is_attribute_required: bool,
                  attribute_description: Optional[str] = None) -> None:
         """
+        Initialize an attribute schema.
+
         :param attribute_name: the name of this attribute.
         :param attribute_type: the type of this attribute, must be a type in ATTRIBUTE_TYPES.
         :param is_attribute_required: does this attribute have to be included.
@@ -179,7 +186,7 @@ class Description(ProtobufSerializable):
         Initialize a description.
 
         :param attribute_values: the values of each attribute in the description. This is a
-        dictionary from attribute name to attribute value, each attribute value must have a type
+             dictionary from attribute name to attribute value, each attribute value must have a type
         in ATTRIBUTE_TYPES.
         :param data_model: optional schema of this description. If none is provided
         then the attribute values will not be checked against a schema. Schemas are extremely useful
@@ -197,6 +204,7 @@ class Description(ProtobufSerializable):
     def _extract_value(value: query_pb2.Query.Value) -> ATTRIBUTE_TYPES:
         """
         From protobuf query value to attribute type.
+
         :param value: an instance of query_pb2.Query.Value.
         :return: the associated attribute type.
         """

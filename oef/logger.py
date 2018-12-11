@@ -11,11 +11,14 @@ _DEFAULT_LOG_FORMAT = '[%(asctime)s][%(name)s][%(funcName)s][%(levelname)s] %(me
 def set_logger(name, level=logging.INFO, handlers: List[logging.Handler]=None):
     """
     Utility to set up a logger, for a given module.
-    :param name: the name of the module to audit.
-           This can be the name of the package (e.g. ``oef``) or any child module (e.g. ``oef.agents``).
+
+    >>> logger = set_logger("oef", logging.DEBUG)
+
+    :param name: the name of the module to audit. This can be the name of the package (e.g. ``"oef"``)
+           | or any child module (e.g. ``"oef.agents"``).
     :param level: the logging level
     :param handlers: a list of logging handlers. If None, then a default StreamHandler is provided,
-                     printing to standard error.
+           | printing to standard error.
     :return: the logger.
     """
 

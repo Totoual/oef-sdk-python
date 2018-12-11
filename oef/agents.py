@@ -22,7 +22,12 @@ def _warning_not_implemented_method(method_name):
 class Agent(AgentInterface, ABC):
 
     @property
-    def public_key(self):
+    def public_key(self) -> str:
+        """
+        The public key that identifies the agent in the OEF.
+
+        :return: the public key.
+        """
         return self.oef_proxy.public_key
 
     def __init__(self, oef_proxy: OEFProxy):
@@ -32,15 +37,17 @@ class Agent(AgentInterface, ABC):
 
     def run(self) -> None:
         """
-        Run the agent synchronously. That is, until self.stop() is not called.
-        :return: None
+        Run the agent synchronously. That is, until :func:`~oef.agents.Agent.stop()` is not called.
+
+        :return: ``None``
         """
         self._loop.run_until_complete(self.async_run())
 
     async def async_run(self) -> None:
         """
         Run the agent asynchronously.
-        :return: None
+
+        :return: ``None``
         """
         if self._task:
             logger.warning("Agent {} already scheduled for running.".format(self.public_key))
@@ -49,18 +56,17 @@ class Agent(AgentInterface, ABC):
 
     def stop(self) -> None:
         """
-        Stop the agent. Specifically, if ``run()`` or ``async_run()`` have been called, then
-        this method will cancel the previously instantiated task.
+        Stop the agent. Specifically, if :func:`~oef.agents.Agent.run()` or :func:`~oef.agents.Agent.async_run()`
+        have been called, then this method will cancel the previously instantiated task.
         The task that manages the agent-loop is hence scheduled for cancellation.
+
+        :return: ``None``
         """
         if self._task:
             self._task.cancel()
             self._task = None
 
     def connect(self) -> None:
-        """
-        Connect the agent to the OEF Node specified by ``oef_addr`` and ``_oef_port``.
-        """
         logger.debug("{}: Connecting...".format(self.public_key))
         self._loop.run_until_complete(self.oef_proxy.connect())
         logger.debug("{}: Connection established.".format(self.public_key))

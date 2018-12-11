@@ -11,7 +11,7 @@ Initialization
 
 
 Setup an OEF Node
-~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~
 
 To be able to follow the following examples, we need to set up an OEF Node.
 This node will manage the discovery of agents
@@ -264,7 +264,7 @@ Analogously to the previous section, we connect our client to the OEF.
 Make a query
 ````````````
 
-Now we need to search for agents who provide the ``echo` service.
+Now we need to search for agents who provide the ``echo`` service.
 
 To do so, we create a ``Query`` referring to the ``echo`` data model. The first parameter is a list
 of *constraints* over the attributes of the data model. However, since our data model is trivial,
@@ -333,7 +333,7 @@ The order of the exchanged message is the following:
 2. The ``echo_client`` queries to the OEF Node
 3. The OEF Node sends back the list of agents who satisfy
    the query constraints. In this trivial example,
-   the only agent returned is the ``echo_server`.
+   the only agent returned is the ``echo_server``.
 4. The client sends a ``"hello"`` message to the OEF Node,
    which targets the ``echo_server``
 5. The OEF Node dispatches the message from ``echo_client`` to ``echo_server``

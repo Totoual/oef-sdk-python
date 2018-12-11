@@ -17,7 +17,7 @@ import struct
 from typing import Optional, Awaitable, Tuple, Dict, List
 
 from oef.core import OEFProxy
-from oef.messages import SimpleMessage, CFP_TYPES, PROPOSE_TYPES, CFP, Propose, Accept, Decline, Message, \
+from oef.messages import Message, CFP_TYPES, PROPOSE_TYPES, CFP, Propose, Accept, Decline, BaseMessage, \
     AgentMessage, RegisterDescription, RegisterService, UnregisterDescription, \
     UnregisterService, SearchAgents, SearchServices
 from oef.schema import Description
@@ -133,7 +133,7 @@ class OEFNetworkProxy(OEFProxy):
         self._send(msg.to_envelope())
 
     def send_message(self, dialogue_id: int, destination: str, msg: bytes) -> None:
-        msg = SimpleMessage(dialogue_id, destination, msg)
+        msg = Message(dialogue_id, destination, msg)
         self._send(msg.to_envelope())
 
     def send_cfp(self,
@@ -200,7 +200,7 @@ class OEFLocalProxy(OEFProxy):
         async def _process_messages(self):
             while True:
                 try:
-                    data = await self.read_queue.get()  # type: Tuple[str, Message]
+                    data = await self.read_queue.get()  # type: Tuple[str, BaseMessage]
                 except asyncio.CancelledError:
                     logger.debug("Local Node: loop cancelled.")
                     break
@@ -296,7 +296,7 @@ class OEFLocalProxy(OEFProxy):
         self.local_node.unregister_service(self.public_key, service_description)
 
     def send_message(self, dialogue_id: int, destination: str, msg: bytes) -> None:
-        msg = SimpleMessage(dialogue_id, destination, msg)
+        msg = Message(dialogue_id, destination, msg)
         self._send(msg)
 
     def send_cfp(self, dialogue_id: int, destination: str, query: CFP_TYPES, msg_id: Optional[int] = 1,
@@ -325,5 +325,5 @@ class OEFLocalProxy(OEFProxy):
         data = await self.read_queue.get()
         return data
 
-    def _send(self, msg: Message) -> None:
+    def _send(self, msg: BaseMessage) -> None:
         self.write_queue.put_nowait((self.public_key, msg))

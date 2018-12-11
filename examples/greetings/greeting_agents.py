@@ -1,6 +1,8 @@
-# Copyright (C) Fetch.ai 2018 - All Rights Reserved
-# Unauthorized copying of this file, via any medium is strictly prohibited
-# Proprietary and confidential
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# Copyright 2018, Fetch AI Ltd. All Rights Reserved.
+
 """
 A simple example with OEF Agents that greet each other.
 The agents interact via an OEF Node on the network.
@@ -21,6 +23,7 @@ parser.add_argument("--port", default=3333, help="Port for the connection with t
 
 
 class GreetingsAgent(Agent):
+    """A class that implements the greeting agent."""
 
     def on_message(self, origin: str, dialogue_id: int, content: bytes):
         print("[{}]: Received message: origin={}, dialogue_id={}, content={}"

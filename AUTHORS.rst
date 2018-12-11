@@ -1,5 +1,6 @@
 Authors
-```````
+=======
+
 This is the official list of Fetch.AI authors for copyright purposes.
 
 Jerome Maloberti <jerome.maloberti@fetch.ai> `@jeromemaloberti <https://github.com/jeromemalobertiz>`_

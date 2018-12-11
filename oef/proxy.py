@@ -1,9 +1,14 @@
-# Copyright (C) Fetch.ai 2018 - All Rights Reserved
-# Unauthorized copying of this file, via any medium is strictly prohibited
-# Proprietary and confidential
+# -*- coding: utf-8 -*-
+
+# Copyright 2018, Fetch AI Ltd. All Rights Reserved.
 
 """
-Python bindings for OEFCore
+
+oef.proxy
+~~~~~~~~~
+
+This module defines the proxies classes used by agents to interact with an OEF Node.
+
 """
 
 import asyncio
@@ -76,11 +81,6 @@ class OEFNetworkProxy(OEFProxy):
         return await self._server_reader.read(nbytes[0])
 
     async def connect(self) -> bool:
-        """
-        Connect to the OEFNode
-        :return: True if the connection has been established, False otherwise.
-        """
-
         if self._connection is not None:
             return True
 
@@ -136,8 +136,7 @@ class OEFNetworkProxy(OEFProxy):
         msg = Message(dialogue_id, destination, msg)
         self._send(msg.to_envelope())
 
-    def send_cfp(self,
-                 dialogue_id: int,
+    def send_cfp(self, dialogue_id: int,
                  destination: str,
                  query: CFP_TYPES,
                  msg_id: Optional[int] = 1,
@@ -145,9 +144,11 @@ class OEFNetworkProxy(OEFProxy):
         msg = CFP(dialogue_id, destination, query, msg_id, target)
         self._send(msg.to_envelope())
 
-    def send_propose(self, dialogue_id: int, destination: str, proposals: PROPOSE_TYPES, msg_id: int,
+    def send_propose(self, dialogue_id: int,
+                     destination: str,
+                     proposals: PROPOSE_TYPES,
+                     msg_id: int,
                      target: Optional[int] = None) -> None:
-
         msg = Propose(dialogue_id, destination, proposals, msg_id, target)
         self._send(msg.to_envelope())
 
@@ -156,8 +157,7 @@ class OEFNetworkProxy(OEFProxy):
         msg = Accept(dialogue_id, destination, msg_id, target)
         self._send(msg.to_envelope())
 
-    def send_decline(self,
-                     dialogue_id: int,
+    def send_decline(self, dialogue_id: int,
                      destination: str,
                      msg_id: int,
                      target: Optional[int] = None) -> None:
@@ -166,8 +166,7 @@ class OEFNetworkProxy(OEFProxy):
 
     def close(self) -> None:
         """
-        Used to tear down resources associated with this Proxy, i.e. the writing connection with
-        the server.
+        Tear down resources associated with this Proxy, i.e. the writing connection with the server.
         """
         self._server_writer.close()
 

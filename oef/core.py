@@ -1,7 +1,14 @@
-# Copyright (C) Fetch.ai 2018 - All Rights Reserved
-# Unauthorized copying of this file, via any medium is strictly prohibited
-# Proprietary and confidential
-"""The core module that contains the main abstraction of the package."""
+# -*- coding: utf-8 -*-
+
+# Copyright 2018, Fetch AI Ltd. All Rights Reserved.
+
+"""
+
+oef.core
+~~~~~~~~
+
+The core module that contains the main abstraction of the SDK.
+"""
 import asyncio
 import logging
 from abc import ABC, abstractmethod
@@ -19,10 +26,11 @@ class OEFCoreInterface(ABC):
     """Methods to interact with an OEF node."""
 
     @abstractmethod
-    async def connect(self) -> None:
-        """Connect to the OEF Node.
+    async def connect(self) -> bool:
+        """
+        Connect to the OEF Node
 
-        :return: ``None``
+        :return: True if the connection has been established, False otherwise.
         """
         raise NotImplementedError
 

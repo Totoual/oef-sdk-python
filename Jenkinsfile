@@ -43,8 +43,7 @@ pipeline {
 
                 stage('Lint'){
                     steps{
-                        // TODO remove the "disable all" flags.
-                        sh 'flake8 --exclude=.*'
+                        sh 'flake8 oef --exclude=oef/*_pb2.py'
                         sh 'pylint -d all oef'
                     }
                 }

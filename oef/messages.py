@@ -1,6 +1,15 @@
-# Copyright (C) Fetch.ai 2018 - All Rights Reserved
-# Unauthorized copying of this file, via any medium is strictly prohibited
-# Proprietary and confidential
+# -*- coding: utf-8 -*-
+
+# Copyright 2018, Fetch AI Ltd. All Rights Reserved.
+
+"""
+oef.messages
+~~~~~~~~~~~~
+
+This module contains classes to manage serialization of data in Protobuf messages.
+
+"""
+
 from abc import ABC, abstractmethod
 from typing import Optional, Union, List
 

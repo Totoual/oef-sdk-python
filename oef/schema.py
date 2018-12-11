@@ -1,7 +1,15 @@
-# Copyright (C)  - All Rights Reserved
-# Unauthorized copying of this file, via any medium is strictly prohibited
-# Proprietary and confidential
-"""This module defines classes to deal with data models and their instances."""
+# -*- coding: utf-8 -*-
+
+# Copyright 2018, Fetch AI Ltd. All Rights Reserved.
+
+"""
+
+oef.schema
+~~~~~~~~~~
+
+This module defines classes to deal with data models and their instances.
+
+"""
 
 
 import copy

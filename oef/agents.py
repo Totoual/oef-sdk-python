@@ -1,6 +1,15 @@
-# Copyright (C) Fetch.ai 2018 - All Rights Reserved
-# Unauthorized copying of this file, via any medium is strictly prohibited
-# Proprietary and confidential
+# -*- coding: utf-8 -*-
+
+# Copyright 2018, Fetch AI Ltd. All Rights Reserved.
+
+"""
+
+oef.agents
+~~~~~~~~~~
+
+This module contains the base class for implementing agents
+
+"""
 import asyncio
 import logging
 from abc import ABC
@@ -15,11 +24,25 @@ from oef.schema import Description
 logger = logging.getLogger(__name__)
 
 
-def _warning_not_implemented_method(method_name):
+def _warning_not_implemented_method(method_name) -> None:
+    """
+    Raise a warning if a method has not been implemented.
+
+    :param method_name: the method name to report in the warning
+    :return: ``None``
+    """
     logger.warning("You should implement {} in your OEFAgent class.", method_name)
 
 
 class Agent(AgentInterface, ABC):
+    """
+    The base class for OEF Agents.
+
+    Extend this class to implement the callback methods defined in
+    `~oef.core.DialogueInterface` and `~oef.core.ConnectionInterface`.
+
+    In this way you can program the behaviour of the agent when it's running.
+    """
 
     @property
     def public_key(self) -> str:
@@ -31,6 +54,12 @@ class Agent(AgentInterface, ABC):
         return self.oef_proxy.public_key
 
     def __init__(self, oef_proxy: OEFProxy):
+        """
+        Initialize the OEF Agent.
+
+        :param oef_proxy: the proxy for an OEF Node.
+        """
+
         self.oef_proxy = oef_proxy
         self._task = None
         self._loop = asyncio.get_event_loop()
@@ -89,8 +118,7 @@ class Agent(AgentInterface, ABC):
     def search_services(self, search_id: int, query: Query) -> None:
         self.oef_proxy.search_services(search_id, query)
 
-    def send_message(self,
-                     dialogue_id: int,
+    def send_message(self, dialogue_id: int,
                      destination: str,
                      msg: bytes) -> None:
         logger.debug("Agent {}: dialogue_id={}, destination={}, msg={}"
@@ -100,8 +128,7 @@ class Agent(AgentInterface, ABC):
                              msg))
         self.oef_proxy.send_message(dialogue_id, destination, msg)
 
-    def send_cfp(self,
-                 dialogue_id: int,
+    def send_cfp(self, dialogue_id: int,
                  destination: str,
                  query: CFP_TYPES,
                  msg_id: Optional[int] = 1,
@@ -115,8 +142,7 @@ class Agent(AgentInterface, ABC):
                              target))
         self.oef_proxy.send_cfp(dialogue_id, destination, query, msg_id, target)
 
-    def send_propose(self,
-                     dialogue_id: int,
+    def send_propose(self, dialogue_id: int,
                      destination: str,
                      proposals: PROPOSE_TYPES,
                      msg_id: int,
@@ -154,8 +180,7 @@ class Agent(AgentInterface, ABC):
                              target))
         self.oef_proxy.send_decline(dialogue_id, destination, msg_id, target)
 
-    def on_message(self,
-                   origin: str,
+    def on_message(self, origin: str,
                    dialogue_id: int,
                    content: bytes):
         logger.info("on_message: {}, {}, {}, {}", origin, dialogue_id, content)
@@ -169,24 +194,21 @@ class Agent(AgentInterface, ABC):
         logger.info("on_cfp: {}, {}, {}, {}", origin, dialogue_id, msg_id, target, query)
         _warning_not_implemented_method(self.on_cfp.__name__)
 
-    def on_accept(self,
-                  origin: str,
+    def on_accept(self, origin: str,
                   dialogue_id: int,
                   msg_id: int,
                   target: int, ):
         logger.info("on_accept: {}, {}, {}, {}", origin, dialogue_id, msg_id, target)
         _warning_not_implemented_method(self.on_accept.__name__)
 
-    def on_decline(self,
-                   origin: str,
+    def on_decline(self, origin: str,
                    dialogue_id: int,
                    msg_id: int,
                    target: int, ):
         logger.info("on_decline: {}, {}, {}, {}", origin, dialogue_id, msg_id, target)
         _warning_not_implemented_method(self.on_decline.__name__)
 
-    def on_propose(self,
-                   origin: str,
+    def on_propose(self, origin: str,
                    dialogue_id: int,
                    msg_id: int,
                    target: int,
@@ -194,8 +216,7 @@ class Agent(AgentInterface, ABC):
         logger.info("on_propose: {}, {}, {}, {}, {}", origin, dialogue_id, msg_id, target, proposal)
         _warning_not_implemented_method(self.on_propose.__name__)
 
-    def on_error(self,
-                 operation: agent_pb2.Server.AgentMessage.Error.Operation,
+    def on_error(self, operation: agent_pb2.Server.AgentMessage.Error.Operation,
                  dialogue_id: int,
                  message_id: int):
         logger.info("on_error: {}, {}, {}", operation, dialogue_id, message_id)
@@ -207,11 +228,16 @@ class Agent(AgentInterface, ABC):
 
 
 class OEFAgent(Agent):
-    """Agent that interacts with an OEFNode on the network."""
+    """
+    Agent that interacts with an OEFNode on the network.
+
+    It provides a nicer constructor that does not require to instantiate `~oef.proxy.OEFLocalProxy` explicitly.
+    """
 
     def __init__(self, public_key: str, oef_addr: str, oef_port: int = 3333) -> None:
         """
         Initialize an OEF network agent.
+
         :param public_key: the public key (identifier) of the agent
         :param oef_addr: the IP address of the OEF Node.
         :param oef_port: the port for the connection.
@@ -222,11 +248,18 @@ class OEFAgent(Agent):
 
 
 class LocalAgent(Agent):
-    """Agent that interacts with a local implementation of an OEF Node."""
+    """
+    Agent that interacts with a local implementation of an OEF Node.
+
+    It provides a nicer constructor that does not require to instantiate `~oef.proxy.OEFLocalProxy` explicitly.
+
+    Notice: other agents need to be constructed with the same `oef.proxy.OEFLocalProxy.LocalNode` instance.
+    """
 
     def __init__(self, public_key: str, local_node: OEFLocalProxy.LocalNode):
         """
         Initialize an OEF local agent.
+
         :param public_key: the public key (identifier) of the agent.
         :param local_node: an instance of the local implementation of the OEF Node.
         """

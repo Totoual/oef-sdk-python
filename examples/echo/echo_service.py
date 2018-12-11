@@ -1,6 +1,31 @@
-# Copyright (C) Fetch.ai 2018 - All Rights Reserved
-# Unauthorized copying of this file, via any medium is strictly prohibited
-# Proprietary and confidential
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# Copyright 2018, Fetch AI Ltd. All Rights Reserved.
+
+"""
+Echo service agent
+~~~~~~~~~~~~~~~~~
+
+This script belongs to the ``echo`` example of OEF Agent development, and implements the echo service agent.
+It assumes that an instance of the OEF Node is running at ``127.0.0.1:3333``.
+
+The script does the following:
+
+1. Instantiate a ``EchoServiceAgent``
+2. Connect the agent to the OEF Node.
+3. Register the agent as an ``echo`` service.
+4. Run the agent, waiting for messages from the OEF.
+
+
+The class ``EchoServiceAgent`` define the behaviour of the echo client agent.
+
+* whenever he receives a message (see ``on_message`` method) from another agent,
+he sends back the same message to the origin.
+
+Other methods (e.g. ``on_cfp``, ``on_error`` etc.) are omitted, since not needed.
+
+"""
 
 
 from oef.agents import OEFAgent
@@ -13,6 +38,9 @@ from oef.schema import DataModel, Description
 
 
 class EchoServiceAgent(OEFAgent):
+    """
+    The class that defines the behaviour of the echo service agent.
+    """
 
     def on_message(self, origin: str, dialogue_id: int, content: bytes):
         print("Received message: origin={}, dialogue_id={}, content={}".format(origin, dialogue_id, content))

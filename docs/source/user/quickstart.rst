@@ -70,11 +70,6 @@ The ``GreetingsAgent`` does the following:
 * ``on_message``: whenever the agent receives a ``hello`` message,
   it answers with ine if its greetings.
 
-.. code-block:: python
-
-    >>> a = "a"
-    >>> a
-    'a'
 
 .. code-block:: python
 

@@ -1,6 +1,8 @@
-# Copyright (C) Fetch.ai 2018 - All Rights Reserved
-# Unauthorized copying of this file, via any medium is strictly prohibited
-# Proprietary and confidential
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# Copyright 2018, Fetch AI Ltd. All Rights Reserved.
+
 import distutils.cmd
 import distutils.log
 import fileinput
@@ -13,6 +15,8 @@ import glob
 import setuptools.command.build_py
 from setuptools import setup
 
+# TODO check README
+# TODO check HISTORY (version number)
 
 class ProtocCommand(distutils.cmd.Command):
     """A custom command to generate Python Protobuf modules from OEFCoreProtocol"""
@@ -82,13 +86,37 @@ class BuildPyCommand(setuptools.command.build_py.build_py):
         setuptools.command.build_py.build_py.run(self)
 
 
+here = os.path.abspath(os.path.dirname(__file__))
+about = {}
+with open(os.path.join(here, 'oef', '__version__.py'), 'r') as f:
+    exec(f.read(), about)
+
+with open('README.md', 'r') as f:
+    readme = f.read()
+
 setup(
-    name='oef',
-    version='0.1',
+    name=about['__title__'],
+    description=about['__description__'],
+    version=about['__version__'],
+    author=about['__author__'],
+    author_email=about['__author_email__'],
+    url=about['__url__'],
+    long_description=readme,
+    long_description_content_type='text/markdown',
     packages=['oef'],
     cmdclass={
         'protoc': ProtocCommand,
         'build_py': BuildPyCommand
     },
-    install_requires=["protobuf"]
+    classifiers=[
+        # TODO decide development status
+        'Development Status :: 1 - Production/Stable',
+        'Intended Audience :: Developers',
+        'Natural Language :: English',
+        'License :: OSI Approved :: Apache Software License',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+    ],
+    install_requires=["protobuf"],
+    license=about['__license__'],
 )

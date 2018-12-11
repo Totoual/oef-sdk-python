@@ -1,6 +1,6 @@
-# Copyright (C) Fetch.ai 2018 - All Rights Reserved
-# Unauthorized copying of this file, via any medium is strictly prohibited
-# Proprietary and confidential
+# -*- coding: utf-8 -*-
+
+# Copyright 2018, Fetch AI Ltd. All Rights Reserved.
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Union, Tuple, List, Optional

@@ -1,6 +1,11 @@
+# -*- coding: utf-8 -*-
 # Copyright (C) Fetch.ai 2018 - All Rights Reserved
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
+"""
+Script that clone the OEFCore repository and build the OEFCore Node.
+You must have the OEFCore built in order to run tests successfully.
+"""
 import os
 import subprocess
 import sys
@@ -41,6 +46,7 @@ def build_project(project_root, build_root, options):
 def main():
 
     if not os.path.exists("OEFCore"):
+        # TODO change url
         Repo.clone_from("git@github.com:uvue-git/OEFCore.git", "OEFCore", progress=RemoteProgress())
     else:
         try:

@@ -21,13 +21,13 @@ sys.path.insert(0, os.path.abspath('../oef'))
 # -- Project information -----------------------------------------------------
 
 project = 'oef'
-copyright = '2018, Fetch.ai'
-author = 'Fetch.ai'
+copyright = u'2018, Fetch AI Ltd.'
+author = u'Fetch AI Ltd.'
 
 # The short X.Y version
-version = ''
+version = '0.1'
 # The full version, including alpha/beta/rc tags
-release = ''
+release = '0.1'
 
 
 # -- General configuration ---------------------------------------------------
@@ -41,6 +41,7 @@ release = ''
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    ''
 ]
 
 # Add any paths that contain templates here, relative to this directory.

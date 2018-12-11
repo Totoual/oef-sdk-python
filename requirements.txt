@@ -4,6 +4,7 @@ protobuf
 # test
 pytest
 pytest-cov
+tox
 pylint
 pydocstyle
 flake8

@@ -6,9 +6,10 @@
 from oef.agents import OEFAgent
 from oef.schema import DataModel, Description
 
-import logging
-from oef.logger import set_logger
-set_logger("oef", logging.DEBUG)
+# Uncomment the following lines if you want more output
+# import logging
+# from oef.logger import set_logger
+# set_logger("oef", logging.DEBUG)
 
 
 class EchoServiceAgent(OEFAgent):
@@ -25,8 +26,8 @@ if __name__ == '__main__':
     server_agent = EchoServiceAgent("echo_server", oef_addr="127.0.0.1", oef_port=3333)
     server_agent.connect()
 
-    # register a data service on the OEF
-    echo_model = DataModel("echo", [], "echo data service.")
+    # register a service on the OEF
+    echo_model = DataModel("echo", [], "echo service.")
     echo_description = Description({}, echo_model)
 
     server_agent.register_service(echo_description)

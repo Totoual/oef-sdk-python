@@ -8,15 +8,18 @@ from oef.agents import OEFAgent
 from oef.schema import DataModel
 from oef.query import Query
 
-import logging
-from oef.logger import set_logger
-set_logger("oef", logging.DEBUG)
+# Uncomment the following lines if you want more output
+# import logging
+# from oef.logger import set_logger
+# set_logger("oef", logging.DEBUG)
 
 
 class EchoClientAgent(OEFAgent):
 
     def on_message(self, origin: str, dialogue_id: int, content: bytes):
         print("Received message: origin={}, dialogue_id={}, content={}".format(origin, dialogue_id, content))
+        print("Stopping...")
+        self.stop()
 
     def on_search_result(self, search_id: int, agents: List[str]):
         if len(agents) > 0:

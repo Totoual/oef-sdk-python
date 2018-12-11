@@ -17,8 +17,9 @@ import struct
 from typing import Optional, Awaitable, Tuple, Dict, List
 
 from oef.core import OEFProxy
-from oef.messages import SimpleMessage, CFP_TYPES, PROPOSE_TYPES, CFP, Propose, Accept, Decline, Message, AgentMessage, \
-    RegisterDescription, RegisterService, UnregisterDescription, UnregisterService, SearchAgents, SearchServices
+from oef.messages import SimpleMessage, CFP_TYPES, PROPOSE_TYPES, CFP, Propose, Accept, Decline, Message, \
+    AgentMessage, RegisterDescription, RegisterService, UnregisterDescription, \
+    UnregisterService, SearchAgents, SearchServices
 from oef.schema import Description
 from oef.query import Query
 
@@ -214,7 +215,7 @@ class OEFLocalProxy(OEFProxy):
 
         def stop(self):
             if self._task:
-                self._task.stop()
+                self._task.cancel()
 
         def register_agent(self, public_key: str, agent_description: Description) -> None:
             self.loop.run_until_complete(self._lock.acquire())

@@ -2,7 +2,7 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 
-from examples.weather.weather_schema import WEATHER_DATA_MODEL
+from weather_schema import WEATHER_DATA_MODEL
 from oef.agents import OEFAgent
 from oef.proxy import CFP_TYPES
 from oef.schema import Description

@@ -4,7 +4,7 @@
 import asyncio
 import logging
 from abc import ABC
-from typing import Optional
+from typing import Optional, List
 
 from oef import agent_pb2
 from oef.core import OEFProxy, AgentInterface
@@ -148,20 +148,18 @@ class Agent(AgentInterface, ABC):
                              target))
         self.oef_proxy.send_decline(dialogue_id, destination, msg_id, target)
 
+    def on_message(self,
+                   origin: str,
+                   dialogue_id: int,
+                   content: bytes):
+        logger.info("on_message: {}, {}, {}, {}", origin, dialogue_id, content)
+        _warning_not_implemented_method(self.on_message.__name__)
+
     def on_cfp(self, origin: str,
                dialogue_id: int,
                msg_id: int,
                target: int,
                query: CFP_TYPES):
-        """
-
-        :param origin:
-        :param dialogue_id:
-        :param msg_id:
-        :param target:
-        :param query:
-        :return:
-        """
         logger.info("on_cfp: {}, {}, {}, {}", origin, dialogue_id, msg_id, target, query)
         _warning_not_implemented_method(self.on_cfp.__name__)
 
@@ -197,12 +195,9 @@ class Agent(AgentInterface, ABC):
         logger.info("on_error: {}, {}, {}", operation, dialogue_id, message_id)
         _warning_not_implemented_method(self.on_error.__name__)
 
-    def on_message(self,
-                   origin: str,
-                   dialogue_id: int,
-                   content: bytes):
-        logger.info("on_message: {}, {}, {}, {}", origin, dialogue_id, content)
-        _warning_not_implemented_method(self.on_message.__name__)
+    def on_search_result(self, search_id: int, agents: List[str]):
+        logger.info("on_search_result: {}, {}", search_id, agents)
+        _warning_not_implemented_method(self.on_error.__name__)
 
 
 class OEFAgent(Agent):

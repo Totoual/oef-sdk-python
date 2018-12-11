@@ -1,0 +1,5 @@
+include README.md LICENSE HISTORY.md requirements.txt Pipfile Pipfile.lock
+recursive-include examples *.txt *.py
+recursive-include test *.py
+recursive-include OEFCoreProtocol *
+recursive-include docker-images/fetch-ledger-develop-image *

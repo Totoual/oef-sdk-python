@@ -40,7 +40,7 @@ Then, you need to clone the [OEFCore](https://github.com/uvue-git/OEFCore) repos
     
 Finally:
 
-    pytest 
+    tox 
 
 ## Documentation
 

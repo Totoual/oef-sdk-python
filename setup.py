@@ -15,16 +15,13 @@ import glob
 import setuptools.command.build_py
 from setuptools import setup
 
-# TODO check README
-# TODO check HISTORY (version number)
-
 
 class ProtocCommand(distutils.cmd.Command):
     """A custom command to generate Python Protobuf modules from OEFCoreProtocol"""
 
     description = "Generate Python Protobuf modules from protobuf files specifications."
     user_options = [
-        ("--proto_path", None, "Path to OEFCoreProtocol folder..")
+        ("--proto_path", None, "Path to the `oef-core-protocol` folder.")
     ]
 
     def run(self):

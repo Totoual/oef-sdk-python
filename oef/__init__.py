@@ -17,3 +17,5 @@ logging.getLogger(__name__).addHandler(NullHandler())
 # TODO add CONTRIBUTING.rst
 # TODO add Makefile
 # TODO check README
+# TODO check HISTORY (version number)
+

@@ -1,6 +1,6 @@
 .. oef documentation master file
 
-OEFCore Python API
+OEF Python SDK
 ===============================
 
 .. toctree::
@@ -15,7 +15,7 @@ OEFCore Python API
 
 **WARNING**: the package is in active development, so the API might change frequently.
 
-This is the Python API for the OEFCore, allowing
+This is the Python SDK for OEF agent development, allowing:
 
  * registration of agents and services in the OEF
  * searching for agents and services in the OEF
@@ -32,7 +32,11 @@ User guide
    user/quickstart
    user/tutorial
 
+   oef
+   contributing
 
+.. include:: ../../AUTHORS.rst
+.. include:: ../../HISTORY.rst
 
 Indices and tables
 ==================

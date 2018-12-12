@@ -16,3 +16,4 @@ logging.getLogger(__name__).addHandler(NullHandler())
 # TODO add contextmanager for launching OEF Node as subprocess.
 # TODO add CONTRIBUTING.rst
 # TODO add Makefile
+# TODO check README

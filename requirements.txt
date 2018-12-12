@@ -16,4 +16,3 @@ hypothesis
 sphinx
 sphinx_rtd_theme
 sphinxcontrib.mermaid
-m2r

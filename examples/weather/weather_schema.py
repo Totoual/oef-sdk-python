@@ -29,11 +29,7 @@ HUMIDITY_ATTR = AttributeSchema("humidity",
                                 is_attribute_required=True,
                                 attribute_description="Provides humidity measurements.")
 
-PRICE_ATTR = AttributeSchema("price",
-                             int,
-                             is_attribute_required=True,
-                             attribute_description="The price for a measurement.")
 
 WEATHER_DATA_MODEL = DataModel("weather_data",
-                               [WIND_SPEED_ATTR, TEMPERATURE_ATTR, AIR_PRESSURE_ATTR, HUMIDITY_ATTR, PRICE_ATTR],
+                               [WIND_SPEED_ATTR, TEMPERATURE_ATTR, AIR_PRESSURE_ATTR, HUMIDITY_ATTR],
                                "All possible weather data.")

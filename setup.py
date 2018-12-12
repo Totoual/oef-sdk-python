@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 # Copyright 2018, Fetch AI Ltd. All Rights Reserved.
@@ -15,16 +15,13 @@ import glob
 import setuptools.command.build_py
 from setuptools import setup
 
-# TODO check README
-# TODO check HISTORY (version number)
-
 
 class ProtocCommand(distutils.cmd.Command):
     """A custom command to generate Python Protobuf modules from OEFCoreProtocol"""
 
     description = "Generate Python Protobuf modules from protobuf files specifications."
     user_options = [
-        ("--proto_path", None, "Path to OEFCoreProtocol folder..")
+        ("--proto_path", None, "Path to the `oef-core-protocol` folder.")
     ]
 
     def run(self):
@@ -41,7 +38,7 @@ class ProtocCommand(distutils.cmd.Command):
 
     def initialize_options(self):
         """Set default values for options."""
-        self.proto_path = "OEFCoreProtocol"
+        self.proto_path = "oef-core-protocol"
 
     def finalize_options(self):
         """Post-process options."""
@@ -64,7 +61,7 @@ class ProtocCommand(distutils.cmd.Command):
         arguments = []
         arguments.append("--proto_path=%s" % self.proto_path)
         arguments.append("--python_out=oef")
-        arguments += glob.glob(os.path.join("OEFCoreProtocol", "*.proto"))
+        arguments += glob.glob(os.path.join("oef-core-protocol", "*.proto"))
         return arguments
 
     def _fix_import_statements_in_all_protobuf_modules(self):

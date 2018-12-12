@@ -1,13 +1,11 @@
-import sys
-import os
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
-from oef.proxy import OEFNetworkProxy
-
-PACKAGE_PARENT = '../oef'
-SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
-sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
+# Copyright 2018, Fetch AI Ltd. All Rights Reserved.
 
 import asyncio
+
+from oef.proxy import OEFNetworkProxy
 
 if __name__ == "__main__":
     connections = []

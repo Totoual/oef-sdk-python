@@ -1,6 +1,6 @@
-# Copyright (C) Fetch.ai 2018 - All Rights Reserved
-# Unauthorized copying of this file, via any medium is strictly prohibited
-# Proprietary and confidential
+# -*- coding: utf-8 -*-
+
+# Copyright 2018, Fetch AI Ltd. All Rights Reserved.
 from typing import List, Dict
 
 import pytest
@@ -11,7 +11,7 @@ from oef import query_pb2
 from oef.schema import AttributeSchema, ATTRIBUTE_TYPES, DataModel, AttributeInconsistencyException, Description, \
     generate_schema
 
-from test.hypothesis import attribute_schema_types, not_attribute_schema_types, _value_type_pairs, descriptions, \
+from test.hypothesis.strategies import attribute_schema_types, not_attribute_schema_types, _value_type_pairs, descriptions, \
     data_models, attributes_schema, is_correct_attribute_value, attribute_schema_values
 
 

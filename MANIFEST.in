@@ -2,6 +2,6 @@ include README.md LICENSE HISTORY.rst AUTHORS.rst requirements.txt Pipfile Pipfi
 
 recursive-include examples *.txt *.py
 recursive-include test *.py
-recursive-include OEFCoreProtocol *
+recursive-include oef-core-protocol *
 recursive-include docker-images/fetch-ledger-develop-image *
 recursive-include scripts *.py

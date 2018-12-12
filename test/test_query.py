@@ -1,11 +1,11 @@
-# Copyright (C) Fetch.ai 2018 - All Rights Reserved
-# Unauthorized copying of this file, via any medium is strictly prohibited
-# Proprietary and confidential
+# -*- coding: utf-8 -*-
+
+# Copyright 2018, Fetch AI Ltd. All Rights Reserved.
 from hypothesis import given
 
 from oef import query_pb2
 from oef.query import Relation, Range, Set, And, Or, Constraint, Query
-from test.hypothesis import relations, ranges, query_sets, and_constraints, or_constraints, constraints, queries
+from test.hypothesis.strategies import relations, ranges, query_sets, and_constraints, or_constraints, constraints, queries
 
 
 @given(relations())

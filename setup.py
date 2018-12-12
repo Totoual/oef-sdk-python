@@ -41,7 +41,7 @@ class ProtocCommand(distutils.cmd.Command):
 
     def initialize_options(self):
         """Set default values for options."""
-        self.proto_path = "OEFCoreProtocol"
+        self.proto_path = "oef-core-protocol"
 
     def finalize_options(self):
         """Post-process options."""
@@ -64,7 +64,7 @@ class ProtocCommand(distutils.cmd.Command):
         arguments = []
         arguments.append("--proto_path=%s" % self.proto_path)
         arguments.append("--python_out=oef")
-        arguments += glob.glob(os.path.join("OEFCoreProtocol", "*.proto"))
+        arguments += glob.glob(os.path.join("oef-core-protocol", "*.proto"))
         return arguments
 
     def _fix_import_statements_in_all_protobuf_modules(self):

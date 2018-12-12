@@ -344,28 +344,11 @@ The order of the exchanged message is the following:
 
 Follows the sequence diagram with the message exchange.
 
-.. mermaid::
+.. mermaid:: ../diagrams/echo_sequence_diagram.mmd
+    :alt: Sequence diagram for the Echo example.
+    :align: center
+    :caption: The exchange of messages in the Echo example.
 
-    sequenceDiagram
-        participant Echo Client
-        participant OEF Node
-        participant Echo Service
-        Echo Service->>OEF Node: (1) register_service(description);
-        loop run()
-            Echo Service->>Echo Service: waiting for messages...
-        end
-        Echo Client->>OEF Node: (2) search_services(query);
-        loop run()
-            Echo Client->>Echo Client: waiting for messages...
-        end
-        OEF Node->>Echo Client: (3) search_result(list of agents);
-        Echo Client->>Echo Client: on_search_result();
-        Echo Client->> OEF Node: (4) send_message("hello", "echo_server");
-        OEF Node->> Echo Service: (5) "hello" from "echo_client";
-        Echo Service->>Echo Service: (6) on_message();
-        Echo Service ->> OEF Node: (7) send_message("hello", "echo_client")
-        OEF Node ->> Echo Client: (8) "hello" from "echo_server"
-        Echo Client->>Echo Client: on_message();
 
 
 Second example: Weather Station

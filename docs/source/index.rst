@@ -33,7 +33,7 @@ User guide
    user/tutorial
 
    oef
-   contributing
+.. include:: ../../CONTRIBUTING.rst
 
 .. include:: ../../AUTHORS.rst
 .. include:: ../../HISTORY.rst

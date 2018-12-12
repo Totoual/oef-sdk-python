@@ -67,7 +67,7 @@ You will need:
 
 On Linux (Ubuntu) you can run:
 
-::
+.. code-block:: none
 
   git clone https://github.com/uvue-git/OEFCore.git --recursive && cd OEFCore
   sudo apt-get install cmake protobuf-compiler libprotobuf-dev
@@ -77,7 +77,7 @@ On Linux (Ubuntu) you can run:
 
 And to run a OEFNode:
 
-::
+.. code-block:: none
 
   ./apps/node/Node
 
@@ -431,15 +431,6 @@ We can define other type of measurements as well:
         attribute_description="Provides humidity measurements."
     )
 
-    PRICE_ATTR = AttributeSchema(
-        "price",
-        int,
-        is_attribute_required=True,
-        attribute_description="The price for a measurement."
-    )
-
-
-We will use the ``price`` attribute, an integer, to represents the price for any measurements.
 
 Now we can define our data model:
 
@@ -452,8 +443,7 @@ Now we can define our data model:
         [WIND_SPEED_ATTR,
         TEMPERATURE_ATTR,
         AIR_PRESSURE_ATTR,
-        HUMIDITY_ATTR,
-        PRICE_ATTR],
+        HUMIDITY_ATTR],
         "All possible weather data."
     )
 
@@ -471,11 +461,10 @@ Once we have the data model, we can provide an `instance` of that model. To do s
 
     weather_service_description = Description(
         {
-            "wind_speed": True,
+            "wind_speed": False,
             "temperature": True,
             "air_pressure": True,
             "humidity": True,
-            "price": 50
         },
         WEATHER_DATA_MODEL
     )
@@ -498,21 +487,48 @@ This is the code for our weather station:
 .. code-block:: python
 
     class WeatherStation(OEFAgent):
+        """Class that implements the behaviour of the weather station."""
+
+        weather_service_description = Description(
+            {
+                "wind_speed": False,
+                "temperature": True,
+                "air_pressure": True,
+                "humidity": True,
+            },
+            WEATHER_DATA_MODEL
+        )
+
+        def on_cfp(self, origin: str,
+                   dialogue_id: int,
+                   msg_id: int,
+                   target: int,
+                   query: CFP_TYPES):
+            """Send a simple Propose to the sender of the CFP."""
+            print("Received CFP from {0} with Query: {1}"
+                  .format(origin, query))
+
+            # prepare the proposal with a given price.
+            proposal = Description({"price": 50})
+            self.send_propose(dialogue_id, origin, [proposal], msg_id + 1, target + 1)
+
+        def on_accept(self, origin: str,
+                      dialogue_id: int,
+                      msg_id: int,
+                      target: int):
+            """Once we received an Accept, send the requested data."""
+            print("Received accept from {0} cif {1} msgId {2} target {3}"
+                  .format(origin, dialogue_id, msg_id, target))
+
+            # send the measurements to the client. for the sake of simplicity, they are hard-coded.
+            self.send_message(dialogue_id, origin, b"temperature:15.0")
+            self.send_message(dialogue_id, origin, b"humidity:0.7")
+            self.send_message(dialogue_id, origin, b"air_pressure:1019.0")
 
 
-    def on_cfp(self,
-               origin: str,
-               dialogue_id: int,
-               msg_id: int,
-               target: int,
-               query: CFP_TYPES):
-        print("Received cfp from {0} cif {1} msgId {2} target {3} query [{4}]"
-              .format(origin, dialogue_id, msg_id, target, query))
-
-        # prepare a propose
-        proposal = self.weather_service_description
-        self.send_propose(dialogue_id, origin, [proposal], msg_id + 1, target + 1)
-
+* when the agent receives a CFP, it answers with a list of relevant resources, that constitutes his proposal.
+  In this simplified example he answers with only one Description object, that specifies the price of the negotiation.
+* on Accept messages, he answers with the available measurements. For the sake of simplicity, they are hard-coded.
 
 And here is the code to run the agent:
 
@@ -533,24 +549,42 @@ This is the code for the client of the weather service:
 .. code-block:: python
 
     class WeatherClient(OEFAgent):
-    
+        """Class that implements the behavior of the weather client."""
+
         def on_search_result(self, search_id: int, agents: List[str]):
+            """For every agent returned in the service search, send a CFP to obtain resources from them."""
             print("Agent found: {0}".format(agents))
             for agent in agents:
                 print("Sending to agent {0}".format(agent))
-                query = Query([Constraint(TEMPERATURE_ATTR, Eq(True)),
-                               Constraint(AIR_PRESSURE_ATTR, Eq(True)),
-                               Constraint(HUMIDITY_ATTR, Eq(True))],
-                              WEATHER_DATA_MODEL)
+                # we send a query with no constraints, meaning "give me all the resources you can propose."
+                query = Query([])
                 self.send_cfp(0, agent, query)
-    
+
         def on_propose(self, origin: str, dialogue_id: int, msg_id: int, target: int, proposals: PROPOSE_TYPES):
-            print("Received propose from {0} cif {1} msgId {2} target {3} proposals {4}"
-                  .format(origin, dialogue_id, msg_id, target, proposals))
-            print("Price {0}".format(proposals[0]._values["price"]))
+            """When we receive a Propose message, answer with an Accept."""
+            print("Received propose from agent {0}".format(origin))
+            for i, p in enumerate(proposals):
+                print("Proposal {}: {}".format(i, p.values))
+            print("Accepting Propose.")
             self.send_accept(dialogue_id, origin, msg_id + 1, msg_id)
 
+        def on_message(self, origin: str,
+                       dialogue_id: int,
+                       content: bytes):
+            """Extract and print data from incoming (simple) messages."""
+            key, value = content.decode().split(":")
+            print("Received measurement from {}: {}={}".format(origin, key, float(value)))
 
+His behaviour can be summarized with the following lines:
+
+* When the agent receives a search result from the OEF (see ``on_search_result``), it sends a CFP to
+  every weather station found. This message starts a negotiation with every agent.
+  For simplicity, the CFP contains a query with an empty list of constraints, meaning that we do not specify constraints
+  on the set of proposals we can receive.
+* When the agent receives a Propose message, he will automatically accept the proposal, sending an Accept message.
+  Here it is possible to implement multiple strategies, e.g. find the proposal with the minimum
+  across different services.
+* Then he waits to receive the measurements from the weather station.
 
 And here's the code to run it:
 
@@ -568,28 +602,79 @@ And here's the code to run it:
     agent.run()
 
 
+Notice how we built the ``Query`` object, used to search weather services. The query requires:
+
+* a data model over which the query is defined
+* a list of ``Constraint`` object. Each constraint is defined over attributes of the data model, and imposes
+  a restriction on the possible values that the associated attributes can assume.
+
+In this example, we require that the ``Description`` of the services registered in the OEF is compliant with the
+following conditions:
+
+* The description is defined over the ``WEATHER_DATA_MODEL`` (defined before)
+* The fields `temperature`, `humidity` and `air pressure` must be set to ``True`` (that is, the service provides the
+  associated measurements.
+  To specify this kind of constraint, we use the class :class:`~oef.schema.Eq` that express the constraint of equality
+  to a specific value.
+
+To give a better idea, you can think at this query as an equivalent of the following SQL-like query:
+
+.. code-block:: sql
+   :linenos:
+
+   SELECT * FROM weather_data WHERE
+     temperature = true and
+     air_pressure = true and
+     humidity = true;
+
+
+In other sections of the documentation you can find more details about the query language and other types of constraint.
+
 Message Exchange
 ~~~~~~~~~~~~~~~~
 
 
 The output from the client agent should be:
 
-::
+.. code-block:: none
 
     Agent found: ['weather_station']
     Sending to agent weather_station
-    Received propose from weather_station cif 0 msgId 2 target 1 proposals [<oef.schema.Description object at 0x7f94ad8ca278>]
-    Price 50
+    Received propose from agent weather_station
+    Proposal 0: {'price': 50}
+    Accepting Propose.
+    Received measurement from weather_station: temperature=15.0
+    Received measurement from weather_station: humidity=0.7
+    Received measurement from weather_station: air_pressure=1019.0
 
 
 Whereas, the one from the server agent is:
 
-::
+.. code-block:: none
 
-    Received cfp from weather_client cif 0 msgId 1 target 0 query [<oef.query.Query object at 0x7fe00f674358>]
-    Received accept from weather_client cif 0 msgId 3 target 2
+    Received CFP from weather_client
+    Received accept from weather_client.
 
 
-The order of the exchanged message is the following:
+Follows the summary of the communication between the weather client and the weather station:
 
-TODO
+1. The weather station agent registers to the OEF, and waits for messages.
+2. The client send a search result with a query, looking for weather stations
+   that provide measurements for temperature, humidity and air pressure.
+   Then, he waits for messages.
+3. The OEF answers with the services that satisfies the query.
+4. The client send a CFP to the service via the OEF Node. The node forwards it to the recipient.
+5. The weather station answers with a proposal.
+6. The client accept the proposal and notifies the weather station.
+7. The station send messages to the client with the desired measurements.
+
+
+Follows the sequence diagram with the message exchange.
+
+.. mermaid:: ../diagrams/weather_sequence_diagram.mmd
+    :alt: Sequence diagram for the Weather example.
+    :align: center
+    :caption: The exchange of messages in the Weather example.
+
+Notice: in step (6), instead of the `Accept` action, we might have had a counter-Propose, or a `Decline`.
+`Decline` means that the sender is not interested anymore in continuing the negotiation with the recipient.

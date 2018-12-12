@@ -18,13 +18,18 @@ The script does the following:
 4. Run the agent, waiting for messages from the OEF.
 
 
-The class ``WeatherClientAgent`` define the behaviour of the weather client agent.
+The class ``WeatherClientAgent`` define the behaviour of the weather client agent. In summary:
 
-* when the agent receives a search result from the OEF (see ``on_search_result``), it sends an "hello" message to
-  every agent found.
-* once he receives a message (see ``on_message`` method), he stops.
+* when the agent receives a search result from the OEF (see ``on_search_result``), it sends a CFP to
+  every weather station found. This message starts a negotiation with every agent.
+  For simplicity, the CFP contains a query with an empty list of constraints, meaning that we do not specify constraints
+  on the set of proposals we can receive.
+* when the agent receives a Propose message, he will automatically accept the proposal, sending an Accept message.
+  Here it is possible to implement multiple strategies, e.g. find the proposal with the minimum
+  across different services.
+* Then he waits to receive the measurements from the weather station.
 
-Other methods (e.g. ``on_cfp``, ``on_error`` etc.) are omitted, since not needed.
+It would be nice to extend this example to work with multiple weather stations, and pick the one with the minimum price.
 
 
 """
@@ -39,21 +44,31 @@ from oef.query import Query
 
 
 class WeatherClient(OEFAgent):
+    """Class that implements the behavior of the weather client."""
 
     def on_search_result(self, search_id: int, agents: List[str]):
+        """For every agent returned in the service search, send a CFP to obtain resources from them."""
         print("Agent found: {0}".format(agents))
         for agent in agents:
             print("Sending to agent {0}".format(agent))
-
             # we send a query with no constraints, meaning "give me all the resources you can propose."
-            query = Query([], WEATHER_DATA_MODEL)
+            query = Query([])
             self.send_cfp(0, agent, query)
 
     def on_propose(self, origin: str, dialogue_id: int, msg_id: int, target: int, proposals: PROPOSE_TYPES):
-        print("Received propose from {0} cif {1} msgId {2} target {3} proposals {4}"
-              .format(origin, dialogue_id, msg_id, target, proposals))
-        print("Price {0}".format(proposals[0].values["price"]))
+        """When we receive a Propose message, answer with an Accept."""
+        print("Received propose from agent {0}".format(origin))
+        for i, p in enumerate(proposals):
+            print("Proposal {}: {}".format(i, p.values))
+        print("Accepting Propose.")
         self.send_accept(dialogue_id, origin, msg_id + 1, msg_id)
+
+    def on_message(self, origin: str,
+                   dialogue_id: int,
+                   content: bytes):
+        """Extract and print data from incoming (simple) messages."""
+        key, value = content.decode().split(":")
+        print("Received measurement from {}: {}={}".format(origin, key, float(value)))
 
 
 if __name__ == "__main__":

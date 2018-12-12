@@ -18,6 +18,7 @@ from setuptools import setup
 # TODO check README
 # TODO check HISTORY (version number)
 
+
 class ProtocCommand(distutils.cmd.Command):
     """A custom command to generate Python Protobuf modules from OEFCoreProtocol"""
 
@@ -110,7 +111,7 @@ setup(
     },
     classifiers=[
         # TODO decide development status
-        'Development Status :: 1 - Production/Stable',
+        'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
         'Natural Language :: English',
         'License :: OSI Approved :: Apache Software License',

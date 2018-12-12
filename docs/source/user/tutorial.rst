@@ -329,7 +329,7 @@ Whereas, the one from the server agent is:
 
 The order of the exchanged message is the following:
 
-1. The server notifies the OEF Node that it is able to serve other agents
+1. The service agent ``echo_server`` registers itself to the the OEF Node and waits for messages.
 2. The ``echo_client`` queries to the OEF Node
 3. The OEF Node sends back the list of agents who satisfy
    the query constraints. In this trivial example,
@@ -341,6 +341,31 @@ The order of the exchanged message is the following:
    to the OEF Node, which targets the ``echo_client``
 7. The OEF Node dispatch the message from ``echo_server`` to ``echo_client``
 8. The ``echo_client`` receives the echo message.
+
+Follows the sequence diagram with the message exchange.
+
+.. mermaid::
+
+    sequenceDiagram
+        participant Echo Client
+        participant OEF Node
+        participant Echo Service
+        Echo Service->>OEF Node: (1) register_service(description);
+        loop run()
+            Echo Service->>Echo Service: waiting for messages...
+        end
+        Echo Client->>OEF Node: (2) search_services(query);
+        loop run()
+            Echo Client->>Echo Client: waiting for messages...
+        end
+        OEF Node->>Echo Client: (3) search_result(list of agents);
+        Echo Client->>Echo Client: on_search_result();
+        Echo Client->> OEF Node: (4) send_message("hello", "echo_server");
+        OEF Node->> Echo Service: (5) "hello" from "echo_client";
+        Echo Service->>Echo Service: (6) on_message();
+        Echo Service ->> OEF Node: (7) send_message("hello", "echo_client")
+        OEF Node ->> Echo Client: (8) "hello" from "echo_server"
+        Echo Client->>Echo Client: on_message();
 
 
 Second example: Weather Station

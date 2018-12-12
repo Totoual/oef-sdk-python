@@ -13,9 +13,9 @@ Install
 .. code-block:: bash
 
   sudo apt-get install protobuf-compiler
-  git clone https://github.com/uvue-git/OEFCorePython.git --recursive
-  cd OEFCorePython/
-  python setup.py install
+  git clone https://github.com/uvue-git/oef-sdk-python.git --recursive
+  cd oef-sdk-python/
+  sudo python3 setup.py install
 
 
 * On Mac OS X:
@@ -23,9 +23,9 @@ Install
 .. code-block:: bash
 
   brew install protobuf
-  git clone https://github.com/uvue-git/OEFCorePython.git --recursive
-  cd OEFCorePython/
-  python setup.py install
+  git clone https://github.com/uvue-git/oef-sdk-python.git --recursive
+  cd oef-sdk-python/
+  sudo python3 setup.py install
 
 
 * For other platforms and additional details,
@@ -40,7 +40,7 @@ In a separate terminal:
 .. code-block:: bash
 
   # clone the repo for the OEF node
-  git clone git@github.com:uvue-git/OEFCore.git --recursive && cd OEFCore/
+  git clone git@github.com:uvue-git/oef-core.git --recursive && cd oef-core/
 
   # build the docker image
   ./oef-core-image/scripts/docker-build-img.sh

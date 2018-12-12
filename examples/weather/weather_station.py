@@ -22,8 +22,7 @@ class WeatherStation(OEFAgent):
         WEATHER_DATA_MODEL
     )
 
-    def on_cfp(self,
-               origin: str,
+    def on_cfp(self, origin: str,
                dialogue_id: int,
                msg_id: int,
                target: int,
@@ -31,12 +30,11 @@ class WeatherStation(OEFAgent):
         print("Received cfp from {0} cif {1} msgId {2} target {3} query [{4}]"
               .format(origin, dialogue_id, msg_id, target, query))
 
-        # prepare a propose
+        # prepare the proposals
         proposal = self.weather_service_description
         self.send_propose(dialogue_id, origin, [proposal], msg_id + 1, target + 1)
 
-    def on_accept(self,
-                  origin: str,
+    def on_accept(self, origin: str,
                   dialogue_id: int,
                   msg_id: int,
                   target: int):

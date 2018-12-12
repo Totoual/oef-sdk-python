@@ -1,7 +1,4 @@
-.. oef documentation master file, created by
-   sphinx-quickstart on Thu Nov 22 15:49:28 2018.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+.. oef documentation master file
 
 OEFCore Python API
 ===============================

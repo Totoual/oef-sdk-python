@@ -128,7 +128,7 @@ to the OEF-core.
 the agents side. On the OEF-core side, they exist only conceptually.*
 
 Agent-to-agent data and communication protocol
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Once a conversation has been established, particpating agents can use it to exchange messages.
 Messages must be objects of types ``InMessage`` or ``OutMessage``.

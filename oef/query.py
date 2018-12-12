@@ -1,7 +1,7 @@
-# Copyright (C) Fetch.ai 2018 - All Rights Reserved
-# Unauthorized copying of this file, via any medium is strictly prohibited
-# Proprietary and confidential
-from abc import ABC
+# -*- coding: utf-8 -*-
+
+# Copyright 2018, Fetch AI Ltd. All Rights Reserved.
+from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Union, Tuple, List, Optional
 
@@ -16,6 +16,12 @@ class ConstraintType(ProtobufSerializable, ABC):
 
     @classmethod
     def from_pb(cls, constraint_pb: query_pb2.Query.Constraint.ConstraintType):
+        """
+        From ConstraintType protobuf to a ConstraintType.
+        It returns an instance of one of the following: Relation, Set, Range, And, Or.
+        :param constraint_pb: the constraint protobuf object
+        :return: the associated ConstraintType instance.
+        """
         constraint_case = constraint_pb.WhichOneof("constraint")
         if constraint_case == "relation":
             return Relation.from_pb(constraint_pb.relation)
@@ -30,38 +36,44 @@ class ConstraintType(ProtobufSerializable, ABC):
         else:
             raise Exception("No valid constraint type.")
 
+    @abstractmethod
+    def to_pb(self) -> query_pb2.Query.Constraint.ConstraintType:
+        raise NotImplementedError
 
-class Relation(ConstraintType):
+
+class Relation(ConstraintType, ABC):
 
     def __init__(self, value: ATTRIBUTE_TYPES) -> None:
         self.value = value
 
     @property
+    @abstractmethod
     def operator(self) -> query_pb2.Query.Relation:
         raise NotImplementedError
 
     @classmethod
     def from_pb(cls, relation: query_pb2.Query.Relation):
         relations_from_pb = {
-            query_pb2.Query.Relation.GTEQ: GtEq,
-            query_pb2.Query.Relation.GT: Gt,
-            query_pb2.Query.Relation.LTEQ: LtEq,
-            query_pb2.Query.Relation.LT: Lt,
+            query_pb2.Query.Relation.GTEQ:  GtEq,
+            query_pb2.Query.Relation.GT:    Gt,
+            query_pb2.Query.Relation.LTEQ:  LtEq,
+            query_pb2.Query.Relation.LT:    Lt,
             query_pb2.Query.Relation.NOTEQ: NotEq,
-            query_pb2.Query.Relation.EQ: Eq
+            query_pb2.Query.Relation.EQ:    Eq
         }
 
+        relation_class = relations_from_pb[relation.op]
         value_case = relation.val.WhichOneof("value")
         if value_case == "s":
-            return relations_from_pb[relation.op](relation.val.s)
+            return relation_class(relation.val.s)
         elif value_case == "b":
-            return relations_from_pb[relation.op](relation.val.b)
+            return relation_class(relation.val.b)
         elif value_case == "i":
-            return relations_from_pb[relation.op](relation.val.i)
+            return relation_class(relation.val.i)
         elif value_case == "f":
-            return relations_from_pb[relation.op](relation.val.f)
+            return relation_class(relation.val.f)
 
-    def to_pb(self):
+    def to_pb(self) -> query_pb2.Query.Constraint.ConstraintType:
         relation = query_pb2.Query.Relation()
         relation.op = self.operator()
         query_value = query_pb2.Query.Value()
@@ -77,6 +89,12 @@ class Relation(ConstraintType):
         constraint_type = query_pb2.Query.Constraint.ConstraintType()
         constraint_type.relation.CopyFrom(relation)
         return constraint_type
+
+    def __eq__(self, other):
+        if type(other) != type(self):
+            return False
+        else:
+            return self.value == other.value
 
 
 class Eq(Relation):
@@ -119,7 +137,7 @@ class Range(ConstraintType):
     def __init__(self, values: RANGE_TYPES) -> None:
         self._values = values
 
-    def to_pb(self):
+    def to_pb(self) -> query_pb2.Query.Constraint.ConstraintType:
         range_ = query_pb2.Query.Range()
         if isinstance(self._values[0], str):
             values = query_pb2.Query.StringPair()
@@ -144,52 +162,55 @@ class Range(ConstraintType):
     def from_pb(cls, range_pb: query_pb2.Query.Range):
         range_case = range_pb.WhichOneof("pair")
         if range_case == "s":
-            values = (range_pb.s.first, range_pb.s.second)
+            return cls((range_pb.s.first, range_pb.s.second))
         elif range_case == "i":
-            values = (range_pb.i.first, range_pb.i.second)
+            return cls((range_pb.i.first, range_pb.i.second))
         elif range_case == "f":
-            values = (range_pb.f.first, range_pb.f.second)
+            return cls((range_pb.f.first, range_pb.f.second))
+
+    def __eq__(self, other):
+        if type(other) != Range:
+            return False
         else:
-            raise Exception("")
-        return cls(values)
+            return self._values == other._values
 
 
 SET_TYPES = Union[List[float], List[str], List[bool], List[int]]
 
 
-class Set(ConstraintType):
+class Set(ConstraintType, ABC):
 
-    class Operator(Enum):
-        IN = 0
-        NOT_IN = 1
-
-    def __init__(self, values: SET_TYPES, operator: Operator) -> None:
+    def __init__(self, values: SET_TYPES) -> None:
         self._values = values
-        self._operator = operator
 
     @property
+    @abstractmethod
     def operator(self) -> query_pb2.Query.Set:
         raise NotImplementedError
 
     def to_pb(self):
         set_ = query_pb2.Query.Set()
         set_.op = self.operator()
-        if isinstance(self._values[0], str):
+
+        value_type = type(self._values[0]) if len(self._values) > 0 else str
+
+        if value_type == str:
             values = query_pb2.Query.Set.Values.Strings()
             values.vals.extend(self._values)
             set_.vals.s.CopyFrom(values)
-        elif isinstance(self._values[0], bool):  # warning: order matters, bools before ints.
+        elif value_type == bool:
             values = query_pb2.Query.Set.Values.Bools()
             values.vals.extend(self._values)
             set_.vals.b.CopyFrom(values)
-        elif isinstance(self._values[0], int):
+        elif value_type == int:
             values = query_pb2.Query.Set.Values.Ints()
             values.vals.extend(self._values)
             set_.vals.i.CopyFrom(values)
-        elif isinstance(self._values[0], float):
+        elif value_type == float:
             values = query_pb2.Query.Set.Values.Floats()
             values.vals.extend(self._values)
             set_.vals.f.CopyFrom(values)
+
         constraint_type = query_pb2.Query.Constraint.ConstraintType()
         constraint_type.set_.CopyFrom(set_)
         return constraint_type
@@ -200,21 +221,27 @@ class Set(ConstraintType):
             query_pb2.Query.Set.IN: In,
             query_pb2.Query.Set.NOTIN: NotIn
         }
+        set_class = op_from_pb[set_pb.op]
         value_case = set_pb.vals.WhichOneof("values")
         if value_case == "s":
-            return op_from_pb[set_pb.op](set_pb.vals.s.vals)
+            return set_class(set_pb.vals.s.vals)
         elif value_case == "b":
-            return op_from_pb[set_pb.op](set_pb.vals.b.vals)
+            return set_class(set_pb.vals.b.vals)
         elif value_case == "i":
-            return op_from_pb[set_pb.op](set_pb.vals.i.vals)
+            return set_class(set_pb.vals.i.vals)
         elif value_case == "f":
-            return op_from_pb[set_pb.op](set_pb.vals.f.vals)
+            return set_class(set_pb.vals.f.vals)
+
+    def __eq__(self, other):
+        if type(other) != type(self):
+            return False
+        return self._values == other._values
 
 
 class In(Set):
 
     def __init__(self, values: SET_TYPES):
-        super().__init__(values, Set.Operator.IN)
+        super().__init__(values)
 
     def operator(self):
         return query_pb2.Query.Set.IN
@@ -223,17 +250,14 @@ class In(Set):
 class NotIn(Set):
 
     def __init__(self, values: SET_TYPES):
-        super().__init__(values, Set.Operator.NOT_IN)
+        super().__init__(values)
 
     def operator(self):
         return query_pb2.Query.Set.NOTIN
 
 
-CONSTRAINT_TYPES = Union[Relation, Range, Set]
-
-
 class And(ConstraintType):
-    def __init__(self, constraints: List[CONSTRAINT_TYPES]) -> None:
+    def __init__(self, constraints: List[ConstraintType]) -> None:
         self._constraints = constraints
 
     def to_pb(self):
@@ -248,9 +272,15 @@ class And(ConstraintType):
         expr = [ConstraintType.from_pb(c) for c in constraint_pb.expr]
         return cls(expr)
 
+    def __eq__(self, other):
+        if type(other) != And:
+            return False
+        else:
+            return self._constraints == other._constraints
+
 
 class Or(ConstraintType):
-    def __init__(self, constraints: List[CONSTRAINT_TYPES]) -> None:
+    def __init__(self, constraints: List[ConstraintType]) -> None:
         self._constraints = constraints
 
     def to_pb(self):
@@ -265,14 +295,17 @@ class Or(ConstraintType):
         expr = [ConstraintType.from_pb(c) for c in constraint_pb.expr]
         return cls(expr)
 
+    def __eq__(self, other):
+        if type(other) != Or:
+            return False
+        else:
+            return self._constraints == other._constraints
 
-CONSTRAINT_TYPES = Union[Relation, Range, Set, And, Or]
 
-
-class Constraint(object):
+class Constraint(ProtobufSerializable):
     def __init__(self,
                  attribute: AttributeSchema,
-                 constraint: CONSTRAINT_TYPES) -> None:
+                 constraint: ConstraintType) -> None:
         self._attribute = attribute
         self._constraint = constraint
 
@@ -287,8 +320,14 @@ class Constraint(object):
         constraint_type = ConstraintType.from_pb(constraint_pb.constraint)
         return cls(AttributeSchema.from_pb(constraint_pb.attribute), constraint_type)
 
+    def __eq__(self, other):
+        if type(other) != Constraint:
+            return False
+        else:
+            return self._attribute == other._attribute and self._constraint == other._constraint
 
-class Query(object):
+
+class Query(ProtobufSerializable):
     """
     Representation of a search that is to be performed. Currently a search is represented as a
     set of key value pairs that must be contained in the description of the service/ agent.

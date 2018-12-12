@@ -3,6 +3,8 @@
 Installation
 ============
 
+The installation requires Python 3.6 or later versions.
+
 For now, we only support installation from source.
 
 Protobuf Compiler
@@ -45,9 +47,9 @@ Linux (Ubuntu)
 .. code-block:: bash
 
   sudo apt-get install protobuf-compiler
-  git clone https://github.com/uvue-git/OEFCorePython.git --recursive
-  cd OEFCorePython/
-  python setup.py install
+  git clone https://github.com/uvue-git/oef-sdk-python.git --recursive
+  cd oef-sdk-python/
+  sudo python3 setup.py install
 
 For other platforms and other details, please follow the installation guide: :ref:`install`.
 
@@ -83,7 +85,7 @@ Alternatively, you can
 
 
 Install ``oef``
---------------------
+---------------
 
 To install the Python package ``oef``, follow these steps:
 
@@ -91,12 +93,12 @@ To install the Python package ``oef``, follow these steps:
 
 ::
 
-    git clone https://github.com/uvue-git/OEFCorePython.git --recursive && cd OEFCorePython/
+    git clone https://github.com/uvue-git/oef-sdk-python.git --recursive && cd oef-sdk-python/
 
 
 * Install the package:
 
 ::
 
-    python setup.py install
+    sudo python3 setup.py install
 

@@ -9,28 +9,56 @@ import typing
 from typing import List
 
 import hypothesis
-from hypothesis.strategies import sampled_from, from_type, composite, text, booleans, one_of, none, lists
+from hypothesis import settings, assume
+from hypothesis.strategies import sampled_from, from_type, composite, text, booleans, one_of, none, lists, tuples
 
+from oef.query import Eq, NotEq, Lt, LtEq, Gt, GtEq, Range, In, NotIn, And, Or, Constraint, Query
 from oef.schema import ATTRIBUTE_TYPES, AttributeSchema, DataModel, Description
 
+settings(max_examples=1000)
 
-def _is_attribute_type(t: typing.Type):
+
+def _is_attribute_type(t: typing.Type) -> bool:
+    """
+    Check if a type is a valid attribute schema type.
+    :param t: the type.
+    :return: True if the type belongs to `ATTRIBUTE_TYPES`, False otherwise.
+    """
     return t == bool or t in ATTRIBUTE_TYPES.__args__
 
 
+"""Strategy that sample a valid attribute type"""
 attribute_schema_types = sampled_from(ATTRIBUTE_TYPES.__args__ + (bool,))
+
+"""Strategy that sample a not valid attribute type."""
 not_attribute_schema_types = from_type(type).filter(lambda t: not _is_attribute_type(t))
+
+
+def is_correct_attribute_value(value: ATTRIBUTE_TYPES):
+    if type(value) == int and abs(value) >= 0xFFFFFFFF:
+        return False
+    if type(value) == float:
+        return False
+
+    return value
+
+
+"""Strategy that sample a value from valid attribute types."""
+attribute_schema_values = attribute_schema_types.flatmap(lambda x: from_type(x)).filter(is_correct_attribute_value)
 
 
 @composite
 def _value_type_pairs(draw, type_strategy):
+    """
+    Return a value-type pair.
+    """
     type_ = draw(type_strategy)
     value = draw(from_type(type_))
     return value, type_
 
 
 @composite
-def attributes_schema(draw):
+def attributes_schema(draw) -> AttributeSchema:
     attr_name = draw(text())
     attr_type = draw(attribute_schema_types)
     attr_required = draw(booleans())
@@ -71,6 +99,52 @@ def descriptions(draw, from_data_model=False):
 
     d = Description(attributes_values, data_model)
     return d
+
+
+relation_types = sampled_from([Eq, NotEq, Lt, LtEq, Gt, GtEq])
+
+
+@composite
+def relations(draw):
+    return draw(relation_types)(draw(attribute_schema_values))
+
+
+@composite
+def ranges(draw):
+    value_pairs = draw(sampled_from([str, int, float]).map(lambda x: tuples(from_type(x), from_type(x))))
+    value_pair = draw(value_pairs)
+    assume(is_correct_attribute_value(value_pair[0]) and is_correct_attribute_value(value_pair[1]))
+    return Range(value_pair)
+
+
+set_types = sampled_from([In, NotIn])
+
+
+@composite
+def query_sets(draw):
+    return draw(set_types)(draw(lists(from_type(draw(attribute_schema_types)).filter(is_correct_attribute_value))))
+
+
+@composite
+def and_constraints(draw):
+    return And(draw(lists(one_of(relations(), ranges(), query_sets()))))
+
+
+@composite
+def or_constraints(draw):
+    return Or(draw(lists(one_of(relations(), ranges(), query_sets()))))
+
+
+@composite
+def constraints(draw):
+    return Constraint(draw(attributes_schema()),
+                      draw(one_of(relations(), ranges(), query_sets(), and_constraints(), or_constraints())))
+
+
+@composite
+def queries(draw):
+    return Query(draw(lists(constraints())),
+                 draw(one_of(none(), data_models())))
 
 
 hypothesis.strategies.register_type_strategy(AttributeSchema, attributes_schema)

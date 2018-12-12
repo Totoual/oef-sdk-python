@@ -1,6 +1,11 @@
-# Copyright (C) Fetch.ai 2018 - All Rights Reserved
-# Unauthorized copying of this file, via any medium is strictly prohibited
-# Proprietary and confidential
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# Copyright 2018, Fetch AI Ltd. All Rights Reserved.
+
+"""
+The local counterpart implementation of the weather example.
+"""
 import asyncio
 from typing import List
 
@@ -84,8 +89,13 @@ if __name__ == "__main__":
 
     client.on_search_result(0, ["weather_station"])
 
-    asyncio.get_event_loop().run_until_complete(asyncio.gather(
-        client.async_run(),
-        server.async_run()
-    ))
-
+    try:
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(asyncio.gather(
+            client.async_run(),
+            server.async_run(),
+            local_node.run()))
+    finally:
+        local_node.stop()
+        client.stop()
+        server.stop()

@@ -1,7 +1,15 @@
-# Copyright (C)  - All Rights Reserved
-# Unauthorized copying of this file, via any medium is strictly prohibited
-# Proprietary and confidential
-"""This module defines classes to deal with data models and their instances."""
+# -*- coding: utf-8 -*-
+
+# Copyright 2018, Fetch AI Ltd. All Rights Reserved.
+
+"""
+
+oef.schema
+~~~~~~~~~~
+
+This module defines classes to deal with data models and their instances.
+
+"""
 
 
 import copy
@@ -22,7 +30,12 @@ class ProtobufSerializable(ABC):
     @classmethod
     @abstractmethod
     def from_pb(cls, obj):
-        """Return the object from a Protobuf object"""
+        """
+        Return the object from a Protobuf object
+        :param obj:
+        :return:
+        """
+
         raise NotImplementedError
 
     def serialize(self) -> str:
@@ -34,7 +47,7 @@ The allowable types that an Attribute can have
 """
 ATTRIBUTE_TYPES = Union[float, str, bool, int]
 
-
+# TODO add doctests in docstrings
 class AttributeSchema(ProtobufSerializable):
     """
     Description of a single element of datum of either a description or a service.
@@ -48,6 +61,8 @@ class AttributeSchema(ProtobufSerializable):
                  is_attribute_required: bool,
                  attribute_description: Optional[str] = None) -> None:
         """
+        Initialize an attribute schema.
+
         :param attribute_name: the name of this attribute.
         :param attribute_type: the type of this attribute, must be a type in ATTRIBUTE_TYPES.
         :param is_attribute_required: does this attribute have to be included.
@@ -179,7 +194,7 @@ class Description(ProtobufSerializable):
         Initialize a description.
 
         :param attribute_values: the values of each attribute in the description. This is a
-        dictionary from attribute name to attribute value, each attribute value must have a type
+             dictionary from attribute name to attribute value, each attribute value must have a type
         in ATTRIBUTE_TYPES.
         :param data_model: optional schema of this description. If none is provided
         then the attribute values will not be checked against a schema. Schemas are extremely useful
@@ -193,10 +208,19 @@ class Description(ProtobufSerializable):
             # TODO: choose a default name for the data model
             self._data_model = generate_schema("", attribute_values)
 
+    @property
+    def values(self) -> Dict[str, ATTRIBUTE_TYPES]:
+        return self._values
+
+    @property
+    def data_model(self) -> DataModel:
+        return self._data_model
+
     @staticmethod
     def _extract_value(value: query_pb2.Query.Value) -> ATTRIBUTE_TYPES:
         """
         From protobuf query value to attribute type.
+
         :param value: an instance of query_pb2.Query.Value.
         :return: the associated attribute type.
         """
@@ -232,7 +256,7 @@ class Description(ProtobufSerializable):
 
     def as_instance(self):
         instance = query_pb2.Query.Instance()
-        instance.model.CopyFrom(self._data_model.to_pb())
+        instance.model.CopyFrom(self.data_model.to_pb())
         instance.values.extend([self._to_key_value_pb(key, value) for key, value in self._values.items()])
         return instance
 
@@ -252,25 +276,25 @@ class Description(ProtobufSerializable):
         :raises AttributeInconsistencyException: if values do not meet the schema, or if no schema
         is present if they have disallowed types.
         """
-        if self._data_model is not None:
+        if self.data_model is not None:
             # check that all required attributes in the schema are contained in
-            required_attributes = [s.name for s in self._data_model.attribute_schemas if s.required]
-            if not all(a in self._values for a in required_attributes):
+            required_attributes = [s.name for s in self.data_model.attribute_schemas if s.required]
+            if not all(a in self.values for a in required_attributes):
                 raise AttributeInconsistencyException("Missing required attribute.")
 
             # check that all values are defined in the schema
-            all_schema_attributes = [s.name for s in self._data_model.attribute_schemas]
-            if not all(k in all_schema_attributes for k in self._values):
+            all_schema_attributes = [s.name for s in self.data_model.attribute_schemas]
+            if not all(k in all_schema_attributes for k in self.values):
                 raise AttributeInconsistencyException("Have extra attribute not in schema")
 
             # check that each of the values are consistent with that specified in the schema
-            for schema in self._data_model.attribute_schemas:
-                if schema.name in self._values:
-                    if not isinstance(self._values[schema.name], schema.type):
+            for schema in self.data_model.attribute_schemas:
+                if schema.name in self.values:
+                    if not isinstance(self.values[schema.name], schema.type):
                         # values does not match type in schema
                         raise AttributeInconsistencyException(
                             "Attribute {} has incorrect type".format(schema.name))
-                    elif not isinstance(self._values[schema.name], ATTRIBUTE_TYPES.__args__):
+                    elif not isinstance(self.values[schema.name], ATTRIBUTE_TYPES.__args__):
                         # value type matches schema, but it is not an allowed type
                         raise AttributeInconsistencyException(
                             "Attribute {} has unallowed type".format(schema.name))
@@ -279,4 +303,4 @@ class Description(ProtobufSerializable):
         if type(other) != Description:
             return False
         else:
-            return self._values == other._values and self._data_model == other._data_model
+            return self.values == other.values and self.data_model == other.data_model

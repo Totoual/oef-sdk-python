@@ -20,18 +20,24 @@ _ASYNCIO_DELAY = 0.1
 
 @contextlib.contextmanager
 def setup_test_agents(n: int, local: bool, prefix: str="") -> List[AgentTest]:
-    agents = _init_n_agents(n, local, prefix)
+    agents, task = _init_context(n, local, prefix)
     try:
         yield agents
+    except Exception:
+        raise
     finally:
+        if task:
+            task.cancel()
         _stop_agents(agents)
 
 
-def _init_n_agents(n: int, local: bool, prefix: str="") -> List[AgentTest]:
+def _init_context(n: int, local: bool, prefix: str= ""):
     public_key_prefix = prefix + "-" if prefix else ""
+    _task = None
     if local:
         local_node = OEFLocalProxy.LocalNode()
         proxies = [OEFLocalProxy("{}agent-{}".format(public_key_prefix, i), local_node) for i in range(n)]
+        _task = asyncio.ensure_future(local_node.run())
     else:
         proxies = [OEFNetworkProxy("{}agent-{}".format(public_key_prefix, i), "127.0.0.1", 3333) for i in range(n)]
 
@@ -39,7 +45,7 @@ def _init_n_agents(n: int, local: bool, prefix: str="") -> List[AgentTest]:
     for a in agents:
         a.connect()
 
-    return agents
+    return agents, _task
 
 
 def _stop_agents(agents):
@@ -193,6 +199,8 @@ def test_on_search_result_services(oef_network_node, is_local):
         agent_0.search_services(0, Query([], dummy_datamodel))
         asyncio.ensure_future(agent_0.async_run())
         asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
+        agent_1.unregister_service(Description({}, dummy_datamodel))
+        agent_2.unregister_service(Description({}, dummy_datamodel))
 
         assert len(agent_0.received_msg) == 1
         assert agent_0.received_msg[0] == (0, [agent_1.public_key, agent_2.public_key])
@@ -215,6 +223,8 @@ def test_on_search_result_agents(oef_network_node, is_local):
         agent_0.search_agents(0, Query([], dummy_datamodel))
         asyncio.ensure_future(agent_0.async_run())
         asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
+        agent_1.unregister_agent()
+        agent_2.unregister_agent()
 
         assert len(agent_0.received_msg) == 1
         assert agent_0.received_msg[0] == (0, [agent_1.public_key, agent_2.public_key])

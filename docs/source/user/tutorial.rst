@@ -11,7 +11,7 @@ Initialization
 
 
 Setup an OEF Node
-~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~
 
 To be able to follow the following examples, we need to set up an OEF Node.
 This node will manage the discovery of agents
@@ -97,8 +97,7 @@ To do so, run the following instructions at the beginning of your scripts:
 
     import logging
     from oef.logger import set_logger
-    set_logger("oef", logging.DEBUG)
-
+    set_logger("oef.agents", logging.DEBUG)
 
 
 First example: Echo agent
@@ -265,7 +264,7 @@ Analogously to the previous section, we connect our client to the OEF.
 Make a query
 ````````````
 
-Now we need to search for agents who provide the ``echo` service.
+Now we need to search for agents who provide the ``echo`` service.
 
 To do so, we create a ``Query`` referring to the ``echo`` data model. The first parameter is a list
 of *constraints* over the attributes of the data model. However, since our data model is trivial,
@@ -330,18 +329,43 @@ Whereas, the one from the server agent is:
 
 The order of the exchanged message is the following:
 
-- The server notifies the OEF Node that it is able to serve other agents
-- The ``echo_client`` queries to the OEF Node
-- The OEF Node sends back the list of agents who satisfy
-  the query constraints. In this trivial example,
-  the only agent returned is the ``echo_server`.
-- The client sends a ``"hello"`` message to the OEF Node,
-  which targets the ``echo_server``
-- The OEF Node dispatches the message from ``echo_client`` to ``echo_server``
-- The ``echo_server`` receives the message and sends a new message (with the same content)
-  to the OEF Node, which targets the ``echo_client``
-- The OEF Node dispatch the message from ``echo_server`` to ``echo_client``
-- The ``echo_client`` receives the echo message.
+1. The service agent ``echo_server`` registers itself to the the OEF Node and waits for messages.
+2. The ``echo_client`` queries to the OEF Node
+3. The OEF Node sends back the list of agents who satisfy
+   the query constraints. In this trivial example,
+   the only agent returned is the ``echo_server``.
+4. The client sends a ``"hello"`` message to the OEF Node,
+   which targets the ``echo_server``
+5. The OEF Node dispatches the message from ``echo_client`` to ``echo_server``
+6. The ``echo_server`` receives the message and sends a new message (with the same content)
+   to the OEF Node, which targets the ``echo_client``
+7. The OEF Node dispatch the message from ``echo_server`` to ``echo_client``
+8. The ``echo_client`` receives the echo message.
+
+Follows the sequence diagram with the message exchange.
+
+.. mermaid::
+
+    sequenceDiagram
+        participant Echo Client
+        participant OEF Node
+        participant Echo Service
+        Echo Service->>OEF Node: (1) register_service(description);
+        loop run()
+            Echo Service->>Echo Service: waiting for messages...
+        end
+        Echo Client->>OEF Node: (2) search_services(query);
+        loop run()
+            Echo Client->>Echo Client: waiting for messages...
+        end
+        OEF Node->>Echo Client: (3) search_result(list of agents);
+        Echo Client->>Echo Client: on_search_result();
+        Echo Client->> OEF Node: (4) send_message("hello", "echo_server");
+        OEF Node->> Echo Service: (5) "hello" from "echo_client";
+        Echo Service->>Echo Service: (6) on_message();
+        Echo Service ->> OEF Node: (7) send_message("hello", "echo_client")
+        OEF Node ->> Echo Client: (8) "hello" from "echo_server"
+        Echo Client->>Echo Client: on_message();
 
 
 Second example: Weather Station

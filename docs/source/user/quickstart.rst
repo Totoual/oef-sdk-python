@@ -8,6 +8,11 @@ This is a quick start guide, for the eager users.
 Install
 -------
 
+Try the following installation instructions. If you have some troubles,
+we recommend to follow the full installation guide: :ref:`install`.
+
+Depending on your platform, do one of the following:
+
 * On Linux Ubuntu:
 
 .. code-block:: bash
@@ -35,6 +40,11 @@ Install
 Run a OEF Node
 --------------
 
+For full details about how to run an OEF Node, please follow the instructions at this page: :ref:`oef-node`.
+
+Using Docker
+````````````
+
 In a separate terminal:
 
 .. code-block:: bash
@@ -54,6 +64,7 @@ When finished, you can stop the image by running the following:
 
   docker stop $(docker ps | grep oef-core-image | awk '{ print $1 }')
 
+
 Connect Agents
 --------------
 
@@ -66,9 +77,9 @@ Write Agents
 The ``GreetingsAgent`` does the following:
 
 * ``on_search_result``: Once the agent receives results from its search,
-  the agent sends a ``hello`` message to each agent discovered.
-* ``on_message``: whenever the agent receives a ``hello`` message,
-  it answers with ine if its greetings.
+  the agent sends a ``"hello"`` message to each agent discovered.
+* ``on_message``: whenever the agent receives a ``"hello"`` message,
+  it answers with ``"greetings"``.
 
 
 .. code-block:: python
@@ -142,7 +153,7 @@ When the ``client_agent`` receives a search result from the OEF, the ``on_search
 
 The output should be:
 
-::
+.. code-block:: none
 
     [greetings_client]: Agents found: ['greetings_server']
     [greetings_server]: Received message: origin=greetings_client, dialogue_id=0, content=b'hello'

@@ -3,9 +3,20 @@
 Installation
 ============
 
-The installation requires Python 3.6 or later versions.
+This is the full guide about how to install the OEF Python SDK.
 
-For now, we only support installation from source.
+The supported platforms are:
+
+* Linux (specially Ubuntu 18.04)
+* MacOS
+* Windows
+
+The instructions may change depending on the operating system version/distribution.
+
+The installation requires Python 3.5 or later versions.
+Also, we assume you have `pip` and `git` installed on your system.
+
+At the moment, we only support installation from source.
 
 Protobuf Compiler
 -----------------
@@ -25,8 +36,10 @@ If you get ``Missing input file.``, then you already have it.
 Otherwise, you can install it in several  ways, depending on your platform.
 
 
-Linux (Ubuntu)
-~~~~~~~~~~~~~~
+Linux (Ubuntu 18.04)
+~~~~~~~~~~~~~~~~~~~~
+
+You can follow one of the following instructions:
 
 * Using the package manager:
 
@@ -55,6 +68,8 @@ For other platforms and other details, please follow the installation guide: :re
 
 Mac OS X
 ~~~~~~~~
+
+You can follow one of the following instructions:
 
 * If you have `Homebrew <https://brew.sh/>`_, just run:
 
@@ -102,3 +117,9 @@ To install the Python package ``oef``, follow these steps:
 
     sudo python3 setup.py install
 
+Use the OEF Node
+----------------
+
+In several parts of the documentation, we require that an instance of the OEF Node is running on your local machine.
+
+We suggest to follow the guide about how to run an OEF Node:  :ref:`oef-node`.

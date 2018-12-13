@@ -28,8 +28,9 @@ User guide
    :maxdepth: 2
 
    user/introduction
-   user/install
    user/quickstart
+   user/install
+   user/oef-node
    user/tutorial
 
    oef

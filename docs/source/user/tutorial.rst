@@ -17,73 +17,7 @@ To be able to follow the following examples, we need to set up an OEF Node.
 This node will manage the discovery of agents
 and the communications between agents.
 
-Using Docker
-````````````
-
-We recommend you use the Docker image provided by
-the `OEFCore <https://github.com/uvue-git/OEFCore.git>`_,
-by following these steps:
-
-* Clone OEFCore
-
-.. code-block:: bash
-
-  git clone git@github.com:uvue-git/OEFCore.git --recursive && cd OEFCore/
-
-* Build the image
-
-.. code-block:: bash
-
-  ./oef-core-image/scripts/docker-build-img.sh
-
-* Run the image. This will start the OEF node, listening to port ``3333`` at ``localhost``:
-
-.. code-block:: bash
-
-  ./oef-core-image/scripts/docker-run.sh -p 3333:3333 --
-
-Your terminal will be busy while the Docker image is running.
-If you would prefer to run the OEF node in the background, add the ``-d`` flag:
-
-.. code-block:: bash
-
-  ./oef-core-image/scripts/docker-run.sh -p 3333:3333 -d --
-
-After you have completed this tutorial,
-you can exit the Docker container by running the following line:
-
-.. code-block:: bash
-
-  docker stop $(docker ps | grep oef-core-image | awk '{ print $1 }')
-
-Compiling from source
-`````````````````````
-
-You will need:
-
-* ``cmake``
-* ``gcc``
-* Google Protocol Buffers library.
-
-On Linux (Ubuntu) you can run:
-
-.. code-block:: none
-
-  git clone https://github.com/uvue-git/OEFCore.git --recursive && cd OEFCore
-  sudo apt-get install cmake protobuf-compiler libprotobuf-dev
-  mkdir build && cd build
-  cmake ..
-  make -j 4
-
-And to run a OEFNode:
-
-.. code-block:: none
-
-  ./apps/node/Node
-
-
-For full details, please follow the
-`installation instructions for the OEFCore <https://github.com/uvue-git/OEFCore/blob/master/INSTALL.txt>`_.
+Please follow the instruction in this page about how to run an OEF Node: :ref:`oef-node`.
 
 
 Optional: set up the logger

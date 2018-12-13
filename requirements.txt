@@ -13,6 +13,6 @@ GitPython
 hypothesis
 
 #docs
-sphinx
+Sphinx
 sphinx_rtd_theme
 sphinxcontrib.mermaid

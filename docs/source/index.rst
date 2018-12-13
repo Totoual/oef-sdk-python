@@ -37,10 +37,10 @@ User guide
    user/communication-protocols
 
    oef
+
+.. include:: user/resources-links.rst
+
 .. include:: ../../CONTRIBUTING.rst
-
-.. include:: user/links.rst
-
 .. include:: ../../AUTHORS.rst
 .. include:: ../../HISTORY.rst
 

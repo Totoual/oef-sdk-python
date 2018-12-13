@@ -1,4 +1,4 @@
-.. _links:
+.. _resources-links:
 
 Resources
 =========

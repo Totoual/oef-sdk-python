@@ -21,8 +21,8 @@ sys.path.insert(0, os.path.abspath('../oef'))
 # -- Project information -----------------------------------------------------
 
 project = 'oef'
-copyright = u'2018, Fetch AI Ltd.'
-author = u'Fetch AI Ltd.'
+copyright = u'2018 Fetch.AI Limited'
+author = u'Fetch.AI Limited'
 
 # The short X.Y version
 version = '0.1'

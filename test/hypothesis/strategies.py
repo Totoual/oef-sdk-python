@@ -42,7 +42,7 @@ def _is_attribute_type(t: typing.Type) -> bool:
     :param t: the type.
     :return: True if the type belongs to `ATTRIBUTE_TYPES`, False otherwise.
     """
-    return t == bool or t in ATTRIBUTE_TYPES.__args__
+    return issubclass(t, ATTRIBUTE_TYPES.__args__)
 
 
 """Strategy that sample a valid attribute type"""

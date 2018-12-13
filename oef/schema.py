@@ -47,6 +47,7 @@ The allowable types that an Attribute can have
 """
 ATTRIBUTE_TYPES = Union[float, str, bool, int]
 
+
 # TODO add doctests in docstrings
 class AttributeSchema(ProtobufSerializable):
     """

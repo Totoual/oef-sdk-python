@@ -32,6 +32,7 @@ User guide
    user/install
    user/oef-node
    user/tutorial
+   user/defining-data-model
 
    oef
 .. include:: ../../CONTRIBUTING.rst

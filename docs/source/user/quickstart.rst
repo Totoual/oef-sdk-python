@@ -43,7 +43,7 @@ Run a OEF Node
 For full details about how to run an OEF Node, please follow the instructions at this page: :ref:`oef-node`.
 
 Using Docker
-````````````
+~~~~~~~~~~~~
 
 In a separate terminal:
 

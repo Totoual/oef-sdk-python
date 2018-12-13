@@ -1,6 +1,6 @@
 .. _defining-data-model:
 
-Defining data models
+Defining Data Models
 ====================
 
 In this section we explain how to define `data models`, an important component of the OEF.
@@ -40,7 +40,7 @@ the following properties of our books:
 
 * The `title`
 * The `author`
-* The `category` (e.g. science fiction, horror)
+* The `genre` (e.g. science fiction, horror)
 * The `year of publication`
 * The `average rating` (average of the ratings between 0 and 5)
 * The `ISBN` code
@@ -53,7 +53,7 @@ For each of this fields, we can define an attribute in the SDK by using the :cla
     from oef.schema import AttributeSchema
     attr_title    = AttributeSchema("title" ,          str,   True,  "The title of the book.")
     attr_author   = AttributeSchema("author" ,         str,   True,  "The author of the book.")
-    attr_category = AttributeSchema("category",        str,   True,  "The category of the book.")
+    attr_genre    = AttributeSchema("genre",           str,   True,  "The genre of the book.")
     attr_year     = AttributeSchema("year",            int,   True,  "The year of publication of the book.")
     attr_avg_rat  = AttributeSchema("average_rating",  float, False, "The average rating of the book.")
     attr_isbn     = AttributeSchema("ISBN",            str,   True,  "The ISBN.")
@@ -89,7 +89,7 @@ in the same structure. We can do it in the following way:
     book_model = DataModel("book", [
         attr_title,
         attr_author,
-        attr_category,
+        attr_genre,
         attr_year,
         attr_avg_rat,
         attr_isbn,
@@ -120,7 +120,7 @@ In the SDK, the class that implements the description is :class:`~oef.schema.Des
     It = Description({
         "title" :           "It",
         "author":           "Stephen King",
-        "category":         "horror",
+        "genre":            "horror",
         "year":             1986,
         "average_rating":   4.5,
         "ISBN":             "0-670-81302-8",
@@ -130,7 +130,7 @@ In the SDK, the class that implements the description is :class:`~oef.schema.Des
     _1984 = Description({
         "title" :           "1984",
         "author":           "George Orwell",
-        "category":         "novel",
+        "genre":            "novel",
         "year":             1949,
         "ISBN":             "978-0451524935",
         "ebook_available":  False
@@ -138,10 +138,10 @@ In the SDK, the class that implements the description is :class:`~oef.schema.Des
 
 We defined the descriptions for two books, namely ``It`` and ``1984``, that refer to a data model.
 
-The attributes are instantiated with a dictionary that:
+The attributes are instantiated with a dictionary that has:
 
-* as key, the name of the attribute.
-* as value, the associated value of the attribute.
+* as keys, the name of the attributes.
+* as values, the values associated with the attributes.
 
 Notice that in the latter book we omitted the ``average_rating`` field. We are allowed to do that because the
 ``average_rating`` attribute is not mandatory.

@@ -116,13 +116,13 @@ they can exchange:
 * `FIPA <http://www.fipa.org/>`_ interaction protocol messages, to support negotiation.
 
 Every message contains a `dialogue identifier` that specify to both ends, the sender and the recipient, the dialogue
-in which the message
+in which the message is defined.
 
 In the current implementation of the OEF, dialogues objects really exist only on
 the agents side. On the OEF node side, they exist only conceptually.
 
 What is OEF Python SDK?
-~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------
 
 A Python SDK to develop agents interacting with each other through the OEF-core.
 

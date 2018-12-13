@@ -33,9 +33,12 @@ User guide
    user/oef-node
    user/tutorial
    user/defining-data-model
+   user/query-language
 
    oef
 .. include:: ../../CONTRIBUTING.rst
+
+.. include:: user/links.rst
 
 .. include:: ../../AUTHORS.rst
 .. include:: ../../HISTORY.rst

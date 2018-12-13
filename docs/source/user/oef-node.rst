@@ -11,7 +11,7 @@ We support two methods:
 * Build from source
 
 Using the Docker image
-~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
 
 Using Docker

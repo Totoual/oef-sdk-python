@@ -67,14 +67,12 @@ def test_raise_when_have_incorrect_types():
                                 "incorrect type")
 
 
-@given(text(), _value_type_pairs(not_attribute_schema_types), booleans(), one_of(none(), text()))
-def test_raise_when_have_unallowed_types(name, unallowed_value_type_pair, required, description):
+def test_raise_when_have_unallowed_types():
     """
     Test that if an attribute value has a value inconsistent with its schema, we moan.
     """
-    unallowed_value, unallowed_type = unallowed_value_type_pair
-    check_inconsistency_checker([AttributeSchema(name, unallowed_type, required, description)],
-                                {name: unallowed_value},
+    check_inconsistency_checker([AttributeSchema("foo", tuple, True)],
+                                {"foo": tuple()},
                                 "unallowed type")
 
 

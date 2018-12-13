@@ -1,6 +1,6 @@
 # OEF Python SDK
 
-![](https://img.shields.io/badge/python-3.6%20%7C%203.7-blue.svg)
+![](https://img.shields.io/badge/python-3.5%20%7C%203.6%20%7C%203.7-blue.svg)
 ![](https://img.shields.io/badge/license-Apache--2.0-lightgrey.svg)
 
 This is the Python SDK for OEF agent development, allowing:

@@ -135,8 +135,8 @@ And
 ~~~
 
 The :class:`~oef.query.And` is a constraint type that allows you to specify a conjunction of constraints
-over an attribute. That is, the ``And`` constraint is satisfied whenever every constraint that constitute
-the `and` is satisfied.
+over an attribute. That is, the ``And`` constraint is satisfied whenever all the constraints that constitute
+the `and` are satisfied.
 
 
 **Example**:
@@ -152,7 +152,7 @@ Or
 ~~
 
 The :class:`~oef.query.Or` is a constraint type that allows you to specify a conjunction of constraints. That is, the
-``And`` constraint is satisfied whenever every constraint that constitute the ``and`` is satisfied.
+``Or`` constraint is satisfied whenever at least one of the constraints that constitute the ``or`` is satisfied.
 
 
 **Example**:

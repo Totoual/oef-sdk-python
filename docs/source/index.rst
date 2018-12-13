@@ -34,6 +34,7 @@ User guide
    user/tutorial
    user/defining-data-model
    user/query-language
+   user/communication-protocols
 
    oef
 .. include:: ../../CONTRIBUTING.rst

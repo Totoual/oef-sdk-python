@@ -48,7 +48,7 @@ class OEFCoreInterface(ABC):
     @abstractmethod
     def register_service(self, service_description: Description) -> None:
         """
-        Adds a description of the respective service so that it can be understood/ queried by
+        Adds a description of the respective service so that it can be understood/queried by
         other agents in the OEF.
 
         :param service_description: description of the services to add

@@ -34,6 +34,11 @@ logger = logging.getLogger(__name__)
 DEFAULT_OEF_NODE_PORT = 3333
 
 
+class OEFConnectionError(ConnectionError):
+    def __init__(self):
+        super().__init__("Connection not established yet. Please use 'connect()'.")
+
+
 class OEFNetworkProxy(OEFProxy):
     """
     Proxy to the functionality of the OEF. Provides functionality for an agent to:
@@ -66,13 +71,21 @@ class OEFNetworkProxy(OEFProxy):
     async def _connect_to_server(self, event_loop) -> Awaitable[Tuple[asyncio.StreamReader, asyncio.StreamWriter]]:
         return await asyncio.open_connection(self.oef_addr, self.port, loop=event_loop)
 
-    def _send(self, protobuf_msg):  # async too ?
+    def _send(self, protobuf_msg):
+        try:
+            assert self._server_writer is not None
+        except AssertionError:
+            raise OEFConnectionError()
         serialized_msg = protobuf_msg.SerializeToString()
         nbytes = struct.pack("I", len(serialized_msg))
         self._server_writer.write(nbytes)
         self._server_writer.write(serialized_msg)
 
     async def _receive(self):
+        try:
+            assert self._server_reader is not None
+        except AssertionError:
+            raise OEFConnectionError()
         nbytes_packed = await self._server_reader.read(len(struct.pack("I", 0)))
         logger.debug("received ${0}".format(nbytes_packed))
         nbytes = struct.unpack("I", nbytes_packed)

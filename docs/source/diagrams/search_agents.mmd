@@ -1,0 +1,17 @@
+sequenceDiagram
+        participant Agent
+        participant OEF Node
+        Agent->>OEF Node: connect()
+        activate Agent
+        OEF Node->>Agent: "you are connected"
+        deactivate Echo Client
+        Agent ->> OEF Node: search_agents(search_id, query)
+        activate OEF Node
+        Agent ->> Agent: run()
+        activate Agent
+        OEF Node ->> Agent: (search_id, List[agent_ids])
+        deactivate OEF Node
+        activate Agent
+        note left of Agent: on_search_result() called with parameters (search_id, List[agent_ids])
+        deactivate Agent
+        deactivate Agent

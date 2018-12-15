@@ -78,4 +78,5 @@ if __name__ == '__main__':
     server_agent.register_service(echo_description)
 
     # run the agent
+    print("Waiting for messages...")
     server_agent.run()

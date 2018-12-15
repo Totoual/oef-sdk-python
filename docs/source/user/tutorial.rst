@@ -132,11 +132,12 @@ then our agent will be one of the results of that query.
 
 Run the agent
 `````````````
-To run the agent waiting for events:
+To run the agent waiting for messages:
 
-::
+.. code-block:: python
 
-  server_agent.run()
+   print("Waiting for messages...")
+   server_agent.run()
 
 
 The ``run()`` method is blocking, so you have to switch to another terminal/console to launch the client.
@@ -248,17 +249,18 @@ The output from the client agent should be:
 
 ::
 
-    Make search to the OEF
-    Agents found:  ['echo_server']
-    Sending b'hello' to echo_server
-    Received message: origin=echo_server, dialogue_id=0, content=b'hello'
+   Make search to the OEF
+   Agents found:  ['echo_server']
+   Sending b'hello' to echo_server
+   Received message: origin=echo_server, dialogue_id=0, content=b'hello'
 
 Whereas, the one from the server agent is:
 
 ::
 
-    Received message: origin=echo_client, dialogue_id=0, content=b'hello'
-    Sending b'hello' back to echo_client
+   Waiting for messages...
+   Received message: origin=echo_client, dialogue_id=0, content=b'hello'
+   Sending b'hello' back to echo_client
 
 
 The order of the exchanged message is the following:
@@ -472,6 +474,8 @@ And here is the code to run the agent:
     agent = WeatherStation("weather_station", oef_addr="127.0.0.1", oef_port=3333)
     agent.connect()
     agent.register_service(agent.service_description)
+
+    print("Waiting for clients...")
     agent.run()
 
 
@@ -586,6 +590,7 @@ Whereas, the one from the server agent is:
 
 .. code-block:: none
 
+    Waiting for clients...
     Received CFP from weather_client
     Received accept from weather_client.
 

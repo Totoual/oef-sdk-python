@@ -24,7 +24,7 @@
 oef.agents
 ~~~~~~~~~~
 
-This module contains the base class for implementing agents
+This module contains the base class for implementing agents.
 
 """
 import asyncio
@@ -56,7 +56,7 @@ class Agent(AgentInterface, ABC):
     The base class for OEF Agents.
 
     Extend this class to implement the callback methods defined in
-    `~oef.core.DialogueInterface` and `~oef.core.ConnectionInterface`.
+    :class:`~oef.core.DialogueInterface` and :class:`~oef.core.ConnectionInterface`.
 
     In this way you can program the behaviour of the agent when it's running.
     """
@@ -83,7 +83,7 @@ class Agent(AgentInterface, ABC):
 
     def run(self) -> None:
         """
-        Run the agent synchronously. That is, until :func:`~oef.agents.Agent.stop()` is not called.
+        Run the agent synchronously. That is, until :func:`~oef.agents.Agent.stop` is not called.
 
         :return: ``None``
         """
@@ -102,7 +102,7 @@ class Agent(AgentInterface, ABC):
 
     def stop(self) -> None:
         """
-        Stop the agent. Specifically, if :func:`~oef.agents.Agent.run()` or :func:`~oef.agents.Agent.async_run()`
+        Stop the agent. Specifically, if :func:`~oef.agents.Agent.run` or :func:`~oef.agents.Agent.async_run`
         have been called, then this method will cancel the previously instantiated task.
         The task that manages the agent-loop is hence scheduled for cancellation.
 
@@ -248,7 +248,7 @@ class OEFAgent(Agent):
     """
     Agent that interacts with an OEFNode on the network.
 
-    It provides a nicer constructor that does not require to instantiate `~oef.proxy.OEFLocalProxy` explicitly.
+    It provides a nicer constructor that does not require to instantiate :class:`~oef.proxy.OEFLocalProxy` explicitly.
     """
 
     def __init__(self, public_key: str, oef_addr: str, oef_port: int = 3333) -> None:
@@ -268,9 +268,9 @@ class LocalAgent(Agent):
     """
     Agent that interacts with a local implementation of an OEF Node.
 
-    It provides a nicer constructor that does not require to instantiate `~oef.proxy.OEFLocalProxy` explicitly.
+    It provides a nicer constructor that does not require to instantiate :class:`~oef.proxy.OEFLocalProxy` explicitly.
 
-    Notice: other agents need to be constructed with the same `oef.proxy.OEFLocalProxy.LocalNode` instance.
+    Notice: other agents need to be constructed with the same :class:`~oef.proxy.OEFLocalProxy.LocalNode` instance.
     """
 
     def __init__(self, public_key: str, local_node: OEFLocalProxy.LocalNode):

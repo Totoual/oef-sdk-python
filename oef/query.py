@@ -35,7 +35,14 @@ class ConstraintType(ProtobufSerializable, ABC):
     def from_pb(cls, constraint_pb: query_pb2.Query.Constraint.ConstraintType):
         """
         From ConstraintType protobuf to a ConstraintType.
-        It returns an instance of one of the following: Relation, Set, Range, And, Or.
+        It returns an instance of one of the following:
+
+        * :class:`~oef.query.Relation`
+        * :class:`~oef.query.Set`
+        * :class:`~oef.query.Range`
+        * :class:`~oef.query.And`
+        * :class:`~oef.query.Or`
+
         :param constraint_pb: the constraint protobuf object
         :return: the associated ConstraintType instance.
         """

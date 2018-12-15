@@ -334,7 +334,7 @@ class CFP(AgentMessage):
 
 class Propose(AgentMessage):
     """
-    This message is used to send a `Proposal`.
+    This message is used to send a `Propose`.
     It contains:
 
     * a dialogue id, that identifies the dialogue in which the message is sent.

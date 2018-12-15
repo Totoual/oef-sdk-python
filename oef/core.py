@@ -158,7 +158,7 @@ class OEFCoreInterface(ABC):
 
         :param dialogue_id: the identifier of the dialogue in which the message is sent.
         :param destination: the agent identifier to whom the message is sent.
-        :param proposals:
+        :param proposals: either a list of :class:`~oef.schema.Description` or ``bytes``.
         :param msg_id: the message identifier for the dialogue.
         :param target: the identifier of the message to whom this message is answering.
         :return: ``None``

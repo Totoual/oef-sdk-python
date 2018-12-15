@@ -1,5 +1,3 @@
-.. _resources-links:
-
 Resources
 =========
 

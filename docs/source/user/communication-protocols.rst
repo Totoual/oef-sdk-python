@@ -560,7 +560,7 @@ Here follows the sequence diagram that depicts the message exchange:
 
 Notice that:
 
-* There might have been other counter-`Propose`s between both parties
+* There might have been other counter- `Propose` s between both parties
 * Both the `Buyer` and the `Seller` can send an `Accept`, but only when is it's turn.
 
 
@@ -571,7 +571,8 @@ Decline
 The `Decline` message is used to decline any propose, and it ends the negotiation.
 Obviously, both the `Buyer` and the `Seller` can send a `Decline`.
 
-The `Decline`'s target must be the `CFP` that initiated the negotiation.
+The `Decline`'s target must be the `CFP` that initiated the negotiation. It can be even sent by the `Seller` on the
+`Buyer` 's `CFP`.
 
 You can use the method :func:`~oef.core.OEFCoreInterface.send_decline` to send a `Decline` message.
 
@@ -625,6 +626,54 @@ Here follows the sequence diagram that depicts the message exchange:
 
 Notice that:
 
-* There might have been other counter-`Propose`s between both parties
+* There might have been other counter- `Propose` s between both parties
 * Both the `Buyer` and the `Seller` can send a `Decline`, but only when is it's turn.
+
+
+FIPA Examples
+~~~~~~~~~~~~~
+
+In this section you can see some examples about how the negotiation protocol should work.
+
+Notice that the SDK does not impose any restriction on the messages. Eventually, there will be
+more API support that moves the burden of taking care of some protocol-related details, from the developer to the SDK.
+
+You can use this `script <https://github.com/uvue-git/oef-sdk-python/tree/master/examples/random_fipa/random_fipa.py>`_
+to generate other simulations.
+
+CFP - Decline
+``````````````
+
+.. mermaid:: ../diagrams/fipa_examples/cfp-decline.mmd
+    :align: center
+    :caption: The Seller sends a `Decline` just after a `CFP`.
+
+CFP - Propose - Decline
+````````````````````````
+
+.. mermaid:: ../diagrams/fipa_examples/cfp-propose-decline.mmd
+    :align: center
+    :caption: The Buyer sends a `Decline` after the first `Seller`'s `Propose`.
+
+CFP - Propose - Accept
+``````````````````````
+
+.. mermaid:: ../diagrams/fipa_examples/cfp-propose-decline.mmd
+    :align: center
+    :caption: The Buyer accepts the first `Seller`'s `Propose`.
+
+CFP - Propose - Propose - Decline
+``````````````````````````````````
+
+.. mermaid:: ../diagrams/fipa_examples/cfp-propose-propose-decline.mmd
+    :align: center
+    :caption: The Seller sends a `Decline` after the `Buyers`'s counter-`Propose`.
+
+
+CFP - Propose - Propose - Accept
+````````````````````````````````
+
+.. mermaid:: ../diagrams/fipa_examples/cfp-propose-propose-accept.mmd
+    :align: center
+    :caption: The Seller accept the `Buyers`'s counter-`Propose`.
 

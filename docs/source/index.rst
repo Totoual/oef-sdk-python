@@ -38,10 +38,10 @@ User guide
 
    oef
 
-   user/resources-links.rst
 
 .. include:: ../../CONTRIBUTING.rst
 .. include:: ../../AUTHORS.rst
+.. include:: user/resources-links.rst
 .. include:: ../../HISTORY.rst
 
 Indices and tables

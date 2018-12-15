@@ -43,8 +43,8 @@ with the same message.
 First, we define the service agent that implements the echo service.
 Then, we implement other client agents to interact with the echo service.
 
-The code for the example can be found
-`here <https://github.com/uvue-git/OEFCorePython/tree/master/examples/echo>`_.
+The code for the example can be found at this
+`link <https://github.com/uvue-git/OEFCorePython/tree/master/examples/echo>`_.
 
 Echo Agent service
 ~~~~~~~~~~~~~~~~~~

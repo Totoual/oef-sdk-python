@@ -38,7 +38,7 @@ User guide
 
    oef
 
-.. include:: user/resources-links.rst
+   user/resources-links.rst
 
 .. include:: ../../CONTRIBUTING.rst
 .. include:: ../../AUTHORS.rst

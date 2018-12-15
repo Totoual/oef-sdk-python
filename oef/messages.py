@@ -247,8 +247,7 @@ class Message(AgentMessage):
     It is used in the method :func:`~oef.core.OEFCoreInterface.send_message`.
     """
 
-    def __init__(self,
-                 dialogue_id: int,
+    def __init__(self, dialogue_id: int,
                  destination: str,
                  msg: bytes):
         """
@@ -290,8 +289,7 @@ class CFP(AgentMessage):
     It is used in the method :func:`~oef.core.OEFCoreInterface.send_cfp`.
     """
 
-    def __init__(self,
-                 dialogue_id: int,
+    def __init__(self, dialogue_id: int,
                  destination: str,
                  query: CFP_TYPES,
                  msg_id: Optional[int] = 1,
@@ -351,8 +349,7 @@ class Propose(AgentMessage):
     It is used in the method :func:`~oef.core.OEFCoreInterface.send_propose`.
     """
 
-    def __init__(self,
-                 dialogue_id: int,
+    def __init__(self, dialogue_id: int,
                  destination: str,
                  proposals: PROPOSE_TYPES,
                  msg_id: int,
@@ -411,8 +408,7 @@ class Accept(AgentMessage):
     It is used in the method :func:`~oef.core.OEFCoreInterface.send_accept`.
     """
 
-    def __init__(self,
-                 dialogue_id: int,
+    def __init__(self, dialogue_id: int,
                  destination: str,
                  msg_id: int,
                  target: Optional[int] = None):
@@ -462,8 +458,7 @@ class Decline(AgentMessage):
     It is used in the method :func:`~oef.core.OEFCoreInterface.send_decline`.
     """
 
-    def __init__(self,
-                 dialogue_id: int,
+    def __init__(self, dialogue_id: int,
                  destination: str,
                  msg_id: int,
                  target: Optional[int] = None):

@@ -137,7 +137,7 @@ Start Communications
 
   from oef.query import Query
   query = Query([], greetings_model)
-  client_agent.search_services(query)
+  client_agent.search_services(0, query)
 
 
 When the ``client_agent`` receives a search result from the OEF, the ``on_search_result`` method is executed.
@@ -147,9 +147,10 @@ When the ``client_agent`` receives a search result from the OEF, the ``on_search
 .. code-block:: python
 
     import asyncio
-    loop.run_until_complete(asyncio.gather(
-        client_agent.async_run(),
-        server_agent.async_run()))
+    asyncio.get_event_loop().run_until_complete(
+        asyncio.gather(
+            client_agent.async_run(),
+            server_agent.async_run()))
 
 The output should be:
 

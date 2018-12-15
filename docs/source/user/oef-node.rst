@@ -88,11 +88,11 @@ On Linux (Ubuntu) you can run:
   cmake ..
   make -j 4
 
-And to run a OEFNode:
+And to run an instance of ``OEFNode``:
 
 .. code-block:: none
 
-  ./apps/node/Node
+  ./apps/node/OEFNode
 
 Optional: you can also install it in your system:
 

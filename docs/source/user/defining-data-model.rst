@@ -16,7 +16,8 @@ All you need to specify data models and descriptions (that is, instances of the 
 Attributes
 ~~~~~~~~~~
 
-At the lowest level, we have the `attribute`. An attribute is an abstract definition of a property.
+At the lowest level of our data model language, we have the `attribute`.
+An attribute is an abstract definition of a property.
 
 It is identified by a `name`, that must be unique in a given data model (that is, we can't have two attributes
 that share the same name).

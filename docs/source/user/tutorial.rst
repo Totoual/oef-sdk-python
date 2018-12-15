@@ -43,7 +43,7 @@ with the same message.
 First, we define the service agent that implements the echo service.
 Then, we implement other client agents to interact with the echo service.
 
-The code for the examples can be found
+The code for the example can be found
 `here <https://github.com/uvue-git/OEFCorePython/tree/master/examples/echo>`_.
 
 Echo Agent service
@@ -278,7 +278,7 @@ The order of the exchanged message is the following:
 
 Follows the sequence diagram with the message exchange.
 
-.. mermaid:: ../diagrams/echo_sequence_diagram.mmd
+.. mermaid:: ../diagrams/echo_example.mmd
     :alt: Sequence diagram for the Echo example.
     :align: center
     :caption: The exchange of messages in the Echo example.
@@ -303,7 +303,7 @@ protocol that allows the agents to:
 * accept/decline proposals.
 
 
-You can check the code `here <https://github.com/uvue-git/OEFCorePython/tree/master/examples/weather>`_.
+You can check the full code `here <https://github.com/uvue-git/OEFCorePython/tree/master/examples/weather>`_.
 
 
 Weather Station Agent
@@ -605,7 +605,7 @@ Follows the summary of the communication between the weather client and the weat
 
 Follows the sequence diagram with the message exchange.
 
-.. mermaid:: ../diagrams/weather_sequence_diagram.mmd
+.. mermaid:: ../diagrams/weather_example.mmd
     :alt: Sequence diagram for the Weather example.
     :align: center
     :caption: The exchange of messages in the Weather example.

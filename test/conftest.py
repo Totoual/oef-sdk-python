@@ -28,7 +28,7 @@ import pytest
 
 ROOT_DIR = ".."
 OUR_DIRECTORY = os.path.dirname(inspect.getfile(inspect.currentframe()))
-FULL_PATH = [OUR_DIRECTORY, ROOT_DIR, "oef-core", "build", "apps", "node", "Node"]
+FULL_PATH = [OUR_DIRECTORY, ROOT_DIR, "oef-core", "build", "apps", "node", "OEFNode"]
 PATH_TO_NODE_EXEC = os.path.join(*FULL_PATH)
 
 

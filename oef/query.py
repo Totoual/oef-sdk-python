@@ -552,6 +552,18 @@ class Query(ProtobufSerializable):
     """
     Representation of a search that is to be performed. Currently a search is represented as a
     set of key value pairs that must be contained in the description of the service/ agent.
+
+    Examples:
+
+        >>> # return all the books written by Stephen King published after 1990, and available as an e-book:
+        >>> attr_author   = AttributeSchema("author" ,         str,   True,  "The author of the book.")
+        >>> attr_year     = AttributeSchema("year",            int,   True,  "The year of publication of the book.")
+        >>> attr_ebook    = AttributeSchema("ebook_available", bool,  False, "If the book can be sold as an e-book.")
+        >>> q = Query([
+        ...     Constraint(attr_author, Eq("Stephen King")),
+        ...     Constraint(attr_year, Gt(1990)),
+        ...     Constraint(attr_ebook, Eq(True))
+        ... ])
     """
 
     def __init__(self,

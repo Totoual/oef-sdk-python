@@ -180,7 +180,7 @@ the query must satisfy `every` constraint.)
     # return all the books written by Stephen King published after 1990, and available as an e-book:
     Query([
         Constraint(attr_author, Eq("Stephen King")),
-        Constraint(attr_year, Gt(1990),
+        Constraint(attr_year, Gt(1990)),
         Constraint(attr_ebook, Eq(True))
     ], book_model)
 

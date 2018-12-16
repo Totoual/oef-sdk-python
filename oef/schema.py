@@ -68,6 +68,17 @@ class AttributeSchema(ProtobufSerializable):
     Description of a single element of datum of either a description or a service.
 
     This defines the schema that a single entry in a schema must take.
+
+    Examples:
+
+        >>> attr_title    = AttributeSchema("title" ,          str,   True,  "The title of the book.")
+        >>> attr_author   = AttributeSchema("author" ,         str,   True,  "The author of the book.")
+        >>> attr_genre    = AttributeSchema("genre",           str,   True,  "The genre of the book.")
+        >>> attr_year     = AttributeSchema("year",            int,   True,  "The year of publication of the book.")
+        >>> attr_avg_rat  = AttributeSchema("average_rating",  float, False, "The average rating of the book.")
+        >>> attr_isbn     = AttributeSchema("ISBN",            str,   True,  "The ISBN.")
+        >>> attr_ebook    = AttributeSchema("ebook_available", bool,  False, "If the book can be sold as an e-book.")
+
     """
 
     """mapping from attribute types to its associated pb"""
@@ -143,6 +154,18 @@ class AttributeInconsistencyException(Exception):
 class DataModel(ProtobufSerializable):
     """
     This class represents a data model (a.k.a. schema) of the OEFCore.
+
+    Examples:
+
+        >>> book_model = DataModel("book", [
+        ...  AttributeSchema("title" ,          str,   True,  "The title of the book."),
+        ...  AttributeSchema("author" ,         str,   True,  "The author of the book."),
+        ...  AttributeSchema("genre",           str,   True,  "The genre of the book."),
+        ...  AttributeSchema("year",            int,   True,  "The year of publication of the book."),
+        ...  AttributeSchema("average_rating",  float, False, "The average rating of the book."),
+        ...  AttributeSchema("ISBN",            str,   True,  "The ISBN."),
+        ...  AttributeSchema("ebook_available", bool,  False, "If the book can be sold as an e-book."),
+        ... ], "A data model to describe books.")
     """
 
     def __init__(self,
@@ -216,6 +239,27 @@ class Description(ProtobufSerializable):
 
     Whenever the description is changed (including when it is create), the attribute values will
     checked to make sure they do not violate the attribute schema.
+
+    Examples:
+
+        >>> It = Description({
+        ...     "title" :           "It",
+        ...     "author":           "Stephen King",
+        ...     "genre":            "horror",
+        ...     "year":             1986,
+        ...     "average_rating":   4.5,
+        ...     "ISBN":             "0-670-81302-8",
+        ...     "ebook_available":  True
+        ... })
+
+        >>> _1984 = Description({
+        ...     "title" :           "1984",
+        ...     "author":           "George Orwell",
+        ...     "genre":            "novel",
+        ...     "year":             1949,
+        ...     "ISBN":             "978-0451524935",
+        ...     "ebook_available":  False
+        ... })
     """
 
     def __init__(self,

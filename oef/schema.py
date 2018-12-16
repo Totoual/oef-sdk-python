@@ -114,7 +114,7 @@ class AttributeSchema(ProtobufSerializable):
         elif attribute_type == int:
             return query_pb2.Query.Attribute.INT
         elif attribute_type == float:
-            return query_pb2.Query.Attribute.FLOAT
+            return query_pb2.Query.Attribute.DOUBLE
         elif attribute_type == str:
             return query_pb2.Query.Attribute.STRING
 
@@ -126,7 +126,7 @@ class AttributeSchema(ProtobufSerializable):
             return str
         elif attribute_type == query_pb2.Query.Attribute.INT:
             return int
-        elif attribute_type == query_pb2.Query.Attribute.FLOAT:
+        elif attribute_type == query_pb2.Query.Attribute.DOUBLE:
             return float
 
     def __eq__(self, other):
@@ -249,8 +249,8 @@ class Description(ProtobufSerializable):
             return bool(value.b)
         elif value_case == "i":
             return value.i
-        elif value_case == "f":
-            return value.f
+        elif value_case == "d":
+            return value.d
 
     @classmethod
     def from_pb(cls, query_instance: query_pb2.Query.Instance):
@@ -267,7 +267,7 @@ class Description(ProtobufSerializable):
         elif isinstance(value, int):
             kv.value.i = value
         elif isinstance(value, float):
-            kv.value.f = value
+            kv.value.d = value
         elif isinstance(value, str):
             kv.value.s = value
         return kv

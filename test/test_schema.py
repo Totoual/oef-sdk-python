@@ -142,7 +142,7 @@ def test_description_extract_value(value_type_pair):
     elif attr_type == int:
         value.i = attr_value
     elif attr_type == float:
-        value.f = attr_value
+        value.d = attr_value
 
     expected_value = Description._extract_value(value)
     assert type(expected_value) in ATTRIBUTE_TYPES.__args__ + (bool,)
@@ -162,7 +162,7 @@ def test_description_to_key_value(key: str, value: ATTRIBUTE_TYPES):
     elif isinstance(value, int):
         expected_value = kv.value.i
     elif isinstance(value, float):
-        expected_value = kv.value.f
+        expected_value = kv.value.d
     elif isinstance(value, str):
         expected_value = kv.value.s
     else:

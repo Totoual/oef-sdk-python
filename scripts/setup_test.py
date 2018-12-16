@@ -64,7 +64,7 @@ def main():
 
     if not os.path.exists("oef-core"):
         # TODO change url
-        Repo.clone_from("git@github.com:uvue-git/oef-core.git", "oef-core", progress=RemoteProgress())
+        os.system("git clone --recursive git@github.com:uvue-git/oef-core.git oef-core")
     else:
         try:
             Repo("oef-core")

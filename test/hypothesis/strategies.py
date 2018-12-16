@@ -24,6 +24,7 @@
 
 
 import typing
+from math import isnan
 from typing import List
 
 import hypothesis
@@ -55,7 +56,7 @@ not_attribute_schema_types = from_type(type).filter(lambda t: not _is_attribute_
 def is_correct_attribute_value(value: ATTRIBUTE_TYPES):
     if type(value) == int and abs(value) >= 0xFFFFFFFF:
         return False
-    if type(value) == float:
+    if type(value)==float and isnan(value):
         return False
 
     return value

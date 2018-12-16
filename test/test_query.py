@@ -37,7 +37,7 @@ def test_relation_to_pb(relation: Relation):
     elif type(actual_relation_value) == int:
         expected_relation_value = constraint.relation.val.i
     elif type(actual_relation_value) == float:
-        expected_relation_value = constraint.relation.val.f
+        expected_relation_value = constraint.relation.val.d
     elif type(actual_relation_value) == str:
         expected_relation_value = constraint.relation.val.s
     else:
@@ -71,7 +71,7 @@ def test_range_to_pb(range_: Range):
     elif range_type == int:
         value_pair = constraint.range_.i
     elif range_type == float:
-        value_pair = constraint.range_.f
+        value_pair = constraint.range_.d
     else:
         assert False
 

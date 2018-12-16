@@ -94,8 +94,8 @@ class Relation(ConstraintType, ABC):
             return relation_class(relation.val.b)
         elif value_case == "i":
             return relation_class(relation.val.i)
-        elif value_case == "f":
-            return relation_class(relation.val.f)
+        elif value_case == "d":
+            return relation_class(relation.val.d)
 
     def to_pb(self) -> query_pb2.Query.Constraint.ConstraintType:
         relation = query_pb2.Query.Relation()
@@ -106,7 +106,7 @@ class Relation(ConstraintType, ABC):
         elif isinstance(self.value, int):
             query_value.i = self.value
         elif isinstance(self.value, float):
-            query_value.f = self.value
+            query_value.d = self.value
         elif isinstance(self.value, str):
             query_value.s = self.value
         relation.val.CopyFrom(query_value)
@@ -174,10 +174,10 @@ class Range(ConstraintType):
             values.second = self._values[1]
             range_.i.CopyFrom(values)
         elif isinstance(self._values[0], float):
-            values = query_pb2.Query.FloatPair()
+            values = query_pb2.Query.DoublePair()
             values.first = self._values[0]
             values.second = self._values[1]
-            range_.f.CopyFrom(values)
+            range_.d.CopyFrom(values)
         constraint_type = query_pb2.Query.Constraint.ConstraintType()
         constraint_type.range_.CopyFrom(range_)
         return constraint_type
@@ -189,8 +189,8 @@ class Range(ConstraintType):
             return cls((range_pb.s.first, range_pb.s.second))
         elif range_case == "i":
             return cls((range_pb.i.first, range_pb.i.second))
-        elif range_case == "f":
-            return cls((range_pb.f.first, range_pb.f.second))
+        elif range_case == "d":
+            return cls((range_pb.d.first, range_pb.d.second))
 
     def __eq__(self, other):
         if type(other) != Range:
@@ -231,9 +231,9 @@ class Set(ConstraintType, ABC):
             values.vals.extend(self._values)
             set_.vals.i.CopyFrom(values)
         elif value_type == float:
-            values = query_pb2.Query.Set.Values.Floats()
+            values = query_pb2.Query.Set.Values.Doubles()
             values.vals.extend(self._values)
-            set_.vals.f.CopyFrom(values)
+            set_.vals.d.CopyFrom(values)
 
         constraint_type = query_pb2.Query.Constraint.ConstraintType()
         constraint_type.set_.CopyFrom(set_)
@@ -253,8 +253,8 @@ class Set(ConstraintType, ABC):
             return set_class(set_pb.vals.b.vals)
         elif value_case == "i":
             return set_class(set_pb.vals.i.vals)
-        elif value_case == "f":
-            return set_class(set_pb.vals.f.vals)
+        elif value_case == "d":
+            return set_class(set_pb.vals.d.vals)
 
     def __eq__(self, other):
         if type(other) != type(self):

@@ -146,12 +146,12 @@ the `and` are satisfied.
     from oef.query import Constraint, And, NotEq, Range
 
     # all the books whose title is between 'I' and 'J' (alphanumeric order) but not equal to 'It'
-    Constraint(attr_title,   And([Range("I", "J"), "It"])
+    Constraint(attr_title,   And([Range("I", "J"), NotEq("It")])
 
 Or
 ~~
 
-The :class:`~oef.query.Or` is a constraint type that allows you to specify a conjunction of constraints. That is, the
+The :class:`~oef.query.Or` is a constraint type that allows you to specify a disjunction of constraints. That is, the
 ``Or`` constraint is satisfied whenever at least one of the constraints that constitute the ``or`` is satisfied.
 
 

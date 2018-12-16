@@ -20,41 +20,49 @@
 
 import asyncio
 import contextlib
-from typing import List
+from typing import List, Tuple
+from unittest.mock import patch
 
 import pytest
 
+from oef.agents import Agent
 from oef.schema import Description, DataModel
 
 from oef.query import Query
 
-from oef.proxy import OEFLocalProxy, OEFNetworkProxy
+from oef.proxy import OEFLocalProxy, OEFNetworkProxy, OEFConnectionError
+from test.conftest import _ASYNCIO_DELAY
 from test.test_proxy.agent_test import AgentTest
-
-
-_ASYNCIO_DELAY = 0.1
 
 
 @contextlib.contextmanager
 def setup_test_agents(n: int, local: bool, prefix: str="") -> List[AgentTest]:
-    agents, task = _init_context(n, local, prefix)
+    agents, local_node = _init_context(n, local, prefix)
     try:
         yield agents
     except Exception:
         raise
     finally:
-        if task:
-            task.cancel()
+        if local_node:
+            local_node.stop()
         _stop_agents(agents)
 
 
-def _init_context(n: int, local: bool, prefix: str= ""):
+def _init_context(n: int, local: bool, prefix: str= "") -> Tuple[List[AgentTest], OEFLocalProxy.LocalNode]:
+    """
+    Initialize a context for testing agent communications.
+
+    :param n: the number of agents.
+    :param local: whether the context is local or networked.
+    :param prefix: the prefix to add at the beginning of every agent public key.
+    :return:
+    """
     public_key_prefix = prefix + "-" if prefix else ""
-    _task = None
+    local_node = None
     if local:
         local_node = OEFLocalProxy.LocalNode()
         proxies = [OEFLocalProxy("{}agent-{}".format(public_key_prefix, i), local_node) for i in range(n)]
-        _task = asyncio.ensure_future(local_node.run())
+        asyncio.ensure_future(local_node.run())
     else:
         proxies = [OEFNetworkProxy("{}agent-{}".format(public_key_prefix, i), "127.0.0.1", 3333) for i in range(n)]
 
@@ -62,7 +70,7 @@ def _init_context(n: int, local: bool, prefix: str= ""):
     for a in agents:
         a.connect()
 
-    return agents, _task
+    return agents, local_node
 
 
 def _stop_agents(agents):
@@ -272,7 +280,7 @@ def test_unregister_agent(oef_network_node, is_local):
 @pytest.mark.parametrize("is_local", [True, False], ids=["local", "networked"])
 def test_unregister_service(oef_network_node, is_local):
     """
-    Test that the unregistration of agents works correctly.
+    Test that the unregistration of services works correctly.
     """
 
     with setup_test_agents(2, is_local, prefix="unregister_service") as agents:
@@ -289,3 +297,41 @@ def test_unregister_service(oef_network_node, is_local):
 
         assert len(agent_0.received_msg) == 1
         assert agent_0.received_msg[0] == (0, [])
+
+
+def test_connection_error_on_send(oef_network_node):
+    """Test that a OEFConnectionError is raised when we try to send a message before
+    the connection has been established."""
+    with pytest.raises(OEFConnectionError):
+        proxy = OEFNetworkProxy("test_oef_connection_error_when_send", "127.0.0.1", 3333)
+        agent = Agent(proxy)
+        agent.send_message(0, proxy.public_key, b"message")
+
+
+def test_connection_error_on_receive(oef_network_node):
+    """Test that a OEFConnectionError is raised when we try to send a message before
+    the connection has been established."""
+    with pytest.raises(OEFConnectionError):
+        proxy = OEFNetworkProxy("test_oef_connection_error_when_receive", "127.0.0.1", 3333)
+        agent = Agent(proxy)
+        agent.run()
+
+
+def test_more_than_one_connect_call(oef_network_node):
+    proxy = OEFNetworkProxy("test_more_than_one_connect_call", "127.0.0.1", 3333)
+    agent = Agent(proxy)
+    agent.connect()
+    assert agent.connect()
+
+
+def test_more_than_one_async_run_call(oef_network_node):
+    with patch('logging.Logger.warning') as mock:
+        proxy = OEFNetworkProxy("test_more_than_one_async_run_call", "127.0.0.1", 3333)
+        agent = Agent(proxy)
+        agent.connect()
+
+        asyncio.ensure_future(agent.async_run())
+        asyncio.ensure_future(agent.async_run())
+        asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
+
+        mock.assert_called_with("Agent {} already scheduled for running.".format(agent.public_key))

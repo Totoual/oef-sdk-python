@@ -41,14 +41,14 @@ from oef.schema import Description
 logger = logging.getLogger(__name__)
 
 
-def _warning_not_implemented_method(method_name) -> None:
+def _warning_not_implemented_method(method_name: str) -> None:
     """
     Raise a warning if a method has not been implemented.
 
     :param method_name: the method name to report in the warning
     :return: ``None``
     """
-    logger.warning("You should implement {} in your OEFAgent class.", method_name)
+    logger.warning("You should implement {} in your OEFAgent class.".format(method_name))
 
 
 class Agent(AgentInterface, ABC):
@@ -97,6 +97,7 @@ class Agent(AgentInterface, ABC):
         """
         if self._task:
             logger.warning("Agent {} already scheduled for running.".format(self.public_key))
+            return
         self._task = asyncio.ensure_future(self.oef_proxy.loop(self))
         await self._task
 
@@ -111,14 +112,27 @@ class Agent(AgentInterface, ABC):
         if self._task:
             self._task.cancel()
             self._task = None
+            self.oef_proxy.stop()
 
-    def connect(self) -> None:
-        self._loop.run_until_complete(self.async_connect())
+    def connect(self) -> bool:
+        """
+        Connect to the OEF Node.
 
-    async def async_connect(self):
+        :return: True if the connection has been established successfully, False otherwise.
+        """
+        return self._loop.run_until_complete(self.async_connect())
+
+    async def async_connect(self) -> bool:
+        """
+        The asynchronous counterpart of :func:`~oef.agents.Agent.connect`.
+
+        :return: True if the connection has been established successfully, False otherwise.
+        """
         logger.debug("{}: Connecting...".format(self.public_key))
-        await self.oef_proxy.connect()
-        logger.debug("{}: Connection established.".format(self.public_key))
+        status = await self.oef_proxy.connect()
+        if status:
+            logger.debug("{}: Connection established.".format(self.public_key))
+        return status
 
     def register_agent(self, agent_description: Description) -> None:
         self.oef_proxy.register_agent(agent_description)
@@ -203,7 +217,7 @@ class Agent(AgentInterface, ABC):
     def on_message(self, origin: str,
                    dialogue_id: int,
                    content: bytes):
-        logger.info("on_message: {}, {}, {}, {}", origin, dialogue_id, content)
+        logger.debug("on_message: {}, {}, {}".format(origin, dialogue_id, content))
         _warning_not_implemented_method(self.on_message.__name__)
 
     def on_cfp(self, origin: str,
@@ -211,21 +225,21 @@ class Agent(AgentInterface, ABC):
                msg_id: int,
                target: int,
                query: CFP_TYPES):
-        logger.info("on_cfp: {}, {}, {}, {}", origin, dialogue_id, msg_id, target, query)
+        logger.debug("on_cfp: {}, {}, {}, {}, {}".format(origin, dialogue_id, msg_id, target, query))
         _warning_not_implemented_method(self.on_cfp.__name__)
 
     def on_accept(self, origin: str,
                   dialogue_id: int,
                   msg_id: int,
                   target: int, ):
-        logger.info("on_accept: {}, {}, {}, {}", origin, dialogue_id, msg_id, target)
+        logger.debug("on_accept: {}, {}, {}, {}".format(origin, dialogue_id, msg_id, target))
         _warning_not_implemented_method(self.on_accept.__name__)
 
     def on_decline(self, origin: str,
                    dialogue_id: int,
                    msg_id: int,
                    target: int, ):
-        logger.info("on_decline: {}, {}, {}, {}", origin, dialogue_id, msg_id, target)
+        logger.debug("on_decline: {}, {}, {}, {}".format(origin, dialogue_id, msg_id, target))
         _warning_not_implemented_method(self.on_decline.__name__)
 
     def on_propose(self, origin: str,
@@ -233,18 +247,18 @@ class Agent(AgentInterface, ABC):
                    msg_id: int,
                    target: int,
                    proposal: PROPOSE_TYPES):
-        logger.info("on_propose: {}, {}, {}, {}, {}", origin, dialogue_id, msg_id, target, proposal)
+        logger.debug("on_propose: {}, {}, {}, {}, {}".format(origin, dialogue_id, msg_id, target, proposal))
         _warning_not_implemented_method(self.on_propose.__name__)
 
     def on_error(self, operation: agent_pb2.Server.AgentMessage.Error.Operation,
                  dialogue_id: int,
                  message_id: int):
-        logger.info("on_error: {}, {}, {}", operation, dialogue_id, message_id)
+        logger.debug("on_error: {}, {}, {}".format(operation, dialogue_id, message_id))
         _warning_not_implemented_method(self.on_error.__name__)
 
     def on_search_result(self, search_id: int, agents: List[str]):
-        logger.info("on_search_result: {}, {}", search_id, agents)
-        _warning_not_implemented_method(self.on_error.__name__)
+        logger.debug("on_search_result: {}, {}".format(search_id, agents))
+        _warning_not_implemented_method(self.on_search_result.__name__)
 
 
 class OEFAgent(Agent):

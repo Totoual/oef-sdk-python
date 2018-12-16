@@ -28,13 +28,12 @@ from math import isnan
 from typing import List
 
 import hypothesis
-from hypothesis import settings, assume
+from hypothesis import assume
 from hypothesis.strategies import sampled_from, from_type, composite, text, booleans, one_of, none, lists, tuples
 
 from oef.query import Eq, NotEq, Lt, LtEq, Gt, GtEq, Range, In, NotIn, And, Or, Constraint, Query
 from oef.schema import ATTRIBUTE_TYPES, AttributeSchema, DataModel, Description
 
-settings(max_examples=1000)
 
 
 def _is_attribute_type(t: typing.Type) -> bool:
@@ -56,10 +55,10 @@ not_attribute_schema_types = from_type(type).filter(lambda t: not _is_attribute_
 def is_correct_attribute_value(value: ATTRIBUTE_TYPES):
     if type(value) == int and abs(value) >= 0xFFFFFFFF:
         return False
-    if type(value)==float and isnan(value):
+    if type(value) == float and isnan(value):
         return False
 
-    return value
+    return True
 
 
 """Strategy that sample a value from valid attribute types."""
@@ -72,7 +71,7 @@ def _value_type_pairs(draw, type_strategy):
     Return a value-type pair.
     """
     type_ = draw(type_strategy)
-    value = draw(from_type(type_))
+    value = draw(from_type(type_).filter(is_correct_attribute_value))
     return value, type_
 
 

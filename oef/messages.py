@@ -45,13 +45,6 @@ class BaseMessage(ABC):
     An abstract class to represent the messages exchanged with the OEF.
     Every subclass must implement the :func:`~oef.messages.to_envelope` method
     that serialize the data into a protobuf message.
-
-    >>> BaseMessage()
-    Traceback (most recent call last):
-      ...
-    TypeError: Can't instantiate abstract class BaseMessage with abstract methods to_envelope
-    >>>
-
     """
 
     @abstractmethod
@@ -81,7 +74,7 @@ class RegisterDescription(BaseMessage):
 
     def to_envelope(self) -> agent_pb2.Envelope:
         envelope = agent_pb2.Envelope()
-        envelope.register_description.CopyFrom(self.agent_description.to_pb())
+        envelope.register_description.CopyFrom(self.agent_description.to_agent_description_pb())
         return envelope
 
 
@@ -103,7 +96,7 @@ class RegisterService(BaseMessage):
 
     def to_envelope(self) -> agent_pb2.Envelope:
         envelope = agent_pb2.Envelope()
-        envelope.register_service.CopyFrom(self.service_description.to_pb())
+        envelope.register_service.CopyFrom(self.service_description.to_agent_description_pb())
         return envelope
 
 
@@ -116,7 +109,6 @@ class UnregisterDescription(BaseMessage):
 
     def __init__(self):
         """Initialize a UnregisterDescription message."""
-        pass
 
     def to_envelope(self) -> agent_pb2.Envelope:
         envelope = agent_pb2.Envelope()
@@ -142,7 +134,7 @@ class UnregisterService(BaseMessage):
 
     def to_envelope(self) -> agent_pb2.Envelope:
         envelope = agent_pb2.Envelope()
-        envelope.unregister_service.CopyFrom(self.service_description.to_pb())
+        envelope.unregister_service.CopyFrom(self.service_description.to_agent_description_pb())
         return envelope
 
 
@@ -376,7 +368,7 @@ class Propose(AgentMessage):
             propose.content = self.proposals
         else:
             proposals_pb = fipa_pb2.Fipa.Propose.Proposals()
-            proposals_pb.objects.extend([propose.as_instance() for propose in self.proposals])
+            proposals_pb.objects.extend([propose.to_pb() for propose in self.proposals])
             propose.proposals.CopyFrom(proposals_pb)
         fipa_msg.propose.CopyFrom(propose)
         agent_msg = agent_pb2.Agent.Message()

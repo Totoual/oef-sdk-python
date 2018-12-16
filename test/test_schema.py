@@ -22,14 +22,14 @@ from typing import List, Dict
 
 import pytest
 from hypothesis import given
-from hypothesis.strategies import text, from_type, booleans, one_of, none
+from hypothesis.strategies import text, from_type, one_of, none
 from oef import query_pb2
 
 from oef.schema import AttributeSchema, ATTRIBUTE_TYPES, DataModel, AttributeInconsistencyException, Description, \
     generate_schema
 
-from test.hypothesis.strategies import attribute_schema_types, not_attribute_schema_types, _value_type_pairs, descriptions, \
-    data_models, attributes_schema, is_correct_attribute_value, attribute_schema_values
+from test.hypothesis.strategies import attribute_schema_types, not_attribute_schema_types, \
+    _value_type_pairs, descriptions, data_models, attributes_schema, attribute_schema_values
 
 
 def check_inconsistency_checker(schema: List[AttributeSchema], values: Dict[str, ATTRIBUTE_TYPES], exception_string):
@@ -131,9 +131,6 @@ def test_generate_schema_longer_values():
 def test_description_extract_value(value_type_pair):
     attr_value, attr_type = value_type_pair
 
-    # make the in representable in 32 bit
-    attr_value = 0xFFFFFFFF & attr_value if type(attr_value) == int else attr_value
-
     value = query_pb2.Query.Value()
     if attr_type == str:
         value.s = attr_value
@@ -146,9 +143,7 @@ def test_description_extract_value(value_type_pair):
 
     expected_value = Description._extract_value(value)
     assert type(expected_value) in ATTRIBUTE_TYPES.__args__ + (bool,)
-
-    if attr_type != float:
-        assert attr_value == expected_value
+    assert attr_value == expected_value
 
 
 @given(text(), attribute_schema_values)
@@ -169,7 +164,7 @@ def test_description_to_key_value(key: str, value: ATTRIBUTE_TYPES):
         raise Exception()
 
     assert key == expected_key
-    assert value == expected_value if type(value) != float else True
+    assert value == expected_value
 
 
 @given(attributes_schema())

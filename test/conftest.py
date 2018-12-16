@@ -26,6 +26,11 @@ import time
 
 import pytest
 
+from hypothesis import settings
+
+_ASYNCIO_DELAY = 0.1
+settings(max_examples=1000)
+
 ROOT_DIR = ".."
 OUR_DIRECTORY = os.path.dirname(inspect.getfile(inspect.currentframe()))
 FULL_PATH = [OUR_DIRECTORY, ROOT_DIR, "oef-core", "build", "apps", "node", "OEFNode"]
@@ -41,3 +46,5 @@ def oef_network_node():
     time.sleep(0.01)
     yield
     p.kill()
+
+

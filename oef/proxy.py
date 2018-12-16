@@ -83,9 +83,22 @@ class OEFNetworkProxy(OEFProxy):
         self._server_writer = None
 
     async def _connect_to_server(self, event_loop) -> Awaitable[Tuple[asyncio.StreamReader, asyncio.StreamWriter]]:
+        """
+        Connect to the OEF Node.
+
+        :param event_loop: the event loop to use for the connection.
+        :return: A stream reader and a stream writer for the connection.
+        """
         return await asyncio.open_connection(self.oef_addr, self.port, loop=event_loop)
 
-    def _send(self, protobuf_msg):
+    def _send(self, protobuf_msg) -> None:
+        """
+        Send a Protobuf message to a previously established connection.
+
+        :param protobuf_msg: the message to be sent
+        :return: ``None``
+        :raises OEFConnectionError: if the connection has not been established yet.
+        """
         try:
             assert self._server_writer is not None
         except AssertionError:
@@ -96,6 +109,13 @@ class OEFNetworkProxy(OEFProxy):
         self._server_writer.write(serialized_msg)
 
     async def _receive(self):
+        """
+        Send a Protobuf message.
+
+        :param protobuf_msg: the message to be sent
+        :return: ``None``
+        :raises OEFConnectionError: if the connection has not been established yet.
+        """
         try:
             assert self._server_reader is not None
         except AssertionError:
@@ -191,7 +211,7 @@ class OEFNetworkProxy(OEFProxy):
         msg = Decline(dialogue_id, destination, msg_id, target)
         self._send(msg.to_envelope())
 
-    def close(self) -> None:
+    def stop(self) -> None:
         """
         Tear down resources associated with this Proxy, i.e. the writing connection with the server.
         """
@@ -353,3 +373,6 @@ class OEFLocalProxy(OEFProxy):
 
     def _send(self, msg: BaseMessage) -> None:
         self.write_queue.put_nowait((self.public_key, msg))
+
+    def stop(self):
+        pass

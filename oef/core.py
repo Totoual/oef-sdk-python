@@ -180,6 +180,9 @@ class OEFCoreInterface(ABC):
         :return: ``None``
         """
 
+    @abstractmethod
+    def stop(self):
+        """Stop the proxy."""
 
 class DialogueInterface(ABC):
     """

@@ -40,11 +40,8 @@ class AgentTest(Agent):
         self.received_msg = []
 
     def _process_message(self, arguments: Tuple):
+        """Add the message to the """
         self.received_msg.append(arguments)
-
-    def stop(self):
-        if self._task:
-            self._task.cancel()
 
     def on_message(self, origin: str, dialogue_id: int, content: bytes):
         self._process_message((origin, dialogue_id, content))

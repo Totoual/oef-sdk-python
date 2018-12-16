@@ -19,11 +19,9 @@
 # ------------------------------------------------------------------------------
 
 from abc import ABC, abstractmethod
-from enum import Enum
 from typing import Union, Tuple, List, Optional
 
 import oef.query_pb2 as query_pb2
-
 from oef.schema import ATTRIBUTE_TYPES, AttributeSchema, DataModel, ProtobufSerializable
 
 RANGE_TYPES = Union[Tuple[str, str], Tuple[int, int], Tuple[float, float]]
@@ -78,12 +76,12 @@ class Relation(ConstraintType, ABC):
     @classmethod
     def from_pb(cls, relation: query_pb2.Query.Relation):
         relations_from_pb = {
-            query_pb2.Query.Relation.GTEQ:  GtEq,
-            query_pb2.Query.Relation.GT:    Gt,
-            query_pb2.Query.Relation.LTEQ:  LtEq,
-            query_pb2.Query.Relation.LT:    Lt,
+            query_pb2.Query.Relation.GTEQ: GtEq,
+            query_pb2.Query.Relation.GT: Gt,
+            query_pb2.Query.Relation.LTEQ: LtEq,
+            query_pb2.Query.Relation.LT: Lt,
             query_pb2.Query.Relation.NOTEQ: NotEq,
-            query_pb2.Query.Relation.EQ:    Eq
+            query_pb2.Query.Relation.EQ: Eq
         }
 
         relation_class = relations_from_pb[relation.op]

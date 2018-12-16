@@ -8,7 +8,7 @@ from typing import List
 _DEFAULT_LOG_FORMAT = '[%(asctime)s][%(name)s][%(funcName)s][%(levelname)s] %(message)s'
 
 
-def set_logger(name, level=logging.INFO, handlers: List[logging.Handler]=None):
+def set_logger(name, level=logging.INFO, handlers: List[logging.Handler] = None):
     """
     Utility to set up a logger, for a given module.
 

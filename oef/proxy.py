@@ -30,20 +30,17 @@ This module defines the proxies classes used by agents to interact with an OEF N
 
 import asyncio
 import logging
+import struct
 from collections import defaultdict
+from typing import Optional, Awaitable, Tuple, List
 
 import oef.agent_pb2 as agent_pb2
-
-import struct
-
-from typing import Optional, Awaitable, Tuple, Dict, List
-
 from oef.core import OEFProxy
 from oef.messages import Message, CFP_TYPES, PROPOSE_TYPES, CFP, Propose, Accept, Decline, BaseMessage, \
     AgentMessage, RegisterDescription, RegisterService, UnregisterDescription, \
     UnregisterService, SearchAgents, SearchServices
-from oef.schema import Description
 from oef.query import Query
+from oef.schema import Description
 
 logger = logging.getLogger(__name__)
 

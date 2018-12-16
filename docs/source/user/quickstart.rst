@@ -163,9 +163,11 @@ The output should be:
 
 
 You can find the full script at
-`this link <https://github.com/fetchai/oef-sdk-python/tree/master/examples/greetings/greetings_example.py>`_.
+`this link <https://github.com/fetchai/oef-sdk-python/tree/master/examples/greetings/greeting_agents.py>`_.
+and the `Jupyter notebook version
+<https://github.com/fetchai/oef-sdk-python/tree/master/examples/greetings/greeting_agents.ipynb>`_.
 
 You can also try another version that uses the local implementation of an OEF Node:
-`link <https://github.com/fetchai/oef-sdk-python/tree/master/examples/greetings/local_greetings_example.py>`_.
+`link <https://github.com/fetchai/oef-sdk-python/tree/master/examples/greetings/local_greeting_agents.py>`_.
 
 In :ref:`tutorial` you might find all the details and how to implement more complex behaviours.

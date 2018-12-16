@@ -28,7 +28,7 @@ The agents interact via an OEF Node on the network.
 import asyncio
 from argparse import ArgumentParser
 from typing import List
-
+# connect the agents to the OEF
 from oef.agents import Agent
 from oef.proxy import OEFNetworkProxy
 from oef.query import Query

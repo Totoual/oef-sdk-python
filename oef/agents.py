@@ -113,8 +113,11 @@ class Agent(AgentInterface, ABC):
             self._task = None
 
     def connect(self) -> None:
+        self._loop.run_until_complete(self.async_connect())
+
+    async def async_connect(self):
         logger.debug("{}: Connecting...".format(self.public_key))
-        self._loop.run_until_complete(self.oef_proxy.connect())
+        await self.oef_proxy.connect()
         logger.debug("{}: Connection established.".format(self.public_key))
 
     def register_agent(self, agent_description: Description) -> None:

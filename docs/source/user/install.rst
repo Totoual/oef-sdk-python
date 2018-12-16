@@ -7,7 +7,7 @@ This is the full guide about how to install the OEF Python SDK.
 
 The supported platforms are:
 
-* Linux (specially Ubuntu 18.04)
+* Linux (especially Ubuntu 18.04)
 * MacOS
 * Windows
 
@@ -33,7 +33,7 @@ In order to check if it is installed on your machine, run:
 
 If you get ``Missing input file.``, then you already have it.
 
-Otherwise, you can install it in several  ways, depending on your platform.
+Otherwise, you can install it in several ways, depending on your platform.
 
 
 Linux (Ubuntu 18.04)
@@ -122,4 +122,4 @@ Use the OEF Node
 
 In several parts of the documentation, we require that an instance of the OEF Node is running on your local machine.
 
-We suggest to follow the guide about how to run an OEF Node:  :ref:`oef-node`.
+We suggest following the guide about how to run an OEF Node:  :ref:`oef-node`.

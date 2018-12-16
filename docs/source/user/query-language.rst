@@ -3,20 +3,20 @@
 The Query Language
 ==================
 
-We recommend to read :ref:`defining-data-model` before reading this section.
+We recommend reading:ref:`defining-data-model` before reading this section.
 
 Along with the Data Model language, the SDK offers the possibility to specify `queries` defined over data models.
 
 The :mod:`~oef.query` module implements the API that allows you to:
 
 * Query the OEF Node about specific kind of services
-* Query other agent to ask them the desired resources.
+* Query other agents to ask them the desired resources.
 
 In one sentence, a `query` is a set of `constraints`, defined over a `data model`.
 The outcome is a set of `description` (that is, instances of :class:`~oef.schema.Description`)
 `matching` with the query. That is, all the description whose attributes satisfy the constraints in the query.
 
-In the next sections, we describe how to build query with the SDK.
+In the next sections, we describe how to build queries with the SDK.
 
 Constraints
 -----------
@@ -41,16 +41,16 @@ We have different types of constraints:
 
 * any conjunction/disjunction of the previous constraints:
 
-  * books that belongs to `Horror` **and** has been published after 2000
+  * books that belong to `Horror` **and** has been published after 2000
   * books whose author is **either** `J. K. Rowling` **or** `J. R. R. Tolkien`
 
-The class that implements the constrain concept is :class:`~oef.query.Constraint`
+The class that implements the constraint concept is :class:`~oef.query.Constraint`
 In the following, we show how to define them in the Python SDK.
 
 Relation
 ~~~~~~~~
 
-The :class:`~oef.query.Relation` is a constraint type that allow you to impose specific values for the attributes.
+The :class:`~oef.query.Relation` is a constraint type that allows you to impose specific values for the attributes.
 
 The types of relation constraints are:
 
@@ -161,14 +161,14 @@ The :class:`~oef.query.Or` is a constraint type that allows you to specify a con
 
     from oef.query import Constraint, Or, Lt, Gt
 
-    # all the books that have been published either before year 1960 or after year 1970
+    # all the books that have been published either before the year 1960 or after the year 1970
     Constraint(attr_year,   Or([Lt(1960), Gt(1970)]))
 
 
 Queries
 -------
 
-A `query` is simply a `list of constraints`, interpreted as conjunction (that is, a matching description with
+A `query` is simply a `list of constraints`, interpreted as a conjunction (that is, a matching description with
 the query must satisfy `every` constraint.)
 
 **Examples**:
@@ -177,7 +177,7 @@ the query must satisfy `every` constraint.)
 
     from oef.query import Query, Constraint, Eq, Gt, Eq
 
-    # return all the books written by Stephen King published after 1990, and available as e-book:
+    # return all the books written by Stephen King published after 1990, and available as an e-book:
     Query([
         Constraint(attr_author, Eq("Stephen King")),
         Constraint(attr_year, Gt(1990),

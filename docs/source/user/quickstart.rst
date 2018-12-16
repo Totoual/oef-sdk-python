@@ -9,7 +9,7 @@ Install
 -------
 
 Try the following installation instructions. If you have some troubles,
-we recommend to follow the full installation guide: :ref:`install`.
+we recommend following the full installation guide: :ref:`install`.
 
 Depending on your platform, do one of the following:
 
@@ -37,8 +37,8 @@ Depending on your platform, do one of the following:
   please follow the installation guide: :ref:`install`.
 
 
-Run a OEF Node
---------------
+Run an OEF Node
+---------------
 
 For full details about how to run an OEF Node, please follow the instructions at this page: :ref:`oef-node`.
 

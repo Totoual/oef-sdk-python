@@ -9,6 +9,6 @@ If you need support, want to report/fix a bug, ask for/implement features, you c
 `Issues page <https://github.com/fetchai/oef-sdk-python/issues>`_,
 or `submit a Pull request <https://github.com/fetchai/oef-sdk-python/pulls>`_.
 
-For other kind of feedback, you can contact one of the
+For other kinds of feedback, you can contact one of the
 `authors/maintainers <https://github.com/fetchai/oef-sdk-python/blob/master/AUTHORS.rst>`_ by email.
 

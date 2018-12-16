@@ -44,7 +44,7 @@ The OEF-core keeps track of connected agents in an *AgentDirectory* and register
 in a *ServiceDirectory*.
 
 For each connected and correctly identified agent, the AgentDirectory stores its ID,
-description (as a property list), and session. If the agent register a data service,
+description (as a property list), and session. If the agent registers a data service,
 the data service along with the agent ID will be stored in the ServiceDirectory.
 
 .. image:: https://github.com/uvue-git/oef-sdk-python/wiki/imgs/oef-core.png
@@ -102,7 +102,7 @@ Once a session is in place, an agent can:
 Agent-to-agent interactions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-An agent spends nearly its entire life-time in the Fetch world
+An agent spends nearly its entire lifetime in the Fetch world
 interacting with other agents. An interaction is initiated by either contacting
 an agent (using the ID received from a query or a search) or receiving a message
 from one (in response to a registered data service or based on registered property list).
@@ -119,7 +119,7 @@ Every message contains a `dialogue identifier` that specify to both ends, the se
 in which the message is defined.
 
 In the current implementation of the OEF, dialogues objects really exist only on
-the agents side. On the OEF node side, they exist only conceptually.
+the agent's side. On the OEF node side, they exist only conceptually.
 
 What is OEF Python SDK?
 -----------------------

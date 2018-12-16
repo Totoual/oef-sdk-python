@@ -3,7 +3,7 @@
 Defining Data Models
 ====================
 
-In this section we explain how to define `data models`, an important component of the OEF.
+In this section, we explain how to define `data models`, an important component of the OEF.
 It allows agents to describe themselves and to discover the services/resources they are interested in.
 
 In a sentence, a `data model` is a set of `attributes`, and a `description` of an agent/service/resource is an
@@ -22,7 +22,7 @@ An attribute is an abstract definition of a property.
 It is identified by a `name`, that must be unique in a given data model (that is, we can't have two attributes
 that share the same name).
 
-Every attribute has a `type`, that specify the domain of the property, that is, the possible values that the attribute
+Every attribute has a `type`, that specifies the domain of the property, that is, the possible values that the attribute
 can assume.
 At the moment, we support four types of attributes:
 
@@ -36,7 +36,7 @@ the data model.
 
 Finally, every attribute might have a `description` that explains the purpose of the attribute.
 
-**Example**: suppose we have a bookshop, and we want to describe the books we sell. Presumably we would like to include:
+**Example**: suppose we have a bookshop, and we want to describe the books we sell. Presumably, we would like to include:
 the following properties of our books:
 
 * The `title`
@@ -63,13 +63,13 @@ For each of this fields, we can define an attribute in the SDK by using the :cla
 
 Let's focus on the parameters of the :class:`~oef.schema.AttributeSchema` constructor:
 
-1. the first one is the name of the attribute. It is needed to instantiate data model and to define queries over it.
+1. the first one is the name of the attribute. It is needed to instantiate a data model and to define queries over it.
 2. the second one is the type of the attribute. It specifies the domain of the possible values the attribute can assume.
    E.g. the attribute ``year`` can only be an integer, whereas the ``average_rating`` can only be a
    floating-point number.
 
    The Python types supported are: ``str``, ``int``, ``bool`` and ``float``.
-3. the third one is a boolean that specify whether the attribute is `always required` or it `can be omitted`. For
+3. the third one is a boolean that specifies whether the attribute is `always required` or it `can be omitted`. For
    example, we might not be able to specify the ``ebook_available`` attribute, maybe because it's not applicable
    to some kind of books.
 4. the fourth parameter is the description, that is a short description of the purpose of the attribute.
@@ -102,7 +102,7 @@ A :class:`~oef.schema.DataModel` requires:
 
 1. a `name` (in the example the name is ``"book"``) used to refer to the data model.
 2. a `list of attributes`, that constitutes the abstract data model.
-3. a (optional) `description` about the purpose of the data model.
+3. an (optional) `description` about the purpose of the data model.
 
 Description
 ~~~~~~~~~~~
@@ -112,7 +112,7 @@ to the data model we are interested in.
 
 In the SDK, the class that implements the description is :class:`~oef.schema.Description`.
 
-**Example**: now we have all we need to create a little catalog about our books:
+**Example**: now we have all we need to create a little catalogue about our books:
 
 .. code-block:: python
 
@@ -137,13 +137,13 @@ In the SDK, the class that implements the description is :class:`~oef.schema.Des
         "ebook_available":  False
     }, book_model)
 
-We defined the descriptions for two books, namely ``It`` and ``1984``, that refer to a data model.
+We defined the descriptions for two books, namely ``It`` and ``1984``, that refers to a data model.
 
 The attributes are instantiated with a dictionary that has:
 
 * as keys, the name of the attributes.
 * as values, the values associated with the attributes.
 
-Notice that in the latter book we omitted the ``average_rating`` field. We are allowed to do that because the
+Notice that in the latter book we omitted the ``average_rating`` field. We are allowed to do that because of the
 ``average_rating`` attribute is not mandatory.
 

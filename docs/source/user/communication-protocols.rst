@@ -8,7 +8,7 @@ OEF agents can communicate with two categories of entities:
 * an OEF Node.
 * another OEF agent, via an OEF Node.
 
-In this section we will explain all the possible interaction with one of the cited categories of recipients.
+In this section, we will explain all the possible interaction with one of the cited categories of recipients.
 
 You can check the `.proto` files that define the exchanged messages in the
 `oef-core-protocol <https://github.com/fetchai/oef-core-protocol.git>`_ repository.
@@ -27,10 +27,10 @@ The main difference between the `Agent Directory` and the `Service Directory` is
 
 * the former is more general-purpose, whereas the latter is thought to be used by sellers of resources/data.
 * in the former one, an agent can register himself with only one description at a time, whereas in the latter
-  a service agent can register himself multiple time with different description (and hence discoverable
+  a service agent can register himself multiple time with a different description (and hence discoverable
   in multiple ways).
 
-It is important to notice that most of the above mentioned methods are `asynchronous`, which means that the agent does not
+It is important to notice that most of the above-mentioned methods are `asynchronous`, which means that the agent does not
 waits explicitly for the result of the operations.
 
 Establish a connection: `Handshake`
@@ -97,7 +97,7 @@ Using the example of before:
     agent.unregister_agent()
 
 
-Notice that we don't need to use a description, since our agent in the `Agent Directory` is uniquely identified
+Notice that we don't need to use a description since our agent in the `Agent Directory` is uniquely identified
 by the `public key` of the agent.
 
 Register service
@@ -132,7 +132,7 @@ by using the method :func:`~oef.agents.OEFCoreInterface.register_service`:
 
     agent.register_service(service_description)
 
-Notice: nothing prevent us to register `the same agent` (with the same public key) in the Agent Directory,
+Notice: nothing prevents us to register `the same agent` (with the same public key) in the Agent Directory,
 or as another type of service in the `Service Directory`.
 
 Unregister service
@@ -149,7 +149,7 @@ Continuing with the bookshop example:
 
 
 Notice that, differently from the :func:`~oef.agents.OEFCoreInterface.unregister_agent` described before, we need to
-provide the description that we used when registered, because we might have registered our service
+provide the description that we used when registered because we might have registered our service
 with multiple descriptions.
 
 
@@ -339,7 +339,7 @@ Here follows the sequence diagram that depicts the message exchange:
 Using FIPA for negotiation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In this section we explain a more complex protocol designed to facilitate negotiation.
+In this section, we explain a more complex protocol designed to facilitate negotiation.
 
 It follows FIPA specifications. Citing
 `Wikipedia <https://en.wikipedia.org/wiki/Foundation_for_Intelligent_Physical_Agents>`_:
@@ -350,11 +350,11 @@ It follows FIPA specifications. Citing
 The most simple use case one can think of is an agent (let's call him `buyer`) that wants to buy
 some resources from another agent (the `seller`).
 
-The protocol consists in four types of messages:
+The protocol consists of four types of messages:
 
 - `Call for Proposals` (or `CFP`), used by the buyer for asking resources and their price to the seller.
 - `Propose`, the actual proposal in a negotiation.
-- `Accept`, meaning that the sender accept a previous `Propose` of his opponent.
+- `Accept`, meaning that the sender accepts a previous `Propose` of his opponent.
 - `Decline`, meaning that the sender is not interested anymore in continuing the negotiation.
 
 Every message contains the following information:
@@ -561,7 +561,7 @@ Here follows the sequence diagram that depicts the message exchange:
 Notice that:
 
 * There might have been other counter- `Propose` s between both parties
-* Both the `Buyer` and the `Seller` can send an `Accept`, but only when is it's turn.
+* Both the `Buyer` and the `Seller` can send an `Accept`, but only when is its turn.
 
 
 
@@ -627,13 +627,13 @@ Here follows the sequence diagram that depicts the message exchange:
 Notice that:
 
 * There might have been other counter- `Propose` s between both parties
-* Both the `Buyer` and the `Seller` can send a `Decline`, but only when is it's turn.
+* Both the `Buyer` and the `Seller` can send a `Decline`, but only when is its turn.
 
 
 FIPA Examples
 ~~~~~~~~~~~~~
 
-In this section you can see some examples about how the negotiation protocol should work.
+In this section, you can see some examples of how the negotiation protocol should work.
 
 Notice that the SDK does not impose any restriction on the messages. Eventually, there will be
 more API support that moves the burden of taking care of some protocol-related details, from the developer to the SDK.
@@ -675,5 +675,5 @@ CFP - Propose - Propose - Accept
 
 .. mermaid:: ../diagrams/fipa_examples/cfp-propose-propose-accept.mmd
     :align: center
-    :caption: The Seller accept the `Buyers`'s counter-`Propose`.
+    :caption: The Seller accepts the `Buyers`'s counter-`Propose`.
 

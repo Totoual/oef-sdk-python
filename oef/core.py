@@ -49,7 +49,6 @@ class OEFCoreInterface(ABC):
 
         :return: True if the connection has been established, False otherwise.
         """
-        raise NotImplementedError
 
     @abstractmethod
     def register_agent(self, agent_description: Description) -> None:
@@ -60,7 +59,6 @@ class OEFCoreInterface(ABC):
         :param agent_description: description of the agent to add
         :return: ``None``
         """
-        raise NotImplementedError
 
     @abstractmethod
     def register_service(self, service_description: Description) -> None:
@@ -71,7 +69,6 @@ class OEFCoreInterface(ABC):
         :param service_description: description of the services to add
         :return: ``None``
         """
-        raise NotImplementedError
 
     @abstractmethod
     def search_agents(self, search_id: int, query: Query) -> None:
@@ -85,7 +82,6 @@ class OEFCoreInterface(ABC):
         :param query: specifications of the constraints on the agents that are matched
         :return: ``None``.
         """
-        raise NotImplementedError
 
     @abstractmethod
     def search_services(self, search_id: int, query: Query) -> None:
@@ -98,7 +94,6 @@ class OEFCoreInterface(ABC):
         :param query: the constraint on the matching services
         :return: ``None``.
         """
-        raise NotImplementedError
 
     @abstractmethod
     def unregister_agent(self) -> None:
@@ -109,7 +104,6 @@ class OEFCoreInterface(ABC):
 
         :return: ``None``
         """
-        raise NotImplementedError
 
     @abstractmethod
     def unregister_service(self, service_description: Description) -> None:
@@ -120,7 +114,6 @@ class OEFCoreInterface(ABC):
         :param service_description: description of the services to add
         :return: ``None``
         """
-        raise NotImplementedError
 
     @abstractmethod
     def send_message(self, dialogue_id: int, destination: str, msg: bytes) -> None:
@@ -132,7 +125,6 @@ class OEFCoreInterface(ABC):
         :param msg: the message (in bytes).
         :return: ``None``
         """
-        raise NotImplementedError
 
     @abstractmethod
     def send_cfp(self, dialogue_id: int, destination: str, query: CFP_TYPES, msg_id: Optional[int] = 1,
@@ -148,8 +140,6 @@ class OEFCoreInterface(ABC):
         :return: ``None``
         """
 
-        raise NotImplementedError
-
     @abstractmethod
     def send_propose(self, dialogue_id: int, destination: str, proposals: PROPOSE_TYPES, msg_id: int,
                      target: Optional[int] = None) -> None:
@@ -163,7 +153,6 @@ class OEFCoreInterface(ABC):
         :param target: the identifier of the message to whom this message is answering.
         :return: ``None``
         """
-        raise NotImplementedError
 
     @abstractmethod
     def send_accept(self, dialogue_id: int, destination: str, msg_id: int,
@@ -177,7 +166,6 @@ class OEFCoreInterface(ABC):
         :param target: the identifier of the message to whom this message is answering.
         :return: ``None``
         """
-        raise NotImplementedError
 
     @abstractmethod
     def send_decline(self, dialogue_id: int, destination: str, msg_id: int,
@@ -191,7 +179,6 @@ class OEFCoreInterface(ABC):
         :param target: the identifier of the message to whom this message is answering.
         :return: ``None``
         """
-        raise NotImplementedError
 
 
 class DialogueInterface(ABC):
@@ -213,7 +200,6 @@ class DialogueInterface(ABC):
         :param content: the content of the message (in bytes).
         :return: ``None``
         """
-        raise NotImplementedError
 
     @abstractmethod
     def on_cfp(self, origin: str,
@@ -231,7 +217,6 @@ class DialogueInterface(ABC):
         :param query: the query associated with the Call For Proposals.
         :return: ``None``
         """
-        raise NotImplementedError
 
     @abstractmethod
     def on_propose(self, origin: str,
@@ -249,7 +234,6 @@ class DialogueInterface(ABC):
         :param proposal: the proposal associated with the message.
         :return: ``None``
         """
-        raise NotImplementedError
 
     @abstractmethod
     def on_accept(self, origin: str,
@@ -265,7 +249,6 @@ class DialogueInterface(ABC):
         :param target: the identifier of the message to whom this message is answering.
         :return: ``None``
         """
-        raise NotImplementedError
 
     @abstractmethod
     def on_decline(self, origin: str,
@@ -281,7 +264,6 @@ class DialogueInterface(ABC):
         :param target: the identifier of the message to whom this message is answering.
         :return: ``None``
         """
-        raise NotImplementedError
 
 
 class ConnectionInterface(ABC):
@@ -299,7 +281,6 @@ class ConnectionInterface(ABC):
         :param message_id: the message identifier for the dialogue.
         :return: ``None``
         """
-        raise NotImplementedError
 
     @abstractmethod
     def on_search_result(self, search_id: int, agents: List[str]) -> None:
@@ -310,7 +291,6 @@ class ConnectionInterface(ABC):
         :param agents: the list of identifiers of the agents compliant with the search constraints.
         :return: ``None``
         """
-        raise NotImplementedError
 
 
 class AgentInterface(DialogueInterface, ConnectionInterface, OEFCoreInterface, ABC):
@@ -343,7 +323,6 @@ class OEFProxy(OEFCoreInterface, ABC):
 
         :return: the bytes received from the communication channel.
         """
-        raise NotImplementedError
 
     async def loop(self, agent: AgentInterface) -> None:  # noqa: C901
         """

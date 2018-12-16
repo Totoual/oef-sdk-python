@@ -60,7 +60,7 @@ class ConstraintType(ProtobufSerializable, ABC):
 
     @abstractmethod
     def to_pb(self) -> query_pb2.Query.Constraint.ConstraintType:
-        raise NotImplementedError
+        """Convert the object into a Protobuf object"""
 
 
 class Relation(ConstraintType, ABC):
@@ -71,7 +71,7 @@ class Relation(ConstraintType, ABC):
     @property
     @abstractmethod
     def operator(self) -> query_pb2.Query.Relation:
-        raise NotImplementedError
+        """"""
 
     @classmethod
     def from_pb(cls, relation: query_pb2.Query.Relation):
@@ -208,7 +208,7 @@ class Set(ConstraintType, ABC):
     @property
     @abstractmethod
     def operator(self) -> query_pb2.Query.Set:
-        raise NotImplementedError
+        """"""
 
     def to_pb(self):
         set_ = query_pb2.Query.Set()

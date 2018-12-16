@@ -61,7 +61,6 @@ class BaseMessage(ABC):
 
         :return: the envelope.
         """
-        raise NotImplementedError
 
 
 class RegisterDescription(BaseMessage):

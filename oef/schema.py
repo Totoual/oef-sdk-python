@@ -42,7 +42,6 @@ class ProtobufSerializable(ABC):
     @abstractmethod
     def to_pb(self):
         """Convert the object into a Protobuf object"""
-        raise NotImplementedError
 
     @classmethod
     @abstractmethod
@@ -52,8 +51,6 @@ class ProtobufSerializable(ABC):
         :param obj:
         :return:
         """
-
-        raise NotImplementedError
 
     def serialize(self) -> str:
         return self.to_pb().SerializeToString()

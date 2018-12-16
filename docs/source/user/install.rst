@@ -60,7 +60,7 @@ You can follow one of the following instructions:
 .. code-block:: bash
 
   sudo apt-get install protobuf-compiler
-  git clone https://github.com/uvue-git/oef-sdk-python.git --recursive
+  git clone https://github.com/fetchai/oef-sdk-python.git --recursive
   cd oef-sdk-python/
   sudo python3 setup.py install
 
@@ -108,7 +108,7 @@ To install the Python package ``oef``, follow these steps:
 
 ::
 
-    git clone https://github.com/uvue-git/oef-sdk-python.git --recursive && cd oef-sdk-python/
+    git clone https://github.com/fetchai/oef-sdk-python.git --recursive && cd oef-sdk-python/
 
 
 * Install the package:

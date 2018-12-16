@@ -34,7 +34,7 @@ To run the tests, first do:
 
     pip install -r requirements.txt
     
-Then, you need to clone the [OEFCore](https://github.com/uvue-git/OEFCore) repository and build the project:
+Then, you need to clone [oef-core](https://github.com/fetchai/oef-core) repository and build the project:
 
     python scripts/setup_test.py
     

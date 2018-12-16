@@ -27,21 +27,20 @@ on your platform:
 * `Windows <https://docs.docker.com/docker-for-windows/install/>`_
 
 
-.. todo change url
 
 Build and run the image
 ```````````````````````
 
 
 We recommend you use the Docker image provided by
-the `OEF Core <https://github.com/uvue-git/oef-core.git>`_ project,
+the `OEF Core <https://github.com/fetchai/oef-core.git>`_ project,
 by following these steps:
 
 * Clone ``oef-core``
 
 .. code-block:: bash
 
-  git clone git@github.com:uvue-git/oef-core.git --recursive && cd oef-core/
+  git clone https://github.com/fetchai/oef-core.git --recursive && cd oef-core/
 
 * Build the image
 
@@ -82,7 +81,7 @@ On Linux (Ubuntu) you can run:
 
 .. code-block:: none
 
-  git clone https://github.com/uvue-git/OEFCore.git --recursive && cd OEFCore
+  git clone https://github.com/fetchai/oef-core.git --recursive && cd oef-core
   sudo apt-get install cmake protobuf-compiler libprotobuf-dev
   mkdir build && cd build
   cmake ..
@@ -101,5 +100,5 @@ Optional: you can also install it in your system:
   make install
 
 For full details, please follow the
-`installation instructions for the OEFCore <https://github.com/uvue-git/OEFCore/blob/master/INSTALL.txt>`_.
+`installation instructions for the OEFCore <https://github.com/fetchai/oef-core/blob/master/INSTALL.txt>`_.
 

@@ -31,11 +31,11 @@ pipeline {
                         }
                         stage('Test') {
                             steps {
-                                dir ("OEFCore"){
-                                    git url: 'https://github.com/uvue-git/OEFCore.git'
+                                dir ("oef-core"){
+                                    git url: 'https://github.com/uvue-git/oef-core.git'
                                 }
-                                sh 'cd OEFCore && mkdir build && cd build && cmake .. && make -j4'
-                                sh 'pytest --verbose --cov=oef ./test'
+                                sh 'cd oef-core && mkdir build && cd build && cmake .. && make -j4'
+                                sh 'tox'
                             }
                         }
                     }

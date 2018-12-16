@@ -20,8 +20,8 @@
 
 
 """
-Script that clone the OEFCore repository and build the OEFCore Node.
-You must have the OEFCore built in order to run tests successfully.
+Script that clone the oef-core repository and build the oef-core Node.
+You must have the oef-core built in order to run tests successfully.
 """
 import os
 import subprocess
@@ -63,8 +63,7 @@ def build_project(project_root, build_root, options):
 def main():
 
     if not os.path.exists("oef-core"):
-        # TODO change url
-        os.system("git clone --recursive git@github.com:uvue-git/oef-core.git oef-core")
+        os.system("git clone --recursive https://github.com/fetchai/oef-core.git oef-core")
     else:
         try:
             Repo("oef-core")

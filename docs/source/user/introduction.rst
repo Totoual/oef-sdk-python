@@ -3,8 +3,8 @@
 Introduction
 ============
 
-What is Fetch
--------------
+What is Fetch?
+--------------
 
 **Fetch promotes a world** where digital entities can exist, interact, and collaborate/cooperate by exchanging
 data services *autonomously* on behalf of their representatives.

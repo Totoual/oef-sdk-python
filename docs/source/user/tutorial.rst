@@ -44,7 +44,7 @@ First, we define the service agent that implements the echo service.
 Then, we implement other client agents to interact with the echo service.
 
 The code for the example can be found at this
-`link <https://github.com/uvue-git/OEFCorePython/tree/master/examples/echo>`_.
+`link <https://github.com/fetchai/oef-sdk-python/tree/master/examples/echo>`_.
 
 Echo Agent service
 ~~~~~~~~~~~~~~~~~~
@@ -305,7 +305,7 @@ protocol that allows the agents to:
 * accept/decline proposals.
 
 
-You can check the full code `here <https://github.com/uvue-git/OEFCorePython/tree/master/examples/weather>`_.
+You can check the full code `here <https://github.com/fetchai/oef-sdk-python/tree/master/examples/weather>`_.
 
 
 Weather Station Agent

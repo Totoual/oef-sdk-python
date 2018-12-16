@@ -210,8 +210,6 @@ class SearchServices(BaseMessage):
         envelope.search_services.search_id = self.search_id
         return envelope
 
-# TODO: ErrorMessage
-
 
 class AgentMessage(BaseMessage, ABC):
     """

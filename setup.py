@@ -34,7 +34,7 @@ from setuptools import setup
 
 
 class ProtocCommand(distutils.cmd.Command):
-    """A custom command to generate Python Protobuf modules from OEFCoreProtocol"""
+    """A custom command to generate Python Protobuf modules from oef-core-protocol"""
 
     description = "Generate Python Protobuf modules from protobuf files specifications."
     user_options = [
@@ -114,7 +114,6 @@ setup(
     description=about['__description__'],
     version=about['__version__'],
     author=about['__author__'],
-    author_email=about['__author_email__'],
     url=about['__url__'],
     long_description=readme,
     long_description_content_type='text/markdown',
@@ -124,7 +123,6 @@ setup(
         'build_py': BuildPyCommand
     },
     classifiers=[
-        # TODO decide development status
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
         'Natural Language :: English',

@@ -638,7 +638,7 @@ In this section you can see some examples about how the negotiation protocol sho
 Notice that the SDK does not impose any restriction on the messages. Eventually, there will be
 more API support that moves the burden of taking care of some protocol-related details, from the developer to the SDK.
 
-You can use this `script <https://github.com/uvue-git/oef-sdk-python/tree/master/examples/random_fipa/random_fipa.py>`_
+You can use this `script <https://github.com/fetchai/oef-sdk-python/tree/master/examples/random_fipa/random_fipa.py>`_
 to generate other simulations.
 
 CFP - Decline

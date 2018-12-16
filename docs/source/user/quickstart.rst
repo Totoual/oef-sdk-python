@@ -18,7 +18,7 @@ Depending on your platform, do one of the following:
 .. code-block:: bash
 
   sudo apt-get install protobuf-compiler
-  git clone https://github.com/uvue-git/oef-sdk-python.git --recursive
+  git clone https://github.com/fetchai/oef-sdk-python.git --recursive
   cd oef-sdk-python/
   sudo python3 setup.py install
 
@@ -28,7 +28,7 @@ Depending on your platform, do one of the following:
 .. code-block:: bash
 
   brew install protobuf
-  git clone https://github.com/uvue-git/oef-sdk-python.git --recursive
+  git clone https://github.com/fetchai/oef-sdk-python.git --recursive
   cd oef-sdk-python/
   sudo python3 setup.py install
 
@@ -50,7 +50,7 @@ In a separate terminal:
 .. code-block:: bash
 
   # clone the repo for the OEF node
-  git clone git@github.com:uvue-git/oef-core.git --recursive && cd oef-core/
+  git clone https://github.com/fetchai/oef-core.git --recursive && cd oef-core/
 
   # build the docker image
   ./oef-core-image/scripts/docker-build-img.sh
@@ -163,9 +163,9 @@ The output should be:
 
 
 You can find the full script at
-`this link <https://github.com/uvue-git/OEFCorePython/tree/master/examples/greetings/greetings_example.py>`_.
+`this link <https://github.com/fetchai/oef-sdk-python/tree/master/examples/greetings/greetings_example.py>`_.
 
 You can also try another version that uses the local implementation of an OEF Node:
-`link <https://github.com/uvue-git/OEFCorePython/tree/master/examples/greetings/local_greetings_example.py>`_.
+`link <https://github.com/fetchai/oef-sdk-python/tree/master/examples/greetings/local_greetings_example.py>`_.
 
 In :ref:`tutorial` you might find all the details and how to implement more complex behaviours.

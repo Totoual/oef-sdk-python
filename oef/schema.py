@@ -65,7 +65,6 @@ The allowable types that an Attribute can have
 ATTRIBUTE_TYPES = Union[float, str, bool, int]
 
 
-# TODO add doctests in docstrings
 class AttributeSchema(ProtobufSerializable):
     """
     Description of a single element of datum of either a description or a service.

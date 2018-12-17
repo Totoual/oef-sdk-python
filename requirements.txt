@@ -5,10 +5,7 @@ protobuf
 pytest
 pytest-cov
 tox
-pylint
-pydocstyle
 flake8
-mypy
 GitPython
 hypothesis
 

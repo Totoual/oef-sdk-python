@@ -66,7 +66,7 @@ attribute_schema_values = attribute_schema_types.flatmap(lambda x: from_type(x))
 
 
 @composite
-def _value_type_pairs(draw, type_strategy):
+def value_type_pairs(draw, type_strategy):
     """
     Return a value-type pair.
     """

@@ -29,7 +29,7 @@ from oef.schema import AttributeSchema, ATTRIBUTE_TYPES, DataModel, AttributeInc
     generate_schema
 
 from test.hypothesis.strategies import attribute_schema_types, not_attribute_schema_types, \
-    _value_type_pairs, descriptions, data_models, attributes_schema, attribute_schema_values
+    value_type_pairs, descriptions, data_models, attributes_schema, attribute_schema_values
 
 
 def check_inconsistency_checker(schema: List[AttributeSchema], values: Dict[str, ATTRIBUTE_TYPES], exception_string):
@@ -101,7 +101,7 @@ def test_generate_schema_empty(name):
     generate_schema_checker(name, {}, DataModel(name, []))
 
 
-@given(text(), text(), _value_type_pairs(attribute_schema_types), one_of(none(), text()))
+@given(text(), text(), value_type_pairs(attribute_schema_types), one_of(none(), text()))
 def test_generate_schema_single_element(schema_name, attribute_name, value_type_pair, description):
     """
     Test that construct_schema constructs the correct schema from single-element attribute values
@@ -127,7 +127,7 @@ def test_generate_schema_longer_values():
     generate_schema_checker("foo", values, DataModel("foo", schema_attributes))
 
 
-@given(_value_type_pairs(attribute_schema_types))
+@given(value_type_pairs(attribute_schema_types))
 def test_description_extract_value(value_type_pair):
     attr_value, attr_type = value_type_pair
 

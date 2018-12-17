@@ -38,6 +38,3 @@ def test_set_logger(logging_level, handlers):
     else:
         assert len(logger.handlers) == 1
         assert type(logger.handlers[0]) == StreamHandler
-
-
-

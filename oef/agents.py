@@ -34,7 +34,7 @@ from typing import Optional, List
 
 from oef import agent_pb2
 from oef.core import OEFProxy, AgentInterface
-from oef.proxy import OEFNetworkProxy, PROPOSE_TYPES, CFP_TYPES, OEFLocalProxy
+from oef.proxy import OEFNetworkProxy, PROPOSE_TYPES, CFP_TYPES, OEFLocalProxy, OEFConnectionError
 from oef.query import Query
 from oef.schema import Description
 
@@ -132,6 +132,8 @@ class Agent(AgentInterface, ABC):
         status = await self.oef_proxy.connect()
         if status:
             logger.debug("{}: Connection established.".format(self.public_key))
+        else:
+            raise OEFConnectionError("Public key already in use.")
         return status
 
     def register_agent(self, agent_description: Description) -> None:

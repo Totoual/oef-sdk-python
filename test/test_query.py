@@ -187,4 +187,3 @@ def test_query_not_eq():
     not_a_query = tuple()
 
     assert a_query != not_a_query
-

@@ -49,8 +49,7 @@ DEFAULT_OEF_NODE_PORT = 3333
 
 
 class OEFConnectionError(ConnectionError):
-    def __init__(self):
-        super().__init__("Connection not established yet. Please use 'connect()'.")
+    pass
 
 
 class OEFNetworkProxy(OEFProxy):
@@ -102,7 +101,7 @@ class OEFNetworkProxy(OEFProxy):
         try:
             assert self._server_writer is not None
         except AssertionError:
-            raise OEFConnectionError()
+            raise OEFConnectionError("Connection not established yet. Please use 'connect()'.")
         serialized_msg = protobuf_msg.SerializeToString()
         nbytes = struct.pack("I", len(serialized_msg))
         self._server_writer.write(nbytes)
@@ -119,7 +118,7 @@ class OEFNetworkProxy(OEFProxy):
         try:
             assert self._server_reader is not None
         except AssertionError:
-            raise OEFConnectionError()
+            raise OEFConnectionError("Connection not established yet. Please use 'connect()'.")
         nbytes_packed = await self._server_reader.read(len(struct.pack("I", 0)))
         logger.debug("received ${0}".format(nbytes_packed))
         nbytes = struct.unpack("I", nbytes_packed)
@@ -241,13 +240,15 @@ class OEFLocalProxy(OEFProxy):
             self.queues = {}  # type: Dict[str, asyncio.Queue]
             self.loop = asyncio.get_event_loop()
 
-        def connect(self, public_key: str) -> asyncio.Queue:
+        def connect(self, public_key: str) -> Optional[asyncio.Queue]:
             """
             Connect a public key to the node.
 
             :param public_key: the public key of the agent.
             :return: an asynchronous queue, that constitutes the communication channel.
             """
+            if public_key in self.queues:
+                return None
             queue = asyncio.Queue()
             self.queues[public_key] = queue
             return queue
@@ -428,9 +429,12 @@ class OEFLocalProxy(OEFProxy):
         msg = Decline(dialogue_id, destination, msg_id, target)
         self._send(msg)
 
-    async def connect(self) -> None:
+    async def connect(self) -> bool:
         queue = self.local_node.connect(self.public_key)
+        if not queue:
+            return False
         self.read_queue = queue
+        return True
 
     async def _receive(self) -> bytes:
         data = await self.read_queue.get()

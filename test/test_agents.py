@@ -118,4 +118,3 @@ def test_agent_on_search_result_handler_warning(oef_network_node):
         agent.stop()
 
         mock.assert_called_with("You should implement on_search_result in your OEFAgent class.")
-

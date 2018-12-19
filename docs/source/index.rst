@@ -28,14 +28,20 @@ User guide
    :maxdepth: 2
 
    user/introduction
-   user/install
    user/quickstart
+   user/install
+   user/oef-node
    user/tutorial
+   user/defining-data-model
+   user/query-language
+   user/communication-protocols
 
    oef
-.. include:: ../../CONTRIBUTING.rst
 
+
+.. include:: ../../CONTRIBUTING.rst
 .. include:: ../../AUTHORS.rst
+.. include:: user/resources-links.rst
 .. include:: ../../HISTORY.rst
 
 Indices and tables

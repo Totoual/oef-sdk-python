@@ -1,6 +1,6 @@
 # OEF Python SDK
 
-![](https://img.shields.io/badge/python-3.6%20%7C%203.7-blue.svg)
+![](https://img.shields.io/badge/python-3.5%20%7C%203.6%20%7C%203.7-blue.svg)
 ![](https://img.shields.io/badge/license-Apache--2.0-lightgrey.svg)
 
 This is the Python SDK for OEF agent development, allowing:
@@ -34,7 +34,7 @@ To run the tests, first do:
 
     pip install -r requirements.txt
     
-Then, you need to clone the [OEFCore](https://github.com/uvue-git/OEFCore) repository and build the project:
+Then, you need to clone [oef-core](https://github.com/fetchai/oef-core) repository and build the project:
 
     python scripts/setup_test.py
     

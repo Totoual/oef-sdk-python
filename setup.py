@@ -1,7 +1,24 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# Copyright 2018, Fetch AI Ltd. All Rights Reserved.
+# ------------------------------------------------------------------------------
+#
+#   Copyright 2018 Fetch.AI Limited
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+# ------------------------------------------------------------------------------
+
 
 import distutils.cmd
 import distutils.log
@@ -17,7 +34,7 @@ from setuptools import setup
 
 
 class ProtocCommand(distutils.cmd.Command):
-    """A custom command to generate Python Protobuf modules from OEFCoreProtocol"""
+    """A custom command to generate Python Protobuf modules from oef-core-protocol"""
 
     description = "Generate Python Protobuf modules from protobuf files specifications."
     user_options = [
@@ -97,7 +114,6 @@ setup(
     description=about['__description__'],
     version=about['__version__'],
     author=about['__author__'],
-    author_email=about['__author_email__'],
     url=about['__url__'],
     long_description=readme,
     long_description_content_type='text/markdown',
@@ -107,7 +123,6 @@ setup(
         'build_py': BuildPyCommand
     },
     classifiers=[
-        # TODO decide development status
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
         'Natural Language :: English',

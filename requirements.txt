@@ -5,14 +5,11 @@ protobuf
 pytest
 pytest-cov
 tox
-pylint
-pydocstyle
 flake8
-mypy
 GitPython
 hypothesis
 
 #docs
-sphinx
+Sphinx
 sphinx_rtd_theme
 sphinxcontrib.mermaid

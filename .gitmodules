@@ -2,6 +2,3 @@
 	path = docker-images
 	url = ../../uvue-git/docker-images.git
 	branch = master
-[submodule "oef-core-protocol"]
-	path = oef-core-protocol
-	url = ../../uvue-git/oef-core-protocol.git

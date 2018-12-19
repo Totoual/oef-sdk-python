@@ -1,6 +1,23 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2018, Fetch AI Ltd. All Rights Reserved.
+# ------------------------------------------------------------------------------
+#
+#   Copyright 2018 Fetch.AI Limited
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+# ------------------------------------------------------------------------------
+
 
 """
 
@@ -13,25 +30,26 @@ This module defines the proxies classes used by agents to interact with an OEF N
 
 import asyncio
 import logging
+import struct
 from collections import defaultdict
+from typing import Optional, Awaitable, Tuple, List
 
 import oef.agent_pb2 as agent_pb2
-
-import struct
-
-from typing import Optional, Awaitable, Tuple, Dict, List
-
 from oef.core import OEFProxy
 from oef.messages import Message, CFP_TYPES, PROPOSE_TYPES, CFP, Propose, Accept, Decline, BaseMessage, \
     AgentMessage, RegisterDescription, RegisterService, UnregisterDescription, \
     UnregisterService, SearchAgents, SearchServices
-from oef.schema import Description
 from oef.query import Query
+from oef.schema import Description
 
 logger = logging.getLogger(__name__)
 
 
 DEFAULT_OEF_NODE_PORT = 3333
+
+
+class OEFConnectionError(ConnectionError):
+    pass
 
 
 class OEFNetworkProxy(OEFProxy):
@@ -64,21 +82,53 @@ class OEFNetworkProxy(OEFProxy):
         self._server_writer = None
 
     async def _connect_to_server(self, event_loop) -> Awaitable[Tuple[asyncio.StreamReader, asyncio.StreamWriter]]:
+        """
+        Connect to the OEF Node.
+
+        :param event_loop: the event loop to use for the connection.
+        :return: A stream reader and a stream writer for the connection.
+        """
         return await asyncio.open_connection(self.oef_addr, self.port, loop=event_loop)
 
-    def _send(self, protobuf_msg):  # async too ?
+    def _send(self, protobuf_msg) -> None:
+        """
+        Send a Protobuf message to a previously established connection.
+
+        :param protobuf_msg: the message to be sent
+        :return: ``None``
+        :raises OEFConnectionError: if the connection has not been established yet.
+        """
+        try:
+            assert self._server_writer is not None
+        except AssertionError:
+            raise OEFConnectionError("Connection not established yet. Please use 'connect()'.")
         serialized_msg = protobuf_msg.SerializeToString()
         nbytes = struct.pack("I", len(serialized_msg))
         self._server_writer.write(nbytes)
         self._server_writer.write(serialized_msg)
 
     async def _receive(self):
+        """
+        Send a Protobuf message.
+
+        :param protobuf_msg: the message to be sent
+        :return: ``None``
+        :raises OEFConnectionError: if the connection has not been established yet.
+        """
+        try:
+            assert self._server_reader is not None
+        except AssertionError:
+            raise OEFConnectionError("Connection not established yet. Please use 'connect()'.")
         nbytes_packed = await self._server_reader.read(len(struct.pack("I", 0)))
         logger.debug("received ${0}".format(nbytes_packed))
-        nbytes = struct.unpack("I", nbytes_packed)
-        logger.debug("received unpacked ${0}".format(nbytes[0]))
-        logger.debug("Preparing to receive ${0} bytes ...".format(nbytes[0]))
-        return await self._server_reader.read(nbytes[0])
+        nbytes = struct.unpack("I", nbytes_packed)[0]
+        logger.debug("received unpacked ${0}".format(nbytes))
+        logger.debug("Preparing to receive ${0} bytes ...".format(nbytes))
+        data = b""
+        while len(data) < nbytes:
+            data += await self._server_reader.read(nbytes - len(data))
+            logger.debug("Read bytes: {}".format(len(data)))
+        return data
 
     async def connect(self) -> bool:
         if self._connection is not None:
@@ -164,7 +214,7 @@ class OEFNetworkProxy(OEFProxy):
         msg = Decline(dialogue_id, destination, msg_id, target)
         self._send(msg.to_envelope())
 
-    def close(self) -> None:
+    def stop(self) -> None:
         """
         Tear down resources associated with this Proxy, i.e. the writing connection with the server.
         """
@@ -179,9 +229,12 @@ class OEFLocalProxy(OEFProxy):
     """
 
     class LocalNode:
-        """A light-weight implementation of a OEF Node."""
+        """A light-weight local implementation of a OEF Node."""
 
         def __init__(self):
+            """
+            Initialize a local (i.e. non-networked) implementation of an OEF Node
+            """
             self.agents = dict()                     # type: Dict[str, Description]
             self.services = defaultdict(lambda: [])  # type: Dict[str, List[Description]]
             self._lock = asyncio.Lock()
@@ -191,12 +244,25 @@ class OEFLocalProxy(OEFProxy):
             self.queues = {}  # type: Dict[str, asyncio.Queue]
             self.loop = asyncio.get_event_loop()
 
-        def connect(self, public_key: str) -> asyncio.Queue:
+        def connect(self, public_key: str) -> Optional[asyncio.Queue]:
+            """
+            Connect a public key to the node.
+
+            :param public_key: the public key of the agent.
+            :return: an asynchronous queue, that constitutes the communication channel.
+            """
+            if public_key in self.queues:
+                return None
             queue = asyncio.Queue()
             self.queues[public_key] = queue
             return queue
 
-        async def _process_messages(self):
+        async def _process_messages(self) -> None:
+            """
+            Main event loop to process the incoming messages.
+
+            :return: ``None``
+            """
             while True:
                 try:
                     data = await self.read_queue.get()  # type: Tuple[str, BaseMessage]
@@ -208,30 +274,66 @@ class OEFLocalProxy(OEFProxy):
                 assert isinstance(msg, AgentMessage)
                 self._send_agent_message(public_key, msg)
 
-        async def run(self):
+        async def run(self) -> None:
+            """
+            Run the node, i.e. start processing the messages.
+
+            :return: ``None``
+            """
             self._task = asyncio.ensure_future(self._process_messages())
             await self._task
 
-        def stop(self):
+        def stop(self) -> None:
+            """
+            Stop the execution of the node.
+
+            :return: ``None``
+            """
             if self._task:
                 self._task.cancel()
 
         def register_agent(self, public_key: str, agent_description: Description) -> None:
+            """
+            Register an agent in the agent directory of the node.
+
+            :param public_key: the public key of the agent to be registered.
+            :param agent_description: the description of the agent to be registered.
+            :return: ``None``
+            """
             self.loop.run_until_complete(self._lock.acquire())
             self.agents[public_key] = agent_description
             self._lock.release()
 
         def register_service(self, public_key: str, service_description: Description):
+            """
+            Register a service agent in the service directory of the node.
+
+            :param public_key: the public key of the service agent to be registered.
+            :param service_description: the description of the service agent to be registered.
+            :return: ``None``
+            """
             self.loop.run_until_complete(self._lock.acquire())
             self.services[public_key].append(service_description)
             self._lock.release()
 
         def unregister_agent(self, public_key: str) -> None:
+            """
+            Unregister an agent.
+
+            :param public_key: the public key of the agent to be unregistered.
+            :return: ``None``
+            """
             self.loop.run_until_complete(self._lock.acquire())
             self.agents.pop(public_key)
             self._lock.release()
 
         def unregister_service(self, public_key: str, service_description: Description) -> None:
+            """
+            Unregister a service agent.
+
+            :param public_key: the public key of the service agent to be unregistered.
+            :return: ``None``
+            """
             self.loop.run_until_complete(self._lock.acquire())
             self.services[public_key].remove(service_description)
             if len(self.services[public_key]) == 0:
@@ -249,6 +351,13 @@ class OEFLocalProxy(OEFProxy):
             self._send_search_result(public_key, search_id, sorted(self.services.keys()))
 
         def _send_agent_message(self, origin: str, msg: AgentMessage) -> None:
+            """
+            Send an :class:`~oef.messages.AgentMessage`.
+
+            :param origin: the public key of the sender agent.
+            :param msg: the message.
+            :return: ``None``
+            """
             e = msg.to_envelope()
             destination = e.send_message.destination
 
@@ -265,6 +374,14 @@ class OEFLocalProxy(OEFProxy):
             self.queues[destination].put_nowait(new_msg.SerializeToString())
 
         def _send_search_result(self, public_key: str, search_id: int, agents: List[str]) -> None:
+            """
+            Send a search result.
+
+            :param public_key: the public key of the agent to whom to send the search result.
+            :param search_id: the id of the search request.
+            :param agents: the list of public key of the agents/services to be returned.
+            :return:
+            """
             msg = agent_pb2.Server.AgentMessage()
             msg.agents.search_id = search_id
             msg.agents.agents.extend(agents)
@@ -316,9 +433,12 @@ class OEFLocalProxy(OEFProxy):
         msg = Decline(dialogue_id, destination, msg_id, target)
         self._send(msg)
 
-    async def connect(self) -> None:
+    async def connect(self) -> bool:
         queue = self.local_node.connect(self.public_key)
+        if not queue:
+            return False
         self.read_queue = queue
+        return True
 
     async def _receive(self) -> bytes:
         data = await self.read_queue.get()
@@ -326,3 +446,6 @@ class OEFLocalProxy(OEFProxy):
 
     def _send(self, msg: BaseMessage) -> None:
         self.write_queue.put_nowait((self.public_key, msg))
+
+    def stop(self):
+        pass

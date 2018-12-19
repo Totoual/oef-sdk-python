@@ -1,6 +1,23 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2018, Fetch AI Ltd. All Rights Reserved.
+# ------------------------------------------------------------------------------
+#
+#   Copyright 2018 Fetch.AI Limited
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+# ------------------------------------------------------------------------------
+
 
 """
 oef.messages
@@ -28,13 +45,6 @@ class BaseMessage(ABC):
     An abstract class to represent the messages exchanged with the OEF.
     Every subclass must implement the :func:`~oef.messages.to_envelope` method
     that serialize the data into a protobuf message.
-
-    >>> BaseMessage()
-    Traceback (most recent call last):
-      ...
-    TypeError: Can't instantiate abstract class BaseMessage with abstract methods to_envelope
-    >>>
-
     """
 
     @abstractmethod
@@ -44,7 +54,6 @@ class BaseMessage(ABC):
 
         :return: the envelope.
         """
-        raise NotImplementedError
 
 
 class RegisterDescription(BaseMessage):
@@ -65,7 +74,7 @@ class RegisterDescription(BaseMessage):
 
     def to_envelope(self) -> agent_pb2.Envelope:
         envelope = agent_pb2.Envelope()
-        envelope.register_description.CopyFrom(self.agent_description.to_pb())
+        envelope.register_description.CopyFrom(self.agent_description.to_agent_description_pb())
         return envelope
 
 
@@ -87,7 +96,7 @@ class RegisterService(BaseMessage):
 
     def to_envelope(self) -> agent_pb2.Envelope:
         envelope = agent_pb2.Envelope()
-        envelope.register_service.CopyFrom(self.service_description.to_pb())
+        envelope.register_service.CopyFrom(self.service_description.to_agent_description_pb())
         return envelope
 
 
@@ -100,7 +109,6 @@ class UnregisterDescription(BaseMessage):
 
     def __init__(self):
         """Initialize a UnregisterDescription message."""
-        pass
 
     def to_envelope(self) -> agent_pb2.Envelope:
         envelope = agent_pb2.Envelope()
@@ -126,7 +134,7 @@ class UnregisterService(BaseMessage):
 
     def to_envelope(self) -> agent_pb2.Envelope:
         envelope = agent_pb2.Envelope()
-        envelope.unregister_service.CopyFrom(self.service_description.to_pb())
+        envelope.unregister_service.CopyFrom(self.service_description.to_agent_description_pb())
         return envelope
 
 
@@ -193,8 +201,6 @@ class SearchServices(BaseMessage):
         envelope.search_services.search_id = self.search_id
         return envelope
 
-# TODO: ErrorMessage
-
 
 class AgentMessage(BaseMessage, ABC):
     """
@@ -230,8 +236,7 @@ class Message(AgentMessage):
     It is used in the method :func:`~oef.core.OEFCoreInterface.send_message`.
     """
 
-    def __init__(self,
-                 dialogue_id: int,
+    def __init__(self, dialogue_id: int,
                  destination: str,
                  msg: bytes):
         """
@@ -273,8 +278,7 @@ class CFP(AgentMessage):
     It is used in the method :func:`~oef.core.OEFCoreInterface.send_cfp`.
     """
 
-    def __init__(self,
-                 dialogue_id: int,
+    def __init__(self, dialogue_id: int,
                  destination: str,
                  query: CFP_TYPES,
                  msg_id: Optional[int] = 1,
@@ -319,7 +323,7 @@ class CFP(AgentMessage):
 
 class Propose(AgentMessage):
     """
-    This message is used to send a `Proposal`.
+    This message is used to send a `Propose`.
     It contains:
 
     * a dialogue id, that identifies the dialogue in which the message is sent.
@@ -334,8 +338,7 @@ class Propose(AgentMessage):
     It is used in the method :func:`~oef.core.OEFCoreInterface.send_propose`.
     """
 
-    def __init__(self,
-                 dialogue_id: int,
+    def __init__(self, dialogue_id: int,
                  destination: str,
                  proposals: PROPOSE_TYPES,
                  msg_id: int,
@@ -365,7 +368,7 @@ class Propose(AgentMessage):
             propose.content = self.proposals
         else:
             proposals_pb = fipa_pb2.Fipa.Propose.Proposals()
-            proposals_pb.objects.extend([propose.as_instance() for propose in self.proposals])
+            proposals_pb.objects.extend([propose.to_pb() for propose in self.proposals])
             propose.proposals.CopyFrom(proposals_pb)
         fipa_msg.propose.CopyFrom(propose)
         agent_msg = agent_pb2.Agent.Message()
@@ -394,8 +397,7 @@ class Accept(AgentMessage):
     It is used in the method :func:`~oef.core.OEFCoreInterface.send_accept`.
     """
 
-    def __init__(self,
-                 dialogue_id: int,
+    def __init__(self, dialogue_id: int,
                  destination: str,
                  msg_id: int,
                  target: Optional[int] = None):
@@ -445,8 +447,7 @@ class Decline(AgentMessage):
     It is used in the method :func:`~oef.core.OEFCoreInterface.send_decline`.
     """
 
-    def __init__(self,
-                 dialogue_id: int,
+    def __init__(self, dialogue_id: int,
                  destination: str,
                  msg_id: int,
                  target: Optional[int] = None):

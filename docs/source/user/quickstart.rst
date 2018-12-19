@@ -8,12 +8,17 @@ This is a quick start guide, for the eager users.
 Install
 -------
 
+Try the following installation instructions. If you have some troubles,
+we recommend following the full installation guide: :ref:`install`.
+
+Depending on your platform, do one of the following:
+
 * On Linux Ubuntu:
 
 .. code-block:: bash
 
   sudo apt-get install protobuf-compiler
-  git clone https://github.com/uvue-git/oef-sdk-python.git --recursive
+  git clone https://github.com/fetchai/oef-sdk-python.git --recursive
   cd oef-sdk-python/
   sudo python3 setup.py install
 
@@ -23,7 +28,7 @@ Install
 .. code-block:: bash
 
   brew install protobuf
-  git clone https://github.com/uvue-git/oef-sdk-python.git --recursive
+  git clone https://github.com/fetchai/oef-sdk-python.git --recursive
   cd oef-sdk-python/
   sudo python3 setup.py install
 
@@ -32,15 +37,20 @@ Install
   please follow the installation guide: :ref:`install`.
 
 
-Run a OEF Node
---------------
+Run an OEF Node
+---------------
+
+For full details about how to run an OEF Node, please follow the instructions at this page: :ref:`oef-node`.
+
+Using Docker
+~~~~~~~~~~~~
 
 In a separate terminal:
 
 .. code-block:: bash
 
   # clone the repo for the OEF node
-  git clone git@github.com:uvue-git/oef-core.git --recursive && cd oef-core/
+  git clone https://github.com/fetchai/oef-core.git --recursive && cd oef-core/
 
   # build the docker image
   ./oef-core-image/scripts/docker-build-img.sh
@@ -54,6 +64,7 @@ When finished, you can stop the image by running the following:
 
   docker stop $(docker ps | grep oef-core-image | awk '{ print $1 }')
 
+
 Connect Agents
 --------------
 
@@ -66,9 +77,9 @@ Write Agents
 The ``GreetingsAgent`` does the following:
 
 * ``on_search_result``: Once the agent receives results from its search,
-  the agent sends a ``hello`` message to each agent discovered.
-* ``on_message``: whenever the agent receives a ``hello`` message,
-  it answers with ine if its greetings.
+  the agent sends a ``"hello"`` message to each agent discovered.
+* ``on_message``: whenever the agent receives a ``"hello"`` message,
+  it answers with ``"greetings"``.
 
 
 .. code-block:: python
@@ -126,7 +137,7 @@ Start Communications
 
   from oef.query import Query
   query = Query([], greetings_model)
-  client_agent.search_services(query)
+  client_agent.search_services(0, query)
 
 
 When the ``client_agent`` receives a search result from the OEF, the ``on_search_result`` method is executed.
@@ -136,13 +147,14 @@ When the ``client_agent`` receives a search result from the OEF, the ``on_search
 .. code-block:: python
 
     import asyncio
-    loop.run_until_complete(asyncio.gather(
-        client_agent.async_run(),
-        server_agent.async_run()))
+    asyncio.get_event_loop().run_until_complete(
+        asyncio.gather(
+            client_agent.async_run(),
+            server_agent.async_run()))
 
 The output should be:
 
-::
+.. code-block:: none
 
     [greetings_client]: Agents found: ['greetings_server']
     [greetings_server]: Received message: origin=greetings_client, dialogue_id=0, content=b'hello'
@@ -151,9 +163,11 @@ The output should be:
 
 
 You can find the full script at
-`this link <https://github.com/uvue-git/OEFCorePython/tree/master/examples/greetings/greetings_example.py>`_.
+`this link <https://github.com/fetchai/oef-sdk-python/tree/master/examples/greetings/greeting_agents.py>`_.
+and the `Jupyter notebook version
+<https://github.com/fetchai/oef-sdk-python/tree/master/examples/greetings/greeting_agents.ipynb>`_.
 
 You can also try another version that uses the local implementation of an OEF Node:
-`link <https://github.com/uvue-git/OEFCorePython/tree/master/examples/greetings/local_greetings_example.py>`_.
+`link <https://github.com/fetchai/oef-sdk-python/tree/master/examples/greetings/local_greeting_agents.py>`_.
 
 In :ref:`tutorial` you might find all the details and how to implement more complex behaviours.

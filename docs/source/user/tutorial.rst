@@ -17,73 +17,7 @@ To be able to follow the following examples, we need to set up an OEF Node.
 This node will manage the discovery of agents
 and the communications between agents.
 
-Using Docker
-````````````
-
-We recommend you use the Docker image provided by
-the `OEFCore <https://github.com/uvue-git/OEFCore.git>`_,
-by following these steps:
-
-* Clone OEFCore
-
-.. code-block:: bash
-
-  git clone git@github.com:uvue-git/OEFCore.git --recursive && cd OEFCore/
-
-* Build the image
-
-.. code-block:: bash
-
-  ./oef-core-image/scripts/docker-build-img.sh
-
-* Run the image. This will start the OEF node, listening to port ``3333`` at ``localhost``:
-
-.. code-block:: bash
-
-  ./oef-core-image/scripts/docker-run.sh -p 3333:3333 --
-
-Your terminal will be busy while the Docker image is running.
-If you would prefer to run the OEF node in the background, add the ``-d`` flag:
-
-.. code-block:: bash
-
-  ./oef-core-image/scripts/docker-run.sh -p 3333:3333 -d --
-
-After you have completed this tutorial,
-you can exit the Docker container by running the following line:
-
-.. code-block:: bash
-
-  docker stop $(docker ps | grep oef-core-image | awk '{ print $1 }')
-
-Compiling from source
-`````````````````````
-
-You will need:
-
-* ``cmake``
-* ``gcc``
-* Google Protocol Buffers library.
-
-On Linux (Ubuntu) you can run:
-
-.. code-block:: none
-
-  git clone https://github.com/uvue-git/OEFCore.git --recursive && cd OEFCore
-  sudo apt-get install cmake protobuf-compiler libprotobuf-dev
-  mkdir build && cd build
-  cmake ..
-  make -j 4
-
-And to run a OEFNode:
-
-.. code-block:: none
-
-  ./apps/node/Node
-
-
-For full details, please follow the
-`installation instructions for the OEFCore <https://github.com/uvue-git/OEFCore/blob/master/INSTALL.txt>`_.
+Please follow the instruction in this page about how to run an OEF Node: :ref:`oef-node`.
 
 
 Optional: set up the logger
@@ -103,14 +37,14 @@ To do so, run the following instructions at the beginning of your scripts:
 First example: Echo agent
 ---------------------------
 
-In this section we will develop an `echo agent`. That is, whenever it receives a message from another agent, it replies
+In this section, we will develop an `echo agent`. That is, whenever it receives a message from another agent, it replies
 with the same message.
 
 First, we define the service agent that implements the echo service.
 Then, we implement other client agents to interact with the echo service.
 
-The code for the examples can be found
-`here <https://github.com/uvue-git/OEFCorePython/tree/master/examples/echo>`_.
+The code for the example can be found at this
+`link <https://github.com/fetchai/oef-sdk-python/tree/master/examples/echo>`_.
 
 Echo Agent service
 ~~~~~~~~~~~~~~~~~~
@@ -124,7 +58,7 @@ the agent is one of the intended recipients of the message.
 In this case, we just send the message back
 to the sender through the OEF.
 
-In later examples we will see a more complex protocol and
+In later examples, we will see a more complex protocol and
 how to implement the associated callbacks.
 
 .. code-block:: python
@@ -150,7 +84,7 @@ In order to connect a (service) agent to the OEF, we need to specify:
 
 We will use ``echo_server`` as the identifier.
 Choose the IP address and port pair provided by the OEFNode instance.
-In this example, the IP address and port pair will be
+In this example, the IP address and the port pair will be
 ``127.0.0.1`` and ``3333``, respectively.
 
 .. code-block:: python
@@ -162,7 +96,7 @@ In this example, the IP address and port pair will be
 Define a Data Model and a Description
 ``````````````````````````````````````
 
-In order to make our agent discoverable to other agents, we need to define a `description` (instance of a schema),
+In order to make our agent discoverable to other agents, we need to define a `description` (an instance of a schema),
 which refers to a `data model` (abstract definition of the schema).
 In this way, other agents can find our service by making `queries` (defined over the same data model) to the OEF.
 
@@ -198,11 +132,12 @@ then our agent will be one of the results of that query.
 
 Run the agent
 `````````````
-To run the agent waiting for events:
+To run the agent waiting for messages:
 
-::
+.. code-block:: python
 
-  server_agent.run()
+   print("Waiting for messages...")
+   server_agent.run()
 
 
 The ``run()`` method is blocking, so you have to switch to another terminal/console to launch the client.
@@ -241,7 +176,7 @@ the consumer of the service we implemented in the previous section.
 
 The ``on_message`` method has the same semantics as the one implemented
 in the ``EchoServiceAgent`` class. In this case,
-we don't implement any complex behavior (we just print the received message).
+we don't implement any complex behaviour (we just print the received message).
 
 The ``on_search_result`` callback is called whenever the agent receives
 a search result of a search query with
@@ -314,22 +249,23 @@ The output from the client agent should be:
 
 ::
 
-    Make search to the OEF
-    Agents found:  ['echo_server']
-    Sending b'hello' to echo_server
-    Received message: origin=echo_server, dialogue_id=0, content=b'hello'
+   Make search to the OEF
+   Agents found:  ['echo_server']
+   Sending b'hello' to echo_server
+   Received message: origin=echo_server, dialogue_id=0, content=b'hello'
 
 Whereas, the one from the server agent is:
 
 ::
 
-    Received message: origin=echo_client, dialogue_id=0, content=b'hello'
-    Sending b'hello' back to echo_client
+   Waiting for messages...
+   Received message: origin=echo_client, dialogue_id=0, content=b'hello'
+   Sending b'hello' back to echo_client
 
 
 The order of the exchanged message is the following:
 
-1. The service agent ``echo_server`` registers itself to the the OEF Node and waits for messages.
+1. The service agent ``echo_server`` registers itself to the OEF Node and waits for messages.
 2. The ``echo_client`` queries to the OEF Node
 3. The OEF Node sends back the list of agents who satisfy
    the query constraints. In this trivial example,
@@ -344,7 +280,7 @@ The order of the exchanged message is the following:
 
 Follows the sequence diagram with the message exchange.
 
-.. mermaid:: ../diagrams/echo_sequence_diagram.mmd
+.. mermaid:: ../diagrams/echo_example.mmd
     :alt: Sequence diagram for the Echo example.
     :align: center
     :caption: The exchange of messages in the Echo example.
@@ -360,7 +296,7 @@ In this second example, consider the following scenario:
   some physical quantity (e.g. wind speed, temperature, air pressure)
 * A `weather client` is interested in these measurements.
 
-The owner of the weather station wants to sell the data it measure.
+The owner of the weather station wants to sell the data it measures.
 In the following sections, we describe a
 protocol that allows the agents to:
 
@@ -369,7 +305,7 @@ protocol that allows the agents to:
 * accept/decline proposals.
 
 
-You can check the code `here <https://github.com/uvue-git/OEFCorePython/tree/master/examples/weather>`_.
+You can check the full code `here <https://github.com/fetchai/oef-sdk-python/tree/master/examples/weather>`_.
 
 
 Weather Station Agent
@@ -378,7 +314,7 @@ Weather Station Agent
 Define a DataModel
 ``````````````````
 
-For this example we need a specific data model that can effectively describe the features of services.
+For this example, we need a specific data model that can effectively describe the features of services.
 
 
 Let's start with an attribute to represent whether a weather station provides a measure for physical quantities, e.g.
@@ -406,7 +342,7 @@ The ``AttributeSchema`` class constructor requires:
 In this case, our ``wind_speed`` attribute is of type ``bool``. If the description of a weather station has the value
 ``wind_speed`` set to ``True``, then it means that it can provide measurements for the wind speed.
 
-We can define other type of measurements as well:
+We can define other types of measurements as well:
 
 .. code-block:: python
 
@@ -527,7 +463,7 @@ This is the code for our weather station:
 
 
 * when the agent receives a CFP, it answers with a list of relevant resources, that constitutes his proposal.
-  In this simplified example he answers with only one Description object, that specifies the price of the negotiation.
+  In this simplified example, he answers with only one Description object, that specifies the price of the negotiation.
 * on Accept messages, he answers with the available measurements. For the sake of simplicity, they are hard-coded.
 
 And here is the code to run the agent:
@@ -538,6 +474,8 @@ And here is the code to run the agent:
     agent = WeatherStation("weather_station", oef_addr="127.0.0.1", oef_port=3333)
     agent.connect()
     agent.register_service(agent.service_description)
+
+    print("Waiting for clients...")
     agent.run()
 
 
@@ -549,7 +487,7 @@ This is the code for the client of the weather service:
 .. code-block:: python
 
     class WeatherClient(OEFAgent):
-        """Class that implements the behavior of the weather client."""
+        """Class that implements the behaviour of the weather client."""
 
         def on_search_result(self, search_id: int, agents: List[str]):
             """For every agent returned in the service search, send a CFP to obtain resources from them."""
@@ -605,7 +543,7 @@ And here's the code to run it:
 Notice how we built the ``Query`` object, used to search weather services. The query requires:
 
 * a data model over which the query is defined
-* a list of ``Constraint`` object. Each constraint is defined over attributes of the data model, and imposes
+* a list of ``Constraint`` object. Each constraint is defined over attributes of the data model and imposes
   a restriction on the possible values that the associated attributes can assume.
 
 In this example, we require that the ``Description`` of the services registered in the OEF is compliant with the
@@ -617,7 +555,7 @@ following conditions:
   To specify this kind of constraint, we use the class :class:`~oef.schema.Eq` that express the constraint of equality
   to a specific value.
 
-To give a better idea, you can think at this query as an equivalent of the following SQL-like query:
+To give a better idea, you can think about this query as an equivalent of the following SQL-like query:
 
 .. code-block:: sql
    :linenos:
@@ -628,7 +566,7 @@ To give a better idea, you can think at this query as an equivalent of the follo
      humidity = true;
 
 
-In other sections of the documentation you can find more details about the query language and other types of constraint.
+In other sections of the documentation, you can find more details about the query language and other types of constraint.
 
 Message Exchange
 ~~~~~~~~~~~~~~~~
@@ -652,26 +590,27 @@ Whereas, the one from the server agent is:
 
 .. code-block:: none
 
+    Waiting for clients...
     Received CFP from weather_client
     Received accept from weather_client.
 
 
 Follows the summary of the communication between the weather client and the weather station:
 
-1. The weather station agent registers to the OEF, and waits for messages.
-2. The client send a search result with a query, looking for weather stations
+1. The weather station agent registers to the OEF and waits for messages.
+2. The client sends a search result with a query, looking for weather stations
    that provide measurements for temperature, humidity and air pressure.
    Then, he waits for messages.
-3. The OEF answers with the services that satisfies the query.
-4. The client send a CFP to the service via the OEF Node. The node forwards it to the recipient.
+3. The OEF answers with the services that satisfy the query.
+4. The client sends a CFP to the service via the OEF Node. The node forwards it to the recipient.
 5. The weather station answers with a proposal.
-6. The client accept the proposal and notifies the weather station.
-7. The station send messages to the client with the desired measurements.
+6. The client accepts the proposal and notifies the weather station.
+7. The station sends messages to the client with the desired measurements.
 
 
 Follows the sequence diagram with the message exchange.
 
-.. mermaid:: ../diagrams/weather_sequence_diagram.mmd
+.. mermaid:: ../diagrams/weather_example.mmd
     :alt: Sequence diagram for the Weather example.
     :align: center
     :caption: The exchange of messages in the Weather example.

@@ -355,3 +355,23 @@ def test_more_than_one_async_run_call(oef_network_node):
         asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
 
         mock.assert_called_with("Agent {} already scheduled for running.".format(agent.public_key))
+
+
+def test_send_more_than_2_to_16_bytes_simple_message(oef_network_node):
+    proxy = OEFNetworkProxy("test_send_more_than_2_to_16_bytes_simple_message", "127.0.0.1", 3333)
+    agent = AgentTest(proxy)
+    agent.connect()
+    agent.send_message(0, agent.public_key, b"a"*2**16)
+    asyncio.ensure_future(agent.async_run())
+    asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
+
+    agent.stop()
+
+    # assert that we received only one message
+    assert len(agent.received_msg) == 1
+
+    # assert that the message contains what we've sent.
+    origin, dialogue_id, content = agent.received_msg[0]
+    assert dialogue_id == 0
+    assert origin == agent.public_key
+    assert content == b"a" * 2 ** 16

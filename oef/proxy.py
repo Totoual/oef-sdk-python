@@ -121,10 +121,14 @@ class OEFNetworkProxy(OEFProxy):
             raise OEFConnectionError("Connection not established yet. Please use 'connect()'.")
         nbytes_packed = await self._server_reader.read(len(struct.pack("I", 0)))
         logger.debug("received ${0}".format(nbytes_packed))
-        nbytes = struct.unpack("I", nbytes_packed)
-        logger.debug("received unpacked ${0}".format(nbytes[0]))
-        logger.debug("Preparing to receive ${0} bytes ...".format(nbytes[0]))
-        return await self._server_reader.read(nbytes[0])
+        nbytes = struct.unpack("I", nbytes_packed)[0]
+        logger.debug("received unpacked ${0}".format(nbytes))
+        logger.debug("Preparing to receive ${0} bytes ...".format(nbytes))
+        data = b""
+        while len(data) != nbytes:
+            data += await self._server_reader.read(nbytes)
+        # data = await self._server_reader.read(nbytes)
+        return data
 
     async def connect(self) -> bool:
         if self._connection is not None:

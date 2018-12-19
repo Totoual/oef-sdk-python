@@ -125,9 +125,9 @@ class OEFNetworkProxy(OEFProxy):
         logger.debug("received unpacked ${0}".format(nbytes))
         logger.debug("Preparing to receive ${0} bytes ...".format(nbytes))
         data = b""
-        while len(data) != nbytes:
-            data += await self._server_reader.read(nbytes)
-        # data = await self._server_reader.read(nbytes)
+        while len(data) < nbytes:
+            data += await self._server_reader.read(nbytes - len(data))
+            logger.debug("Read bytes: {}".format(len(data)))
         return data
 
     async def connect(self) -> bool:

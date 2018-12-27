@@ -1,26 +1,44 @@
-# Copyright (C) Fetch.ai 2018 - All Rights Reserved
-# Unauthorized copying of this file, via any medium is strictly prohibited
-# Proprietary and confidential
-# Written by Tom Nicholson <tom.nicholson@fetch.ai>
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+# ------------------------------------------------------------------------------
+#
+#   Copyright 2018 Fetch.AI Limited
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+# ------------------------------------------------------------------------------
+
+
 import distutils.cmd
 import distutils.log
 import fileinput
 import os
 import re
+import shutil
 import subprocess
 import glob
 
 import setuptools.command.build_py
 from setuptools import setup
 
-#TODO support installation for Windows
 
 class ProtocCommand(distutils.cmd.Command):
-    """A custom command to generate Python Protobuf modules from OEFCoreProtocol"""
+    """A custom command to generate Python Protobuf modules from oef-core-protocol"""
 
-    description = "Generate Python Protobuf modules from OEFCoreProtocol specifications."
+    description = "Generate Python Protobuf modules from protobuf files specifications."
     user_options = [
-        # TODO: put the options like --proto_path and --python_out here
+        ("--proto_path", None, "Path to the `oef-core-protocol` folder.")
     ]
 
     def run(self):
@@ -37,22 +55,15 @@ class ProtocCommand(distutils.cmd.Command):
 
     def initialize_options(self):
         """Set default values for options."""
-        # Each user option must be listed here with their default value.
-        # TODO: complete
-        pass
+        self.proto_path = "oef-core-protocol"
 
     def finalize_options(self):
         """Post-process options."""
-        # TODO complete
-        pass
+        assert os.path.exists(self.proto_path), (
+                'Directory %s does not exist.' % self.proto_path)
 
     def _find_protoc_executable_path(self):
-        # TODO: fix (and test) how to find protoc executable for other OS
-        # the next line works in Python 3 but not in Python 2.
-        # result = shutil.which("protoc")
-
-        # Works also in Python 2
-        result = os.popen("which protoc").read().strip()
+        result = shutil.which("protoc")
 
         if result is None or result == "":
             raise EnvironmentError("protoc compiler not found.")
@@ -63,17 +74,15 @@ class ProtocCommand(distutils.cmd.Command):
         command = [protoc_executable_path] + self._get_arguments()
         return command
 
-    # TODO: generalize to other system path pattern (e.g. Windows)
     def _get_arguments(self):
         arguments = []
-        arguments.append("--proto_path=./OEFCoreProtocol")
-        arguments.append("--python_out=./oef")
-        arguments += glob.glob("OEFCoreProtocol/*.proto") # TODO add recursive search
+        arguments.append("--proto_path=%s" % self.proto_path)
+        arguments.append("--python_out=oef")
+        arguments += glob.glob(os.path.join("oef-core-protocol", "*.proto"))
         return arguments
 
     def _fix_import_statements_in_all_protobuf_modules(self):
-        # TODO: generalize to other system path pattern (e.g. Windows' one)
-        generated_protobuf_python_modules = glob.glob("oef/*_pb2.py")
+        generated_protobuf_python_modules = glob.glob(os.path.join("oef", "*_pb2.py"))
         for filepath in generated_protobuf_python_modules:
             self._fix_import_statements_in_protobuf_module(filepath)
 
@@ -92,13 +101,35 @@ class BuildPyCommand(setuptools.command.build_py.build_py):
         setuptools.command.build_py.build_py.run(self)
 
 
+here = os.path.abspath(os.path.dirname(__file__))
+about = {}
+with open(os.path.join(here, 'oef', '__version__.py'), 'r') as f:
+    exec(f.read(), about)
+
+with open('README.md', 'r') as f:
+    readme = f.read()
+
 setup(
-    name='oef',
-    version='0.1',
+    name=about['__title__'],
+    description=about['__description__'],
+    version=about['__version__'],
+    author=about['__author__'],
+    url=about['__url__'],
+    long_description=readme,
+    long_description_content_type='text/markdown',
     packages=['oef'],
     cmdclass={
         'protoc': ProtocCommand,
         'build_py': BuildPyCommand
     },
-    install_requires=["protobuf"]
+    classifiers=[
+        'Development Status :: 2 - Pre-Alpha',
+        'Intended Audience :: Developers',
+        'Natural Language :: English',
+        'License :: OSI Approved :: Apache Software License',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+    ],
+    install_requires=["protobuf"],
+    license=about['__license__'],
 )

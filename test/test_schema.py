@@ -1,18 +1,35 @@
-# Copyright (C) Fetch.ai 2018 - All Rights Reserved
-# Unauthorized copying of this file, via any medium is strictly prohibited
-# Proprietary and confidential
+# -*- coding: utf-8 -*-
+
+# ------------------------------------------------------------------------------
+#
+#   Copyright 2018 Fetch.AI Limited
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+# ------------------------------------------------------------------------------
+
 from typing import List, Dict
 
 import pytest
 from hypothesis import given
-from hypothesis.strategies import text, from_type, booleans, one_of, none
+from hypothesis.strategies import text, from_type, one_of, none
 from oef import query_pb2
 
 from oef.schema import AttributeSchema, ATTRIBUTE_TYPES, DataModel, AttributeInconsistencyException, Description, \
     generate_schema
 
-from test.hypothesis import attribute_schema_types, not_attribute_schema_types, _value_type_pairs, descriptions, \
-    data_models, attributes_schema, is_correct_attribute_value, attribute_schema_values
+from test.hypothesis.strategies import attribute_schema_types, not_attribute_schema_types, \
+    value_type_pairs, descriptions, data_models, attributes_schema, attribute_schema_values
 
 
 def check_inconsistency_checker(schema: List[AttributeSchema], values: Dict[str, ATTRIBUTE_TYPES], exception_string):
@@ -50,14 +67,12 @@ def test_raise_when_have_incorrect_types():
                                 "incorrect type")
 
 
-@given(text(), _value_type_pairs(not_attribute_schema_types), booleans(), one_of(none(), text()))
-def test_raise_when_have_unallowed_types(name, unallowed_value_type_pair, required, description):
+def test_raise_when_have_unallowed_types():
     """
     Test that if an attribute value has a value inconsistent with its schema, we moan.
     """
-    unallowed_value, unallowed_type = unallowed_value_type_pair
-    check_inconsistency_checker([AttributeSchema(name, unallowed_type, required, description)],
-                                {name: unallowed_value},
+    check_inconsistency_checker([AttributeSchema("foo", tuple, True)],
+                                {"foo": tuple()},
                                 "unallowed type")
 
 
@@ -86,7 +101,7 @@ def test_generate_schema_empty(name):
     generate_schema_checker(name, {}, DataModel(name, []))
 
 
-@given(text(), text(), _value_type_pairs(attribute_schema_types), one_of(none(), text()))
+@given(text(), text(), value_type_pairs(attribute_schema_types), one_of(none(), text()))
 def test_generate_schema_single_element(schema_name, attribute_name, value_type_pair, description):
     """
     Test that construct_schema constructs the correct schema from single-element attribute values
@@ -112,12 +127,9 @@ def test_generate_schema_longer_values():
     generate_schema_checker("foo", values, DataModel("foo", schema_attributes))
 
 
-@given(_value_type_pairs(attribute_schema_types))
+@given(value_type_pairs(attribute_schema_types))
 def test_description_extract_value(value_type_pair):
     attr_value, attr_type = value_type_pair
-
-    # make the in representable in 32 bit
-    attr_value = 0xFFFFFFFF & attr_value if type(attr_value) == int else attr_value
 
     value = query_pb2.Query.Value()
     if attr_type == str:
@@ -127,13 +139,11 @@ def test_description_extract_value(value_type_pair):
     elif attr_type == int:
         value.i = attr_value
     elif attr_type == float:
-        value.f = attr_value
+        value.d = attr_value
 
     expected_value = Description._extract_value(value)
     assert type(expected_value) in ATTRIBUTE_TYPES.__args__ + (bool,)
-
-    if attr_type != float:
-        assert attr_value == expected_value
+    assert attr_value == expected_value
 
 
 @given(text(), attribute_schema_values)
@@ -147,14 +157,14 @@ def test_description_to_key_value(key: str, value: ATTRIBUTE_TYPES):
     elif isinstance(value, int):
         expected_value = kv.value.i
     elif isinstance(value, float):
-        expected_value = kv.value.f
+        expected_value = kv.value.d
     elif isinstance(value, str):
         expected_value = kv.value.s
     else:
         raise Exception()
 
     assert key == expected_key
-    assert value == expected_value if type(value) != float else True
+    assert value == expected_value
 
 
 @given(attributes_schema())

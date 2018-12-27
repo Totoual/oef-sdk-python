@@ -3,7 +3,20 @@
 Installation
 ============
 
-For now, we only support installation from source.
+This is the full guide about how to install the OEF Python SDK.
+
+The supported platforms are:
+
+* Linux (especially Ubuntu 18.04)
+* MacOS
+* Windows
+
+The instructions may change depending on the operating system version/distribution.
+
+The installation requires Python 3.5 or later versions.
+Also, we assume you have `pip` and `git` installed on your system.
+
+At the moment, we only support installation from source.
 
 Protobuf Compiler
 -----------------
@@ -20,11 +33,13 @@ In order to check if it is installed on your machine, run:
 
 If you get ``Missing input file.``, then you already have it.
 
-Otherwise, you can install it in several  ways, depending on your platform.
+Otherwise, you can install it in several ways, depending on your platform.
 
 
-Linux (Ubuntu)
-~~~~~~~~~~~~~~
+Linux (Ubuntu 18.04)
+~~~~~~~~~~~~~~~~~~~~
+
+You can follow one of the following instructions:
 
 * Using the package manager:
 
@@ -45,14 +60,16 @@ Linux (Ubuntu)
 .. code-block:: bash
 
   sudo apt-get install protobuf-compiler
-  git clone https://github.com/uvue-git/OEFCorePython.git --recursive
-  cd OEFCorePython/
-  python setup.py install
+  git clone https://github.com/fetchai/oef-sdk-python.git --recursive
+  cd oef-sdk-python/
+  sudo python3 setup.py install
 
 For other platforms and other details, please follow the installation guide: :ref:`install`.
 
 Mac OS X
 ~~~~~~~~
+
+You can follow one of the following instructions:
 
 * If you have `Homebrew <https://brew.sh/>`_, just run:
 
@@ -83,7 +100,7 @@ Alternatively, you can
 
 
 Install ``oef``
---------------------
+---------------
 
 To install the Python package ``oef``, follow these steps:
 
@@ -91,12 +108,18 @@ To install the Python package ``oef``, follow these steps:
 
 ::
 
-    git clone https://github.com/uvue-git/OEFCorePython.git --recursive && cd OEFCorePython/
+    git clone https://github.com/fetchai/oef-sdk-python.git --recursive && cd oef-sdk-python/
 
 
 * Install the package:
 
 ::
 
-    python setup.py install
+    sudo python3 setup.py install
 
+Use the OEF Node
+----------------
+
+In several parts of the documentation, we require that an instance of the OEF Node is running on your local machine.
+
+We suggest following the guide about how to run an OEF Node:  :ref:`oef-node`.

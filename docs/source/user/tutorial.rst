@@ -11,79 +11,13 @@ Initialization
 
 
 Setup an OEF Node
-~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~
 
 To be able to follow the following examples, we need to set up an OEF Node.
 This node will manage the discovery of agents
 and the communications between agents.
 
-Using Docker
-````````````
-
-We recommend you use the Docker image provided by
-the `OEFCore <https://github.com/uvue-git/OEFCore.git>`_,
-by following these steps:
-
-* Clone OEFCore
-
-.. code-block:: bash
-
-  git clone git@github.com:uvue-git/OEFCore.git --recursive && cd OEFCore/
-
-* Build the image
-
-.. code-block:: bash
-
-  ./oef-core-image/scripts/docker-build-img.sh
-
-* Run the image. This will start the OEF node, listening to port ``3333`` at ``localhost``:
-
-.. code-block:: bash
-
-  ./oef-core-image/scripts/docker-run.sh -p 3333:3333 --
-
-Your terminal will be busy while the Docker image is running.
-If you would prefer to run the OEF node in the background, add the ``-d`` flag:
-
-.. code-block:: bash
-
-  ./oef-core-image/scripts/docker-run.sh -p 3333:3333 -d --
-
-After you have completed this tutorial,
-you can exit the Docker container by running the following line:
-
-.. code-block:: bash
-
-  docker stop $(docker ps | grep oef-core-image | awk '{ print $1 }')
-
-Compiling from source
-`````````````````````
-
-You will need:
-
-* ``cmake``
-* ``gcc``
-* Google Protocol Buffers library.
-
-On Linux (Ubuntu) you can run:
-
-::
-
-  git clone https://github.com/uvue-git/OEFCore.git --recursive && cd OEFCore
-  sudo apt-get install cmake protobuf-compiler libprotobuf-dev
-  mkdir build && cd build
-  cmake ..
-  make -j 4
-
-And to run a OEFNode:
-
-::
-
-  ./apps/node/Node
-
-
-For full details, please follow the
-`installation instructions for the OEFCore <https://github.com/uvue-git/OEFCore/blob/master/INSTALL.txt>`_.
+Please follow the instruction in this page about how to run an OEF Node: :ref:`oef-node`.
 
 
 Optional: set up the logger
@@ -97,21 +31,20 @@ To do so, run the following instructions at the beginning of your scripts:
 
     import logging
     from oef.logger import set_logger
-    set_logger("oef", logging.DEBUG)
-
+    set_logger("oef.agents", logging.DEBUG)
 
 
 First example: Echo agent
 ---------------------------
 
-In this section we will develop an `echo agent`. That is, whenever it receives a message from another agent, it replies
+In this section, we will develop an `echo agent`. That is, whenever it receives a message from another agent, it replies
 with the same message.
 
 First, we define the service agent that implements the echo service.
 Then, we implement other client agents to interact with the echo service.
 
-The code for the examples can be found
-`here <https://github.com/uvue-git/OEFCorePython/tree/master/examples/echo>`_.
+The code for the example can be found at this
+`link <https://github.com/fetchai/oef-sdk-python/tree/master/examples/echo>`_.
 
 Echo Agent service
 ~~~~~~~~~~~~~~~~~~
@@ -125,7 +58,7 @@ the agent is one of the intended recipients of the message.
 In this case, we just send the message back
 to the sender through the OEF.
 
-In later examples we will see a more complex protocol and
+In later examples, we will see a more complex protocol and
 how to implement the associated callbacks.
 
 .. code-block:: python
@@ -151,7 +84,7 @@ In order to connect a (service) agent to the OEF, we need to specify:
 
 We will use ``echo_server`` as the identifier.
 Choose the IP address and port pair provided by the OEFNode instance.
-In this example, the IP address and port pair will be
+In this example, the IP address and the port pair will be
 ``127.0.0.1`` and ``3333``, respectively.
 
 .. code-block:: python
@@ -163,7 +96,7 @@ In this example, the IP address and port pair will be
 Define a Data Model and a Description
 ``````````````````````````````````````
 
-In order to make our agent discoverable to other agents, we need to define a `description` (instance of a schema),
+In order to make our agent discoverable to other agents, we need to define a `description` (an instance of a schema),
 which refers to a `data model` (abstract definition of the schema).
 In this way, other agents can find our service by making `queries` (defined over the same data model) to the OEF.
 
@@ -199,11 +132,12 @@ then our agent will be one of the results of that query.
 
 Run the agent
 `````````````
-To run the agent waiting for events:
+To run the agent waiting for messages:
 
-::
+.. code-block:: python
 
-  server_agent.run()
+   print("Waiting for messages...")
+   server_agent.run()
 
 
 The ``run()`` method is blocking, so you have to switch to another terminal/console to launch the client.
@@ -242,7 +176,7 @@ the consumer of the service we implemented in the previous section.
 
 The ``on_message`` method has the same semantics as the one implemented
 in the ``EchoServiceAgent`` class. In this case,
-we don't implement any complex behavior (we just print the received message).
+we don't implement any complex behaviour (we just print the received message).
 
 The ``on_search_result`` callback is called whenever the agent receives
 a search result of a search query with
@@ -265,7 +199,7 @@ Analogously to the previous section, we connect our client to the OEF.
 Make a query
 ````````````
 
-Now we need to search for agents who provide the ``echo` service.
+Now we need to search for agents who provide the ``echo`` service.
 
 To do so, we create a ``Query`` referring to the ``echo`` data model. The first parameter is a list
 of *constraints* over the attributes of the data model. However, since our data model is trivial,
@@ -315,33 +249,42 @@ The output from the client agent should be:
 
 ::
 
-    Make search to the OEF
-    Agents found:  ['echo_server']
-    Sending b'hello' to echo_server
-    Received message: origin=echo_server, dialogue_id=0, content=b'hello'
+   Make search to the OEF
+   Agents found:  ['echo_server']
+   Sending b'hello' to echo_server
+   Received message: origin=echo_server, dialogue_id=0, content=b'hello'
 
 Whereas, the one from the server agent is:
 
 ::
 
-    Received message: origin=echo_client, dialogue_id=0, content=b'hello'
-    Sending b'hello' back to echo_client
+   Waiting for messages...
+   Received message: origin=echo_client, dialogue_id=0, content=b'hello'
+   Sending b'hello' back to echo_client
 
 
 The order of the exchanged message is the following:
 
-- The server notifies the OEF Node that it is able to serve other agents
-- The ``echo_client`` queries to the OEF Node
-- The OEF Node sends back the list of agents who satisfy
-  the query constraints. In this trivial example,
-  the only agent returned is the ``echo_server`.
-- The client sends a ``"hello"`` message to the OEF Node,
-  which targets the ``echo_server``
-- The OEF Node dispatches the message from ``echo_client`` to ``echo_server``
-- The ``echo_server`` receives the message and sends a new message (with the same content)
-  to the OEF Node, which targets the ``echo_client``
-- The OEF Node dispatch the message from ``echo_server`` to ``echo_client``
-- The ``echo_client`` receives the echo message.
+1. The service agent ``echo_server`` registers itself to the OEF Node and waits for messages.
+2. The ``echo_client`` queries to the OEF Node
+3. The OEF Node sends back the list of agents who satisfy
+   the query constraints. In this trivial example,
+   the only agent returned is the ``echo_server``.
+4. The client sends a ``"hello"`` message to the OEF Node,
+   which targets the ``echo_server``
+5. The OEF Node dispatches the message from ``echo_client`` to ``echo_server``
+6. The ``echo_server`` receives the message and sends a new message (with the same content)
+   to the OEF Node, which targets the ``echo_client``
+7. The OEF Node dispatch the message from ``echo_server`` to ``echo_client``
+8. The ``echo_client`` receives the echo message.
+
+Follows the sequence diagram with the message exchange.
+
+.. mermaid:: ../diagrams/echo_example.mmd
+    :alt: Sequence diagram for the Echo example.
+    :align: center
+    :caption: The exchange of messages in the Echo example.
+
 
 
 Second example: Weather Station
@@ -353,7 +296,7 @@ In this second example, consider the following scenario:
   some physical quantity (e.g. wind speed, temperature, air pressure)
 * A `weather client` is interested in these measurements.
 
-The owner of the weather station wants to sell the data it measure.
+The owner of the weather station wants to sell the data it measures.
 In the following sections, we describe a
 protocol that allows the agents to:
 
@@ -362,7 +305,7 @@ protocol that allows the agents to:
 * accept/decline proposals.
 
 
-You can check the code `here <https://github.com/uvue-git/OEFCorePython/tree/master/examples/weather>`_.
+You can check the full code `here <https://github.com/fetchai/oef-sdk-python/tree/master/examples/weather>`_.
 
 
 Weather Station Agent
@@ -371,7 +314,7 @@ Weather Station Agent
 Define a DataModel
 ``````````````````
 
-For this example we need a specific data model that can effectively describe the features of services.
+For this example, we need a specific data model that can effectively describe the features of services.
 
 
 Let's start with an attribute to represent whether a weather station provides a measure for physical quantities, e.g.
@@ -399,7 +342,7 @@ The ``AttributeSchema`` class constructor requires:
 In this case, our ``wind_speed`` attribute is of type ``bool``. If the description of a weather station has the value
 ``wind_speed`` set to ``True``, then it means that it can provide measurements for the wind speed.
 
-We can define other type of measurements as well:
+We can define other types of measurements as well:
 
 .. code-block:: python
 
@@ -424,15 +367,6 @@ We can define other type of measurements as well:
         attribute_description="Provides humidity measurements."
     )
 
-    PRICE_ATTR = AttributeSchema(
-        "price",
-        int,
-        is_attribute_required=True,
-        attribute_description="The price for a measurement."
-    )
-
-
-We will use the ``price`` attribute, an integer, to represents the price for any measurements.
 
 Now we can define our data model:
 
@@ -445,8 +379,7 @@ Now we can define our data model:
         [WIND_SPEED_ATTR,
         TEMPERATURE_ATTR,
         AIR_PRESSURE_ATTR,
-        HUMIDITY_ATTR,
-        PRICE_ATTR],
+        HUMIDITY_ATTR],
         "All possible weather data."
     )
 
@@ -464,11 +397,10 @@ Once we have the data model, we can provide an `instance` of that model. To do s
 
     weather_service_description = Description(
         {
-            "wind_speed": True,
+            "wind_speed": False,
             "temperature": True,
             "air_pressure": True,
             "humidity": True,
-            "price": 50
         },
         WEATHER_DATA_MODEL
     )
@@ -491,21 +423,48 @@ This is the code for our weather station:
 .. code-block:: python
 
     class WeatherStation(OEFAgent):
+        """Class that implements the behaviour of the weather station."""
+
+        weather_service_description = Description(
+            {
+                "wind_speed": False,
+                "temperature": True,
+                "air_pressure": True,
+                "humidity": True,
+            },
+            WEATHER_DATA_MODEL
+        )
+
+        def on_cfp(self, origin: str,
+                   dialogue_id: int,
+                   msg_id: int,
+                   target: int,
+                   query: CFP_TYPES):
+            """Send a simple Propose to the sender of the CFP."""
+            print("Received CFP from {0} with Query: {1}"
+                  .format(origin, query))
+
+            # prepare the proposal with a given price.
+            proposal = Description({"price": 50})
+            self.send_propose(dialogue_id, origin, [proposal], msg_id + 1, target + 1)
+
+        def on_accept(self, origin: str,
+                      dialogue_id: int,
+                      msg_id: int,
+                      target: int):
+            """Once we received an Accept, send the requested data."""
+            print("Received accept from {0} cif {1} msgId {2} target {3}"
+                  .format(origin, dialogue_id, msg_id, target))
+
+            # send the measurements to the client. for the sake of simplicity, they are hard-coded.
+            self.send_message(dialogue_id, origin, b"temperature:15.0")
+            self.send_message(dialogue_id, origin, b"humidity:0.7")
+            self.send_message(dialogue_id, origin, b"air_pressure:1019.0")
 
 
-    def on_cfp(self,
-               origin: str,
-               dialogue_id: int,
-               msg_id: int,
-               target: int,
-               query: CFP_TYPES):
-        print("Received cfp from {0} cif {1} msgId {2} target {3} query [{4}]"
-              .format(origin, dialogue_id, msg_id, target, query))
-
-        # prepare a propose
-        proposal = self.weather_service_description
-        self.send_propose(dialogue_id, origin, [proposal], msg_id + 1, target + 1)
-
+* when the agent receives a CFP, it answers with a list of relevant resources, that constitutes his proposal.
+  In this simplified example, he answers with only one Description object, that specifies the price of the negotiation.
+* on Accept messages, he answers with the available measurements. For the sake of simplicity, they are hard-coded.
 
 And here is the code to run the agent:
 
@@ -515,6 +474,8 @@ And here is the code to run the agent:
     agent = WeatherStation("weather_station", oef_addr="127.0.0.1", oef_port=3333)
     agent.connect()
     agent.register_service(agent.service_description)
+
+    print("Waiting for clients...")
     agent.run()
 
 
@@ -526,24 +487,42 @@ This is the code for the client of the weather service:
 .. code-block:: python
 
     class WeatherClient(OEFAgent):
-    
+        """Class that implements the behaviour of the weather client."""
+
         def on_search_result(self, search_id: int, agents: List[str]):
+            """For every agent returned in the service search, send a CFP to obtain resources from them."""
             print("Agent found: {0}".format(agents))
             for agent in agents:
                 print("Sending to agent {0}".format(agent))
-                query = Query([Constraint(TEMPERATURE_ATTR, Eq(True)),
-                               Constraint(AIR_PRESSURE_ATTR, Eq(True)),
-                               Constraint(HUMIDITY_ATTR, Eq(True))],
-                              WEATHER_DATA_MODEL)
+                # we send a query with no constraints, meaning "give me all the resources you can propose."
+                query = Query([])
                 self.send_cfp(0, agent, query)
-    
+
         def on_propose(self, origin: str, dialogue_id: int, msg_id: int, target: int, proposals: PROPOSE_TYPES):
-            print("Received propose from {0} cif {1} msgId {2} target {3} proposals {4}"
-                  .format(origin, dialogue_id, msg_id, target, proposals))
-            print("Price {0}".format(proposals[0]._values["price"]))
+            """When we receive a Propose message, answer with an Accept."""
+            print("Received propose from agent {0}".format(origin))
+            for i, p in enumerate(proposals):
+                print("Proposal {}: {}".format(i, p.values))
+            print("Accepting Propose.")
             self.send_accept(dialogue_id, origin, msg_id + 1, msg_id)
 
+        def on_message(self, origin: str,
+                       dialogue_id: int,
+                       content: bytes):
+            """Extract and print data from incoming (simple) messages."""
+            key, value = content.decode().split(":")
+            print("Received measurement from {}: {}={}".format(origin, key, float(value)))
 
+His behaviour can be summarized with the following lines:
+
+* When the agent receives a search result from the OEF (see ``on_search_result``), it sends a CFP to
+  every weather station found. This message starts a negotiation with every agent.
+  For simplicity, the CFP contains a query with an empty list of constraints, meaning that we do not specify constraints
+  on the set of proposals we can receive.
+* When the agent receives a Propose message, he will automatically accept the proposal, sending an Accept message.
+  Here it is possible to implement multiple strategies, e.g. find the proposal with the minimum
+  across different services.
+* Then he waits to receive the measurements from the weather station.
 
 And here's the code to run it:
 
@@ -561,28 +540,80 @@ And here's the code to run it:
     agent.run()
 
 
+Notice how we built the ``Query`` object, used to search weather services. The query requires:
+
+* a data model over which the query is defined
+* a list of ``Constraint`` object. Each constraint is defined over attributes of the data model and imposes
+  a restriction on the possible values that the associated attributes can assume.
+
+In this example, we require that the ``Description`` of the services registered in the OEF is compliant with the
+following conditions:
+
+* The description is defined over the ``WEATHER_DATA_MODEL`` (defined before)
+* The fields `temperature`, `humidity` and `air pressure` must be set to ``True`` (that is, the service provides the
+  associated measurements.
+  To specify this kind of constraint, we use the class :class:`~oef.schema.Eq` that express the constraint of equality
+  to a specific value.
+
+To give a better idea, you can think about this query as an equivalent of the following SQL-like query:
+
+.. code-block:: sql
+   :linenos:
+
+   SELECT * FROM weather_data WHERE
+     temperature = true and
+     air_pressure = true and
+     humidity = true;
+
+
+In other sections of the documentation, you can find more details about the query language and other types of constraint.
+
 Message Exchange
 ~~~~~~~~~~~~~~~~
 
 
 The output from the client agent should be:
 
-::
+.. code-block:: none
 
     Agent found: ['weather_station']
     Sending to agent weather_station
-    Received propose from weather_station cif 0 msgId 2 target 1 proposals [<oef.schema.Description object at 0x7f94ad8ca278>]
-    Price 50
+    Received propose from agent weather_station
+    Proposal 0: {'price': 50}
+    Accepting Propose.
+    Received measurement from weather_station: temperature=15.0
+    Received measurement from weather_station: humidity=0.7
+    Received measurement from weather_station: air_pressure=1019.0
 
 
 Whereas, the one from the server agent is:
 
-::
+.. code-block:: none
 
-    Received cfp from weather_client cif 0 msgId 1 target 0 query [<oef.query.Query object at 0x7fe00f674358>]
-    Received accept from weather_client cif 0 msgId 3 target 2
+    Waiting for clients...
+    Received CFP from weather_client
+    Received accept from weather_client.
 
 
-The order of the exchanged message is the following:
+Follows the summary of the communication between the weather client and the weather station:
 
-TODO
+1. The weather station agent registers to the OEF and waits for messages.
+2. The client sends a search result with a query, looking for weather stations
+   that provide measurements for temperature, humidity and air pressure.
+   Then, he waits for messages.
+3. The OEF answers with the services that satisfy the query.
+4. The client sends a CFP to the service via the OEF Node. The node forwards it to the recipient.
+5. The weather station answers with a proposal.
+6. The client accepts the proposal and notifies the weather station.
+7. The station sends messages to the client with the desired measurements.
+
+
+Follows the sequence diagram with the message exchange.
+
+.. mermaid:: ../diagrams/weather_example.mmd
+    :alt: Sequence diagram for the Weather example.
+    :align: center
+    :caption: The exchange of messages in the Weather example.
+
+Notice: in step (6), instead of the `Accept` action, we might have had a counter-Propose, or a `Decline`.
+`Decline` means that the sender is not interested anymore in continuing the negotiation with the recipient.

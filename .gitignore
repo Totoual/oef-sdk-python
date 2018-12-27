@@ -121,5 +121,5 @@ log.txt*
 # protobuf python modules (generated at installation time)
 oef/*_pb2.py
 
-#OEFCore repository for tests
-OEFCore/
+#OEF Core repository for tests
+oef-core/

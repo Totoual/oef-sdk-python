@@ -1,9 +1,6 @@
-.. oef documentation master file, created by
-   sphinx-quickstart on Thu Nov 22 15:49:28 2018.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+.. oef documentation master file
 
-OEFCore Python API
+OEF Python SDK
 ===============================
 
 .. toctree::
@@ -18,7 +15,7 @@ OEFCore Python API
 
 **WARNING**: the package is in active development, so the API might change frequently.
 
-This is the Python API for the OEFCore, allowing
+This is the Python SDK for OEF agent development, allowing:
 
  * registration of agents and services in the OEF
  * searching for agents and services in the OEF
@@ -31,11 +28,21 @@ User guide
    :maxdepth: 2
 
    user/introduction
-   user/install
    user/quickstart
+   user/install
+   user/oef-node
    user/tutorial
+   user/defining-data-model
+   user/query-language
+   user/communication-protocols
+
+   oef
 
 
+.. include:: ../../CONTRIBUTING.rst
+.. include:: ../../AUTHORS.rst
+.. include:: user/resources-links.rst
+.. include:: ../../HISTORY.rst
 
 Indices and tables
 ==================

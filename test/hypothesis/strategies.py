@@ -1,21 +1,39 @@
-# Copyright (C) Fetch.ai 2018 - All Rights Reserved
-# Unauthorized copying of this file, via any medium is strictly prohibited
-# Proprietary and confidential
+# -*- coding: utf-8 -*-
+
+# ------------------------------------------------------------------------------
+#
+#   Copyright 2018 Fetch.AI Limited
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+# ------------------------------------------------------------------------------
+
+
 """This module contains Hypothesis strategies for some of the package data types
 (e.g. AttributeSchema, DataModel, Description, ...)"""
 
 
 import typing
+from math import isnan
 from typing import List
 
 import hypothesis
-from hypothesis import settings, assume
+from hypothesis import assume
 from hypothesis.strategies import sampled_from, from_type, composite, text, booleans, one_of, none, lists, tuples
 
 from oef.query import Eq, NotEq, Lt, LtEq, Gt, GtEq, Range, In, NotIn, And, Or, Constraint, Query
 from oef.schema import ATTRIBUTE_TYPES, AttributeSchema, DataModel, Description
 
-settings(max_examples=1000)
 
 
 def _is_attribute_type(t: typing.Type) -> bool:
@@ -24,7 +42,7 @@ def _is_attribute_type(t: typing.Type) -> bool:
     :param t: the type.
     :return: True if the type belongs to `ATTRIBUTE_TYPES`, False otherwise.
     """
-    return t == bool or t in ATTRIBUTE_TYPES.__args__
+    return issubclass(t, ATTRIBUTE_TYPES.__args__)
 
 
 """Strategy that sample a valid attribute type"""
@@ -37,10 +55,10 @@ not_attribute_schema_types = from_type(type).filter(lambda t: not _is_attribute_
 def is_correct_attribute_value(value: ATTRIBUTE_TYPES):
     if type(value) == int and abs(value) >= 0xFFFFFFFF:
         return False
-    if type(value) == float:
+    if type(value) == float and isnan(value):
         return False
 
-    return value
+    return True
 
 
 """Strategy that sample a value from valid attribute types."""
@@ -48,12 +66,12 @@ attribute_schema_values = attribute_schema_types.flatmap(lambda x: from_type(x))
 
 
 @composite
-def _value_type_pairs(draw, type_strategy):
+def value_type_pairs(draw, type_strategy):
     """
     Return a value-type pair.
     """
     type_ = draw(type_strategy)
-    value = draw(from_type(type_))
+    value = draw(from_type(type_).filter(is_correct_attribute_value))
     return value, type_
 
 

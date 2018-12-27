@@ -1,6 +1,28 @@
-# Copyright (C) Fetch.ai 2018 - All Rights Reserved
-# Unauthorized copying of this file, via any medium is strictly prohibited
-# Proprietary and confidential
+# -*- coding: utf-8 -*-
+
+# ------------------------------------------------------------------------------
+#
+#   Copyright 2018 Fetch.AI Limited
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+# ------------------------------------------------------------------------------
+
+
+"""
+Script that clone the oef-core repository and build the oef-core Node.
+You must have the oef-core built in order to run tests successfully.
+"""
 import os
 import subprocess
 import sys
@@ -40,16 +62,16 @@ def build_project(project_root, build_root, options):
 
 def main():
 
-    if not os.path.exists("OEFCore"):
-        Repo.clone_from("git@github.com:uvue-git/OEFCore.git", "OEFCore", progress=RemoteProgress())
+    if not os.path.exists("oef-core"):
+        os.system("git clone --recursive https://github.com/fetchai/oef-core.git oef-core")
     else:
         try:
-            Repo("OEFCore")
+            Repo("oef-core")
         except InvalidGitRepositoryError:
             print("Repository is not valid.")
             exit(1)
 
-    build_project("..", "OEFCore/build", {})
+    build_project("..", "oef-core/build", {})
 
 
 if __name__ == '__main__':

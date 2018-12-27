@@ -112,7 +112,6 @@ class Agent(AgentInterface, ABC):
         if self._task:
             self._task.cancel()
             self._task = None
-            self.oef_proxy.stop()
 
     def connect(self) -> bool:
         """

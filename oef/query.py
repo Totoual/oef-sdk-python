@@ -61,7 +61,13 @@ class ConstraintType(ProtobufSerializable, ABC):
 
     @abstractmethod
     def check(self, value: ATTRIBUTE_TYPES) -> bool:
-        pass
+        """
+        Check if an attribute value satisfies the constraint.
+        The implementation depends on the constraint type.
+
+        :param value: the value to check.
+        :return: ``True`` if the value satisfy the constraint, ``False`` otherwise.
+        """
 
 
 class Relation(ConstraintType, ABC):
@@ -152,12 +158,25 @@ class Eq(Relation):
     Examples:
         >>> # all the books whose author is Stephen King
         >>> c = Constraint(AttributeSchema("author", str, True),  Eq("Stephen King"))
+
+        >>> c.check(Description({"author": "Stephen King"}))
+        True
+
+        >>> c.check(Description({"author": "George Orwell"}))
+        False
+
     """
 
     def operator(self):
         return query_pb2.Query.Relation.EQ
 
     def check(self, value: ATTRIBUTE_TYPES) -> bool:
+        """
+        Check if a value is equal to the value of the constraint.
+
+        :param value: the value to check.
+        :return: ``True`` if the value satisfy the constraint, ``False`` otherwise.
+        """
         return value == self.value
 
 
@@ -168,12 +187,26 @@ class NotEq(Relation):
     Examples:
         >>> # all the books that are not of the genre Horror
         >>> c = Constraint(AttributeSchema("genre", str, True),   NotEq("horror"))
+
+
+        >>> c.check(Description({"genre": "non-fiction"}))
+        True
+
+        >>> c.check(Description({"author": "horror"}))
+        False
+
     """
 
     def operator(self):
         return query_pb2.Query.Relation.NOTEQ
 
     def check(self, value: ATTRIBUTE_TYPES) -> bool:
+        """
+        Check if a value is not equal to the value of the constraint.
+
+        :param value: the value to check.
+        :return: ``True`` if the value satisfy the constraint, ``False`` otherwise.
+        """
         return value != self.value
 
 
@@ -183,12 +216,25 @@ class Lt(Relation):
     Examples:
         >>> # all the books published before 1990
         >>> c = Constraint(AttributeSchema("year", int, True), Lt(1990))
+
+        >>> c.check(Description({"year": 1985}))
+        True
+
+        >>> c.check(Description({"year": 2000}))
+        False
+
     """
 
     def operator(self):
         return query_pb2.Query.Relation.LT
 
     def check(self, value: ATTRIBUTE_TYPES) -> bool:
+        """
+        Check if a value is less than the value of the constraint.
+
+        :param value: the value to check.
+        :return: ``True`` if the value satisfy the constraint, ``False`` otherwise.
+        """
         return value < self.value
 
 
@@ -199,12 +245,25 @@ class LtEq(Relation):
     Examples:
         >>> # all the books published before 1990, 1990 included
         >>> c = Constraint(AttributeSchema("year", int, True), LtEq(1990))
+
+        >>> c.check(Description({"year": 1990}))
+        True
+
+        >>> c.check(Description({"year": 1991}))
+        False
+
     """
 
     def operator(self):
         return query_pb2.Query.Relation.LTEQ
 
     def check(self, value: ATTRIBUTE_TYPES) -> bool:
+        """
+        Check if a value is less than or equal to the value of the constraint.
+
+        :param value: the value to check.
+        :return: ``True`` if the value satisfy the constraint, ``False`` otherwise.
+        """
         return value <= self.value
 
 
@@ -215,12 +274,25 @@ class Gt(Relation):
     Examples:
         >>> # all the books with rating greater than 4.0
         >>> c = Constraint(AttributeSchema("average_rating", float, True), Gt(4.0))
+
+        >>> c.check(Description({"average_rating": 4.5}))
+        True
+
+        >>> c.check(Description({"average_rating": 3.0}))
+        False
+
     """
 
     def operator(self):
         return query_pb2.Query.Relation.GT
 
     def check(self, value: ATTRIBUTE_TYPES) -> bool:
+        """
+        Check if a value is greater than the value of the constraint.
+
+        :param value: the value to check.
+        :return: ``True`` if the value satisfy the constraint, ``False`` otherwise.
+        """
         return value > self.value
 
 
@@ -231,18 +303,46 @@ class GtEq(Relation):
     Examples:
         >>> # all the books published after 2000, included
         >>> c = Constraint(AttributeSchema("year", int, True), GtEq(2000))
+
+        >>> c.check(Description({"year": 2000}))
+        True
+
+        >>> c.check(Description({"year": 1990}))
+        False
     """
 
     def operator(self):
         return query_pb2.Query.Relation.GTEQ
 
     def check(self, value: ATTRIBUTE_TYPES) -> bool:
+        """
+        Check if a value greater than or equal to the value of the constraint.
+
+        :param value: the value to check.
+        :return: ``True`` if the value satisfy the constraint, ``False`` otherwise.
+        """
         return value >= self.value
 
 
 class Range(ConstraintType):
     """
     A constraint type that allows you to restrict the values of the attribute in a given range.
+
+    Examples:
+        >>> # all the books published after 2000, included
+        >>> c = Constraint(AttributeSchema("year", int, True), Range((2000, 2005)))
+
+        >>> c.check(Description({"year": 2000}))
+        True
+
+        >>> c.check(Description({"year": 2005}))
+        True
+
+        >>> c.check(Description({"year": 1990}))
+        False
+
+        >>> c.check(Description({"year": 2010}))
+        False
     """
 
     def __init__(self, values: RANGE_TYPES) -> None:
@@ -296,15 +396,21 @@ class Range(ConstraintType):
         elif range_case == "d":
             return cls((range_pb.d.first, range_pb.d.second))
 
+    def check(self, value: ATTRIBUTE_TYPES) -> bool:
+        """
+        Check if a value is in the range specified by the constraint.
+
+        :param value: the value to check.
+        :return: ``True`` if the value satisfy the constraint, ``False`` otherwise.
+        """
+        left, right = self.values
+        return left <= value <= right
+
     def __eq__(self, other):
         if type(other) != Range:
             return False
         else:
             return self.values == other.values
-
-    def check(self, value: ATTRIBUTE_TYPES) -> bool:
-        left, right = self.values
-        return left <= value <= right
 
 
 SET_TYPES = Union[List[float], List[str], List[bool], List[int]]
@@ -403,6 +509,12 @@ class In(Set):
         >>> # all the books whose genre is one of `Horror`, `Science fiction`, `Non-fiction`
         >>> c = Constraint(AttributeSchema("genre", str, True), In(["horror", "science fiction", "non-fiction"]))
 
+        >>> c.check(Description({"genre": "horror"}))
+        True
+
+        >>> c.check(Description({"genre": "thriller"}))
+        False
+
     """
 
     def __init__(self, values: SET_TYPES):
@@ -412,6 +524,12 @@ class In(Set):
         return query_pb2.Query.Set.IN
 
     def check(self, value: ATTRIBUTE_TYPES) -> bool:
+        """
+        Check if a value is in the set of values specified by the constraint.
+
+        :param value: the value to check.
+        :return: ``True`` if the value satisfy the constraint, ``False`` otherwise.
+        """
         return value in self.values
 
 
@@ -426,6 +544,12 @@ class NotIn(Set):
         >>> # all the books that have not been published neither in 1990, nor in 1995, nor in 2000
         >>> c = Constraint(AttributeSchema("year", int, True), NotIn([1990, 1995, 2000]))
 
+        >>> c.check(Description({"year": 1991}))
+        True
+
+        >>> c.check(Description({"year": 2000}))
+        False
+
     """
 
     def __init__(self, values: SET_TYPES):
@@ -435,6 +559,12 @@ class NotIn(Set):
         return query_pb2.Query.Set.NOTIN
 
     def check(self, value: ATTRIBUTE_TYPES) -> bool:
+        """
+        Check if a value is not in the set of values specified by the constraint.
+
+        :param value: the value to check.
+        :return: ``True`` if the value satisfy the constraint, ``False`` otherwise.
+        """
         return value not in self.values
 
 
@@ -447,6 +577,15 @@ class And(ConstraintType):
 
         >>> # all the books whose title is between 'I' and 'J' (alphanumeric order) but not equal to 'It'
         >>> c = Constraint(AttributeSchema("title", str, True),   And([Range(("I", "J")), NotEq("It")]))
+
+        >>> c.check(Description({"title": "I, Robot"}))
+        True
+
+        >>> c.check(Description({"title": "It"}))
+        False
+
+        >>> c.check(Description({"title": "1984"}))
+        False
 
     """
     def __init__(self, constraints: List[ConstraintType]) -> None:
@@ -482,6 +621,12 @@ class And(ConstraintType):
         return cls(expr)
 
     def check(self, value: ATTRIBUTE_TYPES) -> bool:
+        """
+        Check if a value satisfies all the constraints of the ``And`` constraint.
+
+        :param value: the value to check.
+        :return: ``True`` if the value satisfy the constraint, ``False`` otherwise.
+        """
         return all(expr.check(value) for expr in self.constraints)
 
     def __eq__(self, other):
@@ -501,6 +646,18 @@ class Or(ConstraintType):
 
         >>> # all the books that have been published either before the year 1960 or after the year 1970
         >>> c = Constraint(AttributeSchema("year", int, True),   Or([Lt(1960), Gt(1970)]))
+
+        >>> c.check(Description({"year": 1950}))
+        True
+
+        >>> c.check(Description({"year": 1975}))
+        True
+
+        >>> c.check(Description({"year": 1960}))
+        False
+
+        >>> c.check(Description({"year": 1970}))
+        False
 
     """
 
@@ -537,6 +694,12 @@ class Or(ConstraintType):
         return cls(expr)
 
     def check(self, value: ATTRIBUTE_TYPES) -> bool:
+        """
+        Check if a value satisfies one of the constraints of the ``Or`` constraint.
+
+        :param value: the value to check.
+        :return: ``True`` if the value satisfy the constraint, ``False`` otherwise.
+        """
         return any(expr.check(value) for expr in self.constraints)
 
     def __eq__(self, other):

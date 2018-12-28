@@ -35,7 +35,6 @@ from oef.query import Eq, NotEq, Lt, LtEq, Gt, GtEq, Range, In, NotIn, And, Or, 
 from oef.schema import ATTRIBUTE_TYPES, AttributeSchema, DataModel, Description
 
 
-
 def _is_attribute_type(t: typing.Type) -> bool:
     """
     Check if a type is a valid attribute schema type.

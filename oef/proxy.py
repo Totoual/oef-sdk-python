@@ -343,12 +343,25 @@ class OEFLocalProxy(OEFProxy):
         def search_agents(self, public_key: str, search_id: int, query: Query) -> None:
             """Since the agent directory and the instance checking are not implemented,
             just send a dummy search result message, returning all the connected agents."""
-            self._send_search_result(public_key, search_id, sorted(self.agents.keys()))
+
+            result = []
+            for agent_public_key, description in self.agents.items():
+                if query.check(description):
+                    result.append(agent_public_key)
+
+            self._send_search_result(public_key, search_id, sorted(set(result)))
 
         def search_services(self, public_key: str, search_id: int, query: Query) -> None:
             """Since the service directory and the instance checking are not implemented,
             just send a dummy search result message, returning all the connected agents."""
-            self._send_search_result(public_key, search_id, sorted(self.services.keys()))
+            
+            result = []
+            for agent_public_key, descriptions in self.services.items():
+                for description in descriptions:
+                    if query.check(description):
+                        result.append(agent_public_key)
+
+            self._send_search_result(public_key, search_id, sorted(set(result)))
 
         def _send_agent_message(self, origin: str, msg: AgentMessage) -> None:
             """

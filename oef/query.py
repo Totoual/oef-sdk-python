@@ -561,8 +561,8 @@ class And(ConstraintType):
         False
         >>> c.check(Description({"title": "1984"}))
         False
-
     """
+
     def __init__(self, constraints: List[ConstraintType]) -> None:
         """
         Initialize an ``And`` constraint.
@@ -629,7 +629,6 @@ class Or(ConstraintType):
         False
         >>> c.check(Description({"year": 1970}))
         False
-
     """
 
     def __init__(self, constraints: List[ConstraintType]) -> None:

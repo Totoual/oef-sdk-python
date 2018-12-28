@@ -26,9 +26,9 @@ from unittest.mock import patch
 import pytest
 
 from oef.agents import Agent, OEFAgent, LocalAgent
-from oef.schema import Description, DataModel
+from oef.schema import Description, DataModel, AttributeSchema
 
-from oef.query import Query
+from oef.query import Query, Constraint, Gt
 
 from oef.proxy import OEFLocalProxy, OEFNetworkProxy, OEFConnectionError
 from test.conftest import _ASYNCIO_DELAY
@@ -217,18 +217,29 @@ def test_on_search_result_services(oef_network_node, is_local):
 
         agent_0, agent_1, agent_2 = agents
 
-        dummy_datamodel = DataModel("dummy_datamodel", [])
-        agent_1.register_service(Description({}, dummy_datamodel))
-        agent_2.register_service(Description({}, dummy_datamodel))
+        foo_attr = AttributeSchema("foo", int, False, "A foo attribute.")
+        bar_attr = AttributeSchema("bar", str, False, "A bar attribute.")
+
+        dummy_datamodel = DataModel("dummy_datamodel", [foo_attr, bar_attr])
+        desc_1 = Description({"foo": 15, "bar": "BAR"}, dummy_datamodel)
+        desc_2 = Description({"foo": 5, "bar": "ABC"}, dummy_datamodel)
+        agent_1.register_service(desc_1)
+        agent_2.register_service(desc_2)
 
         agent_0.search_services(0, Query([], dummy_datamodel))
+        agent_0.search_services(0, Query([
+            Constraint(foo_attr, Gt(10)),
+            Constraint(bar_attr, Gt("B")),
+        ], dummy_datamodel))
+
         asyncio.ensure_future(agent_0.async_run())
         asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
-        agent_1.unregister_service(Description({}, dummy_datamodel))
-        agent_2.unregister_service(Description({}, dummy_datamodel))
+        agent_1.unregister_service(desc_1)
+        agent_2.unregister_service(desc_2)
 
-        assert len(agent_0.received_msg) == 1
+        assert len(agent_0.received_msg) == 2 
         assert agent_0.received_msg[0] == (0, [agent_1.public_key, agent_2.public_key])
+        assert agent_0.received_msg[1] == (0, [agent_1.public_key])
 
 
 @pytest.mark.parametrize("is_local", [True, False], ids=["local", "networked"])
@@ -240,19 +251,28 @@ def test_on_search_result_agents(oef_network_node, is_local):
     with setup_test_agents(3, is_local, prefix="search_agents") as agents:
 
         agent_0, agent_1, agent_2 = agents
+        foo_attr = AttributeSchema("foo", int, False, "A foo attribute.")
+        bar_attr = AttributeSchema("bar", str, False, "A bar attribute.")
 
-        dummy_datamodel = DataModel("dummy_datamodel", [])
-        agent_1.register_agent(Description({}, dummy_datamodel))
-        agent_2.register_agent(Description({}, dummy_datamodel))
+        dummy_datamodel = DataModel("dummy_datamodel", [foo_attr, bar_attr])
+        agent_1.register_agent(Description({"foo": 15, "bar": "BAR"}, dummy_datamodel))
+        agent_2.register_agent(Description({"foo": 5, "bar": "ABC"}, dummy_datamodel))
 
         agent_0.search_agents(0, Query([], dummy_datamodel))
+
+        agent_0.search_agents(0, Query([
+            Constraint(foo_attr, Gt(10)),
+            Constraint(bar_attr, Gt("B")),
+        ], dummy_datamodel))
+
         asyncio.ensure_future(agent_0.async_run())
         asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
         agent_1.unregister_agent()
         agent_2.unregister_agent()
 
-        assert len(agent_0.received_msg) == 1
+        assert len(agent_0.received_msg) == 2 
         assert agent_0.received_msg[0] == (0, [agent_1.public_key, agent_2.public_key])
+        assert agent_0.received_msg[1] == (0, [agent_1.public_key])
 
 
 @pytest.mark.parametrize("is_local", [True, False], ids=["local", "networked"])

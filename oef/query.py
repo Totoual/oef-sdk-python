@@ -158,10 +158,8 @@ class Eq(Relation):
     Examples:
         >>> # all the books whose author is Stephen King
         >>> c = Constraint(AttributeSchema("author", str, True),  Eq("Stephen King"))
-
         >>> c.check(Description({"author": "Stephen King"}))
         True
-
         >>> c.check(Description({"author": "George Orwell"}))
         False
 
@@ -187,11 +185,8 @@ class NotEq(Relation):
     Examples:
         >>> # all the books that are not of the genre Horror
         >>> c = Constraint(AttributeSchema("genre", str, True),   NotEq("horror"))
-
-
         >>> c.check(Description({"genre": "non-fiction"}))
         True
-
         >>> c.check(Description({"author": "horror"}))
         False
 
@@ -216,10 +211,8 @@ class Lt(Relation):
     Examples:
         >>> # all the books published before 1990
         >>> c = Constraint(AttributeSchema("year", int, True), Lt(1990))
-
         >>> c.check(Description({"year": 1985}))
         True
-
         >>> c.check(Description({"year": 2000}))
         False
 
@@ -245,10 +238,8 @@ class LtEq(Relation):
     Examples:
         >>> # all the books published before 1990, 1990 included
         >>> c = Constraint(AttributeSchema("year", int, True), LtEq(1990))
-
         >>> c.check(Description({"year": 1990}))
         True
-
         >>> c.check(Description({"year": 1991}))
         False
 
@@ -274,13 +265,10 @@ class Gt(Relation):
     Examples:
         >>> # all the books with rating greater than 4.0
         >>> c = Constraint(AttributeSchema("average_rating", float, True), Gt(4.0))
-
         >>> c.check(Description({"average_rating": 4.5}))
         True
-
         >>> c.check(Description({"average_rating": 3.0}))
         False
-
     """
 
     def operator(self):
@@ -303,10 +291,8 @@ class GtEq(Relation):
     Examples:
         >>> # all the books published after 2000, included
         >>> c = Constraint(AttributeSchema("year", int, True), GtEq(2000))
-
         >>> c.check(Description({"year": 2000}))
         True
-
         >>> c.check(Description({"year": 1990}))
         False
     """
@@ -331,16 +317,12 @@ class Range(ConstraintType):
     Examples:
         >>> # all the books published after 2000, included
         >>> c = Constraint(AttributeSchema("year", int, True), Range((2000, 2005)))
-
         >>> c.check(Description({"year": 2000}))
         True
-
         >>> c.check(Description({"year": 2005}))
         True
-
         >>> c.check(Description({"year": 1990}))
         False
-
         >>> c.check(Description({"year": 2010}))
         False
     """
@@ -508,10 +490,8 @@ class In(Set):
 
         >>> # all the books whose genre is one of `Horror`, `Science fiction`, `Non-fiction`
         >>> c = Constraint(AttributeSchema("genre", str, True), In(["horror", "science fiction", "non-fiction"]))
-
         >>> c.check(Description({"genre": "horror"}))
         True
-
         >>> c.check(Description({"genre": "thriller"}))
         False
 
@@ -543,10 +523,8 @@ class NotIn(Set):
 
         >>> # all the books that have not been published neither in 1990, nor in 1995, nor in 2000
         >>> c = Constraint(AttributeSchema("year", int, True), NotIn([1990, 1995, 2000]))
-
         >>> c.check(Description({"year": 1991}))
         True
-
         >>> c.check(Description({"year": 2000}))
         False
 
@@ -577,13 +555,10 @@ class And(ConstraintType):
 
         >>> # all the books whose title is between 'I' and 'J' (alphanumeric order) but not equal to 'It'
         >>> c = Constraint(AttributeSchema("title", str, True),   And([Range(("I", "J")), NotEq("It")]))
-
         >>> c.check(Description({"title": "I, Robot"}))
         True
-
         >>> c.check(Description({"title": "It"}))
         False
-
         >>> c.check(Description({"title": "1984"}))
         False
 
@@ -646,16 +621,12 @@ class Or(ConstraintType):
 
         >>> # all the books that have been published either before the year 1960 or after the year 1970
         >>> c = Constraint(AttributeSchema("year", int, True),   Or([Lt(1960), Gt(1970)]))
-
         >>> c.check(Description({"year": 1950}))
         True
-
         >>> c.check(Description({"year": 1975}))
         True
-
         >>> c.check(Description({"year": 1960}))
         False
-
         >>> c.check(Description({"year": 1970}))
         False
 
@@ -754,7 +725,6 @@ class Constraint(ProtobufSerializable):
             >>> attr_year   = AttributeSchema("year",    int, True, "The year of publication of the book.")
             >>> c1 = Constraint(attr_author, Eq("Stephen King"))
             >>> c2 = Constraint(attr_year, Gt(1990))
-
             >>> book_1 = Description({"author": "Stephen King",  "year": 1991})
             >>> book_2 = Description({"author": "George Orwell", "year": 1948})
 
@@ -817,7 +787,6 @@ class Query(ProtobufSerializable):
         With a query, you can check that a `~oef.schema.Description` object satisfies the constraints.
         >>> q.check(Description({"author": "Stephen King", "year": 1991, "ebook_available": True}))
         True
-
         >>> q.check(Description({"author": "George Orwell", "year": 1948, "ebook_available": False}))
         False
 

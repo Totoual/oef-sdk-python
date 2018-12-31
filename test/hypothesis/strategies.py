@@ -100,7 +100,7 @@ def schema_instances(draw, attributes: List[AttributeSchema]):
         return {}
     else:
         keys, types, required_flags = zip(*[(a.name, a.type, a.required) for a in attributes])
-        values = [draw(from_type(type_)) for type_ in types]
+        values = [draw(from_type(type_).filter(is_correct_attribute_value)) for type_ in types]
         return {k: v for k, v, r in zip(keys, values, required_flags) if r or draw(booleans())}
 
 

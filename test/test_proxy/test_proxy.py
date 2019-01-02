@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 # ------------------------------------------------------------------------------
 #
 #   Copyright 2018 Fetch.AI Limited
@@ -17,60 +16,78 @@
 #   limitations under the License.
 #
 # ------------------------------------------------------------------------------
-
 import asyncio
 import contextlib
-from typing import List, Tuple
+from typing import List
+from unittest import mock
 from unittest.mock import patch
 
 import pytest
-
 from oef.agents import Agent, OEFAgent, LocalAgent
-from oef.schema import Description, DataModel, AttributeSchema
 
-from oef.query import Query, Constraint, Gt
+from oef.schema import Description, AttributeSchema, DataModel
 
-from oef.proxy import OEFLocalProxy, OEFNetworkProxy, OEFConnectionError
-from test.conftest import _ASYNCIO_DELAY
+from oef.query import Query, Gt, Constraint
+
+from oef.core import OEFProxy
+
+from oef.proxy import OEFNetworkProxy, OEFLocalProxy, OEFConnectionError
+from test.conftest import _ASYNCIO_DELAY, NetworkOEFNode
 from test.test_proxy.agent_test import AgentTest
+
+parametrize_node_configurations = pytest.mark.parametrize("local", [True, False], ids=["local", "networked"])
+
+
+@contextlib.contextmanager
+def setup_local_proxies(n: int, prefix: str):
+    public_key_prefix = prefix + "-" if prefix else ""
+    local_node = OEFLocalProxy.LocalNode()
+    proxies = [OEFLocalProxy("{}agent-{}".format(public_key_prefix, i), local_node) for i in range(n)]
+    try:
+        asyncio.ensure_future(local_node.run())
+        yield proxies
+    except BaseException:
+        raise
+    finally:
+        for p in proxies:
+            p.stop()
+        local_node.stop()
+
+
+@contextlib.contextmanager
+def setup_network_proxies(n: int, prefix: str):
+    public_key_prefix = prefix + "-" if prefix else ""
+    proxies = [OEFNetworkProxy("{}agent-{}".format(public_key_prefix, i), "127.0.0.1", 3333) for i in range(n)]
+    try:
+        with NetworkOEFNode() as node:
+            yield proxies
+    except BaseException:
+        raise
+    finally:
+        for p in proxies:
+            p.stop()
+
+
+@contextlib.contextmanager
+def setup_test_proxies(n: int, local: bool, prefix: str="") -> List[OEFProxy]:
+    if local:
+        context = setup_local_proxies(n, prefix)
+    else:
+        context = setup_network_proxies(n, prefix)
+
+    with context as proxies:
+        yield proxies
 
 
 @contextlib.contextmanager
 def setup_test_agents(n: int, local: bool, prefix: str="") -> List[AgentTest]:
-    agents, local_node = _init_context(n, local, prefix)
-    try:
-        yield agents
-    except Exception:
-        raise
-    finally:
-        if local_node:
-            local_node.stop()
-        _stop_agents(agents)
-
-
-def _init_context(n: int, local: bool, prefix: str= "") -> Tuple[List[AgentTest], OEFLocalProxy.LocalNode]:
-    """
-    Initialize a context for testing agent communications.
-
-    :param n: the number of agents.
-    :param local: whether the context is local or networked.
-    :param prefix: the prefix to add at the beginning of every agent public key.
-    :return:
-    """
-    public_key_prefix = prefix + "-" if prefix else ""
-    local_node = None
-    if local:
-        local_node = OEFLocalProxy.LocalNode()
-        proxies = [OEFLocalProxy("{}agent-{}".format(public_key_prefix, i), local_node) for i in range(n)]
-        asyncio.ensure_future(local_node.run())
-    else:
-        proxies = [OEFNetworkProxy("{}agent-{}".format(public_key_prefix, i), "127.0.0.1", 3333) for i in range(n)]
-
-    agents = [AgentTest(proxy) for proxy in proxies]
-    for a in agents:
-        a.connect()
-
-    return agents, local_node
+    with setup_test_proxies(n, local, prefix) as proxies:
+        agents = [AgentTest(proxy) for proxy in proxies]
+        try:
+            yield agents
+        except Exception:
+            raise
+    _stop_agents(agents)
 
 
 def _stop_agents(agents):
@@ -81,242 +98,332 @@ def _stop_agents(agents):
         asyncio.get_event_loop().run_until_complete(t)
 
 
-@pytest.mark.parametrize("is_local", [True, False], ids=["local", "networked"])
-def test_on_message(oef_network_node, is_local):
-    """
-    Test that 3 agents can send a simple message to themselves and each other and that
-    the messages are properly processed and dispatched.
-    """
-    with setup_test_agents(3, is_local, prefix="on_message") as agents:
-        agent_0, agent_1, agent_2 = agents
+class TestConnect:
 
-        msg = b"hello"
+    @parametrize_node_configurations
+    def test_that_one_agent_can_connect(self, local):
+        with setup_test_agents(1, local, prefix="connect") as agents:
+            agent = agents[0]
+            status = agent.connect()
+            assert status
 
-        agent_0.send_message(0, agent_0.public_key, msg)
-        agent_0.send_message(0, agent_1.public_key, msg)
-        agent_0.send_message(0, agent_2.public_key, msg)
+    @parametrize_node_configurations
+    def test_that_two_connect_attempts_work_correctly(self, local):
+        with setup_test_agents(1, local, prefix="connect") as agents:
+            agent = agents[0]
+            first_status = agent.connect()
+            second_status = agent.connect()
 
-        agent_1.send_message(0, agent_0.public_key, msg)
-        agent_1.send_message(0, agent_1.public_key, msg)
-        agent_1.send_message(0, agent_2.public_key, msg)
+            assert first_status
+            assert second_status
 
-        agent_2.send_message(0, agent_0.public_key, msg)
-        agent_2.send_message(0, agent_1.public_key, msg)
-        agent_2.send_message(0, agent_2.public_key, msg)
+    def test_connection_error_public_key_already_in_use(self):
+        """Test that a OEFConnectionError is raised when we try to connect two agents with the same public key."""
+        with pytest.raises(OEFConnectionError, match="Public key already in use."):
+            with NetworkOEFNode():
+                agent_1 = OEFAgent("the_same_public_key", "127.0.0.1", 3333)
+                agent_2 = OEFAgent(agent_1.public_key, "127.0.0.1", 3333)
+                agent_1.connect()
+                agent_2.connect()
 
-        asyncio.ensure_future(asyncio.gather(
-                agent_0.async_run(),
-                agent_1.async_run(),
-                agent_2.async_run()))
-        asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
-
-        assert len(agent_0.received_msg) == 3
-        assert len(agent_1.received_msg) == 3
-        assert len(agent_2.received_msg) == 3
-
-        assert agent_0.received_msg[0] == (agent_0.public_key, 0, msg)
-        assert agent_0.received_msg[1] == (agent_1.public_key, 0, msg)
-        assert agent_0.received_msg[2] == (agent_2.public_key, 0, msg)
-        assert agent_1.received_msg[0] == (agent_0.public_key, 0, msg)
-        assert agent_1.received_msg[1] == (agent_1.public_key, 0, msg)
-        assert agent_1.received_msg[2] == (agent_2.public_key, 0, msg)
-        assert agent_2.received_msg[0] == (agent_0.public_key, 0, msg)
-        assert agent_2.received_msg[1] == (agent_1.public_key, 0, msg)
-        assert agent_2.received_msg[2] == (agent_2.public_key, 0, msg)
+    def test_connection_error_public_key_already_in_use_local_node(self):
+        """Test that a OEFConnectionError is raised when we try to connect two agents with the same public key.
+        Local version."""
+        with pytest.raises(OEFConnectionError, match="Public key already in use."):
+            with OEFLocalProxy.LocalNode() as local_node:
+                agent_1 = LocalAgent("the_same_public_key", local_node)
+                agent_2 = LocalAgent(agent_1.public_key, local_node)
+                agent_1.connect()
+                agent_2.connect()
 
 
-@pytest.mark.parametrize("is_local", [True, False], ids=["local", "networked"])
-def test_on_cfp(oef_network_node, is_local):
-    """
-    Test that an agent can send a CFP to another agent, with different types of queries.
-    """
+class TestSimpleMessage:
 
-    with setup_test_agents(2, is_local, prefix="on_cfp") as agents:
-        agent_0, agent_1 = agents
+    @parametrize_node_configurations
+    def test_on_message(self, local):
+        """
+        Test that 3 agents can send a simple message to themselves and each other and that
+        the messages are properly processed and dispatched.
+        """
+        with setup_test_agents(3, local, prefix="on_message") as agents:
 
-        agent_0.send_cfp(0, agent_1.public_key, None, 1, 0)
-        agent_0.send_cfp(0, agent_1.public_key, b"hello", 1, 0)
-        agent_0.send_cfp(0, agent_1.public_key, Query([]), 1, 0)
+            for a in agents:
+                a.connect()
 
-        asyncio.ensure_future(agent_1.async_run())
-        asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
+            agent_0, agent_1, agent_2 = agents
 
-        assert len(agent_1.received_msg) == 3
-        assert agent_1.received_msg[0] == (agent_0.public_key, 0, 1, 0, None)
-        assert agent_1.received_msg[1] == (agent_0.public_key, 0, 1, 0, b"hello")
-        assert agent_1.received_msg[2] == (agent_0.public_key, 0, 1, 0, Query([]))
+            msg = b"hello"
 
+            agent_0.send_message(0, agent_0.public_key, msg)
+            agent_0.send_message(0, agent_1.public_key, msg)
+            agent_0.send_message(0, agent_2.public_key, msg)
 
-@pytest.mark.parametrize("is_local", [True, False], ids=["local", "networked"])
-def test_on_propose(oef_network_node, is_local):
-    """
-    Test that an agent can send a Propose to another agent, with different types of proposals.
-    """
+            agent_1.send_message(0, agent_0.public_key, msg)
+            agent_1.send_message(0, agent_1.public_key, msg)
+            agent_1.send_message(0, agent_2.public_key, msg)
 
-    with setup_test_agents(2, is_local, prefix="on_propose") as agents:
+            agent_2.send_message(0, agent_0.public_key, msg)
+            agent_2.send_message(0, agent_1.public_key, msg)
+            agent_2.send_message(0, agent_2.public_key, msg)
 
-        agent_0, agent_1 = agents
+            asyncio.ensure_future(asyncio.gather(
+                    agent_0.async_run(),
+                    agent_1.async_run(),
+                    agent_2.async_run()))
+            asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
 
-        agent_0.send_propose(0, agent_1.public_key, b"hello", 1, 0)
-        agent_0.send_propose(0, agent_1.public_key, [], 1, 0)
-        agent_0.send_propose(0, agent_1.public_key, [Description({})], 1, 0)
-        agent_0.send_propose(0, agent_1.public_key, [Description({}), Description({})], 1, 0)
+            assert len(agent_0.received_msg) == 3
+            assert len(agent_1.received_msg) == 3
+            assert len(agent_2.received_msg) == 3
 
-        asyncio.ensure_future(agent_1.async_run())
-        asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
-
-        assert len(agent_1.received_msg) == 4
-        assert agent_1.received_msg[0] == (agent_0.public_key, 0, 1, 0, b"hello")
-        assert agent_1.received_msg[1] == (agent_0.public_key, 0, 1, 0, [])
-        assert agent_1.received_msg[2] == (agent_0.public_key, 0, 1, 0, [Description({})])
-        assert agent_1.received_msg[3] == (agent_0.public_key, 0, 1, 0, [Description({}), Description({})])
-
-
-@pytest.mark.parametrize("is_local", [True, False], ids=["local", "networked"])
-def test_on_accept(oef_network_node, is_local):
-    """
-    Test that an agent can send an Accept to another agent.
-    """
-
-    with setup_test_agents(2, is_local, prefix="on_accept") as agents:
-        agent_0, agent_1 = agents
-
-        agent_0.send_accept(0, agent_1.public_key, 1, 0)
-
-        asyncio.ensure_future(agent_1.async_run())
-        asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
-
-        assert len(agent_1.received_msg) == 1
-        assert agent_1.received_msg[0] == (agent_0.public_key, 0, 1, 0)
+            assert agent_0.received_msg[0] == (agent_0.public_key, 0, msg)
+            assert agent_0.received_msg[1] == (agent_1.public_key, 0, msg)
+            assert agent_0.received_msg[2] == (agent_2.public_key, 0, msg)
+            assert agent_1.received_msg[0] == (agent_0.public_key, 0, msg)
+            assert agent_1.received_msg[1] == (agent_1.public_key, 0, msg)
+            assert agent_1.received_msg[2] == (agent_2.public_key, 0, msg)
+            assert agent_2.received_msg[0] == (agent_0.public_key, 0, msg)
+            assert agent_2.received_msg[1] == (agent_1.public_key, 0, msg)
+            assert agent_2.received_msg[2] == (agent_2.public_key, 0, msg)
 
 
-@pytest.mark.parametrize("is_local", [True, False], ids=["local", "networked"])
-def test_on_decline(oef_network_node, is_local):
-    """
-    Test that an agent can send a Decline to another agent.
-    """
+class TestCFP:
 
-    with setup_test_agents(2, is_local, prefix="on_decline") as agents:
-        agent_0, agent_1 = agents
+    @parametrize_node_configurations
+    def test_on_cfp(self, local):
+        """
+        Test that an agent can send a CFP to another agent, with different types of queries.
+        """
 
-        agent_0.send_decline(0, agent_1.public_key, 1, 0)
-        asyncio.ensure_future(agent_1.async_run())
-        asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
+        with setup_test_agents(2, local, prefix="on_cfp") as agents:
 
-        assert len(agent_1.received_msg) == 1
-        assert agent_1.received_msg[0] == (agent_0.public_key, 0, 1, 0)
+            for a in agents:
+                a.connect()
 
+            agent_0, agent_1 = agents
 
-@pytest.mark.parametrize("is_local", [True, False], ids=["local", "networked"])
-def test_on_search_result_services(oef_network_node, is_local):
-    """
-    Test that an agent can do a search for services.
-    """
+            agent_0.send_cfp(0, agent_1.public_key, None, 1, 0)
+            agent_0.send_cfp(0, agent_1.public_key, b"hello", 1, 0)
+            agent_0.send_cfp(0, agent_1.public_key, Query([]), 1, 0)
 
-    with setup_test_agents(3, is_local, prefix="search_services") as agents:
+            asyncio.ensure_future(agent_1.async_run())
+            asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
 
-        agent_0, agent_1, agent_2 = agents
-
-        foo_attr = AttributeSchema("foo", int, False, "A foo attribute.")
-        bar_attr = AttributeSchema("bar", str, False, "A bar attribute.")
-
-        dummy_datamodel = DataModel("dummy_datamodel", [foo_attr, bar_attr])
-        desc_1 = Description({"foo": 15, "bar": "BAR"}, dummy_datamodel)
-        desc_2 = Description({"foo": 5, "bar": "ABC"}, dummy_datamodel)
-        agent_1.register_service(desc_1)
-        agent_2.register_service(desc_2)
-
-        agent_0.search_services(0, Query([], dummy_datamodel))
-        agent_0.search_services(0, Query([
-            Constraint(foo_attr, Gt(10)),
-            Constraint(bar_attr, Gt("B")),
-        ], dummy_datamodel))
-
-        asyncio.ensure_future(agent_0.async_run())
-        asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
-        agent_1.unregister_service(desc_1)
-        agent_2.unregister_service(desc_2)
-
-        assert len(agent_0.received_msg) == 2 
-        assert agent_0.received_msg[0] == (0, [agent_1.public_key, agent_2.public_key])
-        assert agent_0.received_msg[1] == (0, [agent_1.public_key])
+            assert len(agent_1.received_msg) == 3
+            assert agent_1.received_msg[0] == (agent_0.public_key, 0, 1, 0, None)
+            assert agent_1.received_msg[1] == (agent_0.public_key, 0, 1, 0, b"hello")
+            assert agent_1.received_msg[2] == (agent_0.public_key, 0, 1, 0, Query([]))
 
 
-@pytest.mark.parametrize("is_local", [True, False], ids=["local", "networked"])
-def test_on_search_result_agents(oef_network_node, is_local):
-    """
-    Test that an agent can do a search for agents.
-    """
+class TestPropose:
 
-    with setup_test_agents(3, is_local, prefix="search_agents") as agents:
+    @parametrize_node_configurations
+    def test_on_propose(self, local):
+        """
+        Test that an agent can send a Propose to another agent, with different types of proposals.
+        """
 
-        agent_0, agent_1, agent_2 = agents
-        foo_attr = AttributeSchema("foo", int, False, "A foo attribute.")
-        bar_attr = AttributeSchema("bar", str, False, "A bar attribute.")
+        with setup_test_agents(2, local, prefix="on_propose") as agents:
 
-        dummy_datamodel = DataModel("dummy_datamodel", [foo_attr, bar_attr])
-        agent_1.register_agent(Description({"foo": 15, "bar": "BAR"}, dummy_datamodel))
-        agent_2.register_agent(Description({"foo": 5, "bar": "ABC"}, dummy_datamodel))
+            for a in agents:
+                a.connect()
 
-        agent_0.search_agents(0, Query([], dummy_datamodel))
+            agent_0, agent_1 = agents
 
-        agent_0.search_agents(0, Query([
-            Constraint(foo_attr, Gt(10)),
-            Constraint(bar_attr, Gt("B")),
-        ], dummy_datamodel))
+            agent_0.send_propose(0, agent_1.public_key, b"hello", 1, 0)
+            agent_0.send_propose(0, agent_1.public_key, [], 1, 0)
+            agent_0.send_propose(0, agent_1.public_key, [Description({})], 1, 0)
+            agent_0.send_propose(0, agent_1.public_key, [Description({}), Description({})], 1, 0)
 
-        asyncio.ensure_future(agent_0.async_run())
-        asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
-        agent_1.unregister_agent()
-        agent_2.unregister_agent()
+            asyncio.ensure_future(agent_1.async_run())
+            asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
 
-        assert len(agent_0.received_msg) == 2 
-        assert agent_0.received_msg[0] == (0, [agent_1.public_key, agent_2.public_key])
-        assert agent_0.received_msg[1] == (0, [agent_1.public_key])
+            assert len(agent_1.received_msg) == 4
+            assert agent_1.received_msg[0] == (agent_0.public_key, 0, 1, 0, b"hello")
+            assert agent_1.received_msg[1] == (agent_0.public_key, 0, 1, 0, [])
+            assert agent_1.received_msg[2] == (agent_0.public_key, 0, 1, 0, [Description({})])
+            assert agent_1.received_msg[3] == (agent_0.public_key, 0, 1, 0, [Description({}), Description({})])
 
 
-@pytest.mark.parametrize("is_local", [True, False], ids=["local", "networked"])
-def test_unregister_agent(oef_network_node, is_local):
-    """
-    Test that the unregistration of agents works correctly.
-    """
+class TestAccept:
 
-    with setup_test_agents(2, is_local, prefix="unregister_agent") as agents:
+    @parametrize_node_configurations
+    def test_on_accept(self, local):
+        """
+        Test that an agent can send an Accept to another agent.
+        """
 
-        agent_0, agent_1 = agents
+        with setup_test_agents(2, local, prefix="on_accept") as agents:
 
-        dummy_datamodel = DataModel("dummy_datamodel", [])
-        agent_1.register_agent(Description({}, dummy_datamodel))
-        agent_1.unregister_agent()
+            for a in agents:
+                a.connect()
 
-        agent_0.search_agents(0, Query([], dummy_datamodel))
-        asyncio.ensure_future(agent_0.async_run())
-        asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
+            agent_0, agent_1 = agents
 
-        assert len(agent_0.received_msg) == 1
-        assert agent_0.received_msg[0] == (0, [])
+            agent_0.send_accept(0, agent_1.public_key, 1, 0)
+
+            asyncio.ensure_future(agent_1.async_run())
+            asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
+
+            assert len(agent_1.received_msg) == 1
+            assert agent_1.received_msg[0] == (agent_0.public_key, 0, 1, 0)
 
 
-@pytest.mark.parametrize("is_local", [True, False], ids=["local", "networked"])
-def test_unregister_service(oef_network_node, is_local):
-    """
-    Test that the unregistration of services works correctly.
-    """
+class TestDecline:
 
-    with setup_test_agents(2, is_local, prefix="unregister_service") as agents:
-        agent_0, agent_1 = agents
+    @parametrize_node_configurations
+    def test_on_decline(self, local):
+        """
+        Test that an agent can send a Decline to another agent.
+        """
 
-        dummy_datamodel = DataModel("dummy_datamodel", [])
-        dummy_service_description = Description({}, dummy_datamodel)
-        agent_1.register_service(dummy_service_description)
-        agent_1.unregister_service(dummy_service_description)
+        with setup_test_agents(2, local, prefix="on_decline") as agents:
 
-        agent_0.search_services(0, Query([], dummy_datamodel))
-        asyncio.ensure_future(agent_0.async_run())
-        asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
+            for a in agents:
+                a.connect()
 
-        assert len(agent_0.received_msg) == 1
-        assert agent_0.received_msg[0] == (0, [])
+            agent_0, agent_1 = agents
+
+            agent_0.send_decline(0, agent_1.public_key, 1, 0)
+            asyncio.ensure_future(agent_1.async_run())
+            asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
+
+            assert len(agent_1.received_msg) == 1
+            assert agent_1.received_msg[0] == (agent_0.public_key, 0, 1, 0)
+
+
+class TestSearchServices:
+
+    @parametrize_node_configurations
+    def test_on_search_result_services(self, local):
+        """
+        Test that an agent can do a search for services.
+        """
+
+        with setup_test_agents(3, local, prefix="search_services") as agents:
+
+            for a in agents:
+                a.connect()
+
+            agent_0, agent_1, agent_2 = agents
+
+            foo_attr = AttributeSchema("foo", int, False, "A foo attribute.")
+            bar_attr = AttributeSchema("bar", str, False, "A bar attribute.")
+
+            dummy_datamodel = DataModel("dummy_datamodel", [foo_attr, bar_attr])
+            desc_1 = Description({"foo": 15, "bar": "BAR"}, dummy_datamodel)
+            desc_2 = Description({"foo": 5, "bar": "ABC"}, dummy_datamodel)
+            agent_1.register_service(desc_1)
+            agent_2.register_service(desc_2)
+
+            agent_0.search_services(0, Query([], dummy_datamodel))
+            agent_0.search_services(0, Query([
+                Constraint(foo_attr, Gt(10)),
+                Constraint(bar_attr, Gt("B")),
+            ], dummy_datamodel))
+
+            asyncio.ensure_future(agent_0.async_run())
+            asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
+            agent_1.unregister_service(desc_1)
+            agent_2.unregister_service(desc_2)
+
+            assert len(agent_0.received_msg) == 2
+            assert agent_0.received_msg[0] == (0, [agent_1.public_key, agent_2.public_key])
+            assert agent_0.received_msg[1] == (0, [agent_1.public_key])
+
+
+class TestSearchAgents:
+
+    @parametrize_node_configurations
+    def test_on_search_result_agents(self, local):
+        """
+        Test that an agent can do a search for agents.
+        """
+
+        with setup_test_agents(3, local, prefix="search_agents") as agents:
+
+            for a in agents:
+                a.connect()
+
+            agent_0, agent_1, agent_2 = agents
+
+            foo_attr = AttributeSchema("foo", int, False, "A foo attribute.")
+            bar_attr = AttributeSchema("bar", str, False, "A bar attribute.")
+
+            dummy_datamodel = DataModel("dummy_datamodel", [foo_attr, bar_attr])
+            agent_1.register_agent(Description({"foo": 15, "bar": "BAR"}, dummy_datamodel))
+            agent_2.register_agent(Description({"foo": 5, "bar": "ABC"}, dummy_datamodel))
+
+            agent_0.search_agents(0, Query([], dummy_datamodel))
+
+            agent_0.search_agents(0, Query([
+                Constraint(foo_attr, Gt(10)),
+                Constraint(bar_attr, Gt("B")),
+            ], dummy_datamodel))
+
+            asyncio.ensure_future(agent_0.async_run())
+            asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
+            agent_1.unregister_agent()
+            agent_2.unregister_agent()
+
+            assert len(agent_0.received_msg) == 2
+            assert agent_0.received_msg[0] == (0, [agent_1.public_key, agent_2.public_key])
+            assert agent_0.received_msg[1] == (0, [agent_1.public_key])
+
+
+class TestUnregisterAgent:
+
+    @parametrize_node_configurations
+    def test_unregister_agent(self, local):
+        """
+        Test that the unregistration of agents works correctly.
+        """
+
+        with setup_test_agents(2, local, prefix="unregister_agent") as agents:
+
+            for a in agents:
+                a.connect()
+
+            agent_0, agent_1 = agents
+
+            dummy_datamodel = DataModel("dummy_datamodel", [])
+            agent_1.register_agent(Description({}, dummy_datamodel))
+            agent_1.unregister_agent()
+
+            agent_0.search_agents(0, Query([], dummy_datamodel))
+            asyncio.ensure_future(agent_0.async_run())
+            asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
+
+            assert len(agent_0.received_msg) == 1
+            assert agent_0.received_msg[0] == (0, [])
+
+
+class TestUnregisterService:
+
+    @parametrize_node_configurations
+    def test_unregister_service(self, local):
+        """
+        Test that the unregistration of services works correctly.
+        """
+
+        with setup_test_agents(2, local, prefix="unregister_service") as agents:
+
+            for a in agents:
+                a.connect()
+
+            agent_0, agent_1 = agents
+
+            dummy_datamodel = DataModel("dummy_datamodel", [])
+            dummy_service_description = Description({}, dummy_datamodel)
+            agent_1.register_service(dummy_service_description)
+            agent_1.unregister_service(dummy_service_description)
+
+            agent_0.search_services(0, Query([], dummy_datamodel))
+            asyncio.ensure_future(agent_0.async_run())
+            asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
+
+            assert len(agent_0.received_msg) == 1
+            assert agent_0.received_msg[0] == (0, [])
 
 
 def test_connection_error_on_send(oef_network_node):
@@ -335,33 +442,6 @@ def test_connection_error_on_receive(oef_network_node):
         proxy = OEFNetworkProxy("test_oef_connection_error_when_receive", "127.0.0.1", 3333)
         agent = Agent(proxy)
         agent.run()
-
-
-def test_connection_error_public_key_already_in_use(oef_network_node):
-    """Test that a OEFConnectionError is raised when we try to connect two agents with the same public key."""
-    with pytest.raises(OEFConnectionError, match="Public key already in use."):
-        agent_1 = OEFAgent("the_same_public_key", "127.0.0.1", 3333)
-        agent_2 = OEFAgent(agent_1.public_key, "127.0.0.1", 3333)
-        agent_1.connect()
-        agent_2.connect()
-
-
-def test_connection_error_public_key_already_in_use_local_node(oef_network_node):
-    """Test that a OEFConnectionError is raised when we try to connect two agents with the same public key.
-    Local version."""
-    with pytest.raises(OEFConnectionError, match="Public key already in use."):
-        local_node = OEFLocalProxy.LocalNode()
-        agent_1 = LocalAgent("the_same_public_key", local_node)
-        agent_2 = LocalAgent(agent_1.public_key, local_node)
-        agent_1.connect()
-        agent_2.connect()
-
-
-def test_more_than_one_connect_call(oef_network_node):
-    proxy = OEFNetworkProxy("test_more_than_one_connect_call", "127.0.0.1", 3333)
-    agent = Agent(proxy)
-    agent.connect()
-    assert agent.connect()
 
 
 def test_more_than_one_async_run_call(oef_network_node):

@@ -17,8 +17,7 @@
 #   limitations under the License.
 #
 # ------------------------------------------------------------------------------
-
-
+import contextlib
 import inspect
 import os
 import subprocess
@@ -29,7 +28,7 @@ import pytest
 from hypothesis import settings
 
 _ASYNCIO_DELAY = 0.1
-settings(max_examples=1000)
+settings(max_examples=100)
 
 ROOT_DIR = ".."
 OUR_DIRECTORY = os.path.dirname(inspect.getfile(inspect.currentframe()))
@@ -37,6 +36,7 @@ FULL_PATH = [OUR_DIRECTORY, ROOT_DIR, "oef-core", "build", "apps", "node", "OEFN
 PATH_TO_NODE_EXEC = os.path.join(*FULL_PATH)
 
 
+@contextlib.contextmanager
 @pytest.fixture(scope="session")
 def oef_network_node():
     """Set up an instance of the OEF Node.
@@ -46,3 +46,14 @@ def oef_network_node():
     time.sleep(0.01)
     yield
     p.kill()
+
+
+class NetworkOEFNode:
+
+    def __enter__(self):
+        FNULL = open(os.devnull, 'w')
+        self.p = subprocess.Popen(PATH_TO_NODE_EXEC, stdout=FNULL, stderr=subprocess.STDOUT)
+        time.sleep(0.1)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.p.kill()

@@ -32,7 +32,7 @@ import asyncio
 import logging
 import struct
 from collections import defaultdict
-from typing import Optional, Awaitable, Tuple, List
+from typing import Optional, Awaitable, Tuple, List, Dict
 
 import oef.agent_pb2 as agent_pb2
 from oef.core import OEFProxy
@@ -240,22 +240,30 @@ class OEFLocalProxy(OEFProxy):
             self._lock = asyncio.Lock()
             self._task = None
 
-            self.read_queue = asyncio.Queue()  # type: asyncio.Queue
-            self.queues = {}  # type: Dict[str, asyncio.Queue]
+            self._read_queue = asyncio.Queue()  # type: asyncio.Queue
+            self._queues = {}  # type: Dict[str, asyncio.Queue]
             self.loop = asyncio.get_event_loop()
 
-        def connect(self, public_key: str) -> Optional[asyncio.Queue]:
+        def __enter__(self):
+            self.run()
+            return self
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            self.stop()
+
+        def connect(self, public_key: str) -> Optional[Tuple[asyncio.Queue, asyncio.Queue]]:
             """
             Connect a public key to the node.
 
             :param public_key: the public key of the agent.
             :return: an asynchronous queue, that constitutes the communication channel.
             """
-            if public_key in self.queues:
+            if public_key in self._queues:
                 return None
+
             queue = asyncio.Queue()
-            self.queues[public_key] = queue
-            return queue
+            self._queues[public_key] = queue
+            return self._read_queue, queue
 
         async def _process_messages(self) -> None:
             """
@@ -265,7 +273,7 @@ class OEFLocalProxy(OEFProxy):
             """
             while True:
                 try:
-                    data = await self.read_queue.get()  # type: Tuple[str, BaseMessage]
+                    data = await self._read_queue.get()  # type: Tuple[str, BaseMessage]
                 except asyncio.CancelledError:
                     logger.debug("Local Node: loop cancelled.")
                     break
@@ -384,7 +392,7 @@ class OEFLocalProxy(OEFProxy):
             elif payload == "fipa":
                 new_msg.content.fipa.CopyFrom(e.send_message.fipa)
 
-            self.queues[destination].put_nowait(new_msg.SerializeToString())
+            self._queues[destination].put_nowait(new_msg.SerializeToString())
 
         def _send_search_result(self, public_key: str, search_id: int, agents: List[str]) -> None:
             """
@@ -398,13 +406,14 @@ class OEFLocalProxy(OEFProxy):
             msg = agent_pb2.Server.AgentMessage()
             msg.agents.search_id = search_id
             msg.agents.agents.extend(agents)
-            self.queues[public_key].put_nowait(msg.SerializeToString())
+            self._queues[public_key].put_nowait(msg.SerializeToString())
 
     def __init__(self, public_key: str, local_node: LocalNode):
         super().__init__(public_key)
         self.local_node = local_node
-        self.read_queue = asyncio.Queue()
-        self.write_queue = self.local_node.read_queue
+        self._connection = None
+        self._read_queue = None
+        self._write_queue = None
 
     def register_agent(self, agent_description: Description) -> None:
         self.local_node.register_agent(self.public_key, agent_description)
@@ -447,18 +456,21 @@ class OEFLocalProxy(OEFProxy):
         self._send(msg)
 
     async def connect(self) -> bool:
-        queue = self.local_node.connect(self.public_key)
-        if not queue:
+        if self._connection is not None:
+            return True
+
+        self._connection = self.local_node.connect(self.public_key)
+        if self._connection is None:
             return False
-        self.read_queue = queue
+        self._write_queue, self._read_queue = self._connection
         return True
 
     async def _receive(self) -> bytes:
-        data = await self.read_queue.get()
+        data = await self._read_queue.get()
         return data
 
     def _send(self, msg: BaseMessage) -> None:
-        self.write_queue.put_nowait((self.public_key, msg))
+        self._write_queue.put_nowait((self.public_key, msg))
 
     def stop(self):
         pass

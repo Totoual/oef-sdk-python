@@ -35,7 +35,6 @@ from oef.query import Eq, NotEq, Lt, LtEq, Gt, GtEq, Range, In, NotIn, And, Or, 
 from oef.schema import ATTRIBUTE_TYPES, AttributeSchema, DataModel, Description
 
 
-
 def _is_attribute_type(t: typing.Type) -> bool:
     """
     Check if a type is a valid attribute schema type.
@@ -101,7 +100,7 @@ def schema_instances(draw, attributes: List[AttributeSchema]):
         return {}
     else:
         keys, types, required_flags = zip(*[(a.name, a.type, a.required) for a in attributes])
-        values = [draw(from_type(type_)) for type_ in types]
+        values = [draw(from_type(type_).filter(is_correct_attribute_value)) for type_ in types]
         return {k: v for k, v, r in zip(keys, values, required_flags) if r or draw(booleans())}
 
 

@@ -19,7 +19,6 @@
 import asyncio
 import contextlib
 from typing import List
-from unittest import mock
 from unittest.mock import patch
 
 import pytest
@@ -59,7 +58,7 @@ def setup_network_proxies(n: int, prefix: str):
     public_key_prefix = prefix + "-" if prefix else ""
     proxies = [OEFNetworkProxy("{}agent-{}".format(public_key_prefix, i), "127.0.0.1", 3333) for i in range(n)]
     try:
-        with NetworkOEFNode() as node:
+        with NetworkOEFNode():
             yield proxies
     except BaseException:
         raise
@@ -94,47 +93,9 @@ def _stop_agents(agents):
     for a in agents:
         a.stop()
 
-    for t in asyncio.Task.all_tasks():
+    tasks = asyncio.Task.all_tasks()
+    for t in tasks:
         asyncio.get_event_loop().run_until_complete(t)
-
-
-class TestConnect:
-
-    @parametrize_node_configurations
-    def test_that_one_agent_can_connect(self, local):
-        with setup_test_agents(1, local, prefix="connect") as agents:
-            agent = agents[0]
-            status = agent.connect()
-            assert status
-
-    @parametrize_node_configurations
-    def test_that_two_connect_attempts_work_correctly(self, local):
-        with setup_test_agents(1, local, prefix="connect") as agents:
-            agent = agents[0]
-            first_status = agent.connect()
-            second_status = agent.connect()
-
-            assert first_status
-            assert second_status
-
-    def test_connection_error_public_key_already_in_use(self):
-        """Test that a OEFConnectionError is raised when we try to connect two agents with the same public key."""
-        with pytest.raises(OEFConnectionError, match="Public key already in use."):
-            with NetworkOEFNode():
-                agent_1 = OEFAgent("the_same_public_key", "127.0.0.1", 3333)
-                agent_2 = OEFAgent(agent_1.public_key, "127.0.0.1", 3333)
-                agent_1.connect()
-                agent_2.connect()
-
-    def test_connection_error_public_key_already_in_use_local_node(self):
-        """Test that a OEFConnectionError is raised when we try to connect two agents with the same public key.
-        Local version."""
-        with pytest.raises(OEFConnectionError, match="Public key already in use."):
-            with OEFLocalProxy.LocalNode() as local_node:
-                agent_1 = LocalAgent("the_same_public_key", local_node)
-                agent_2 = LocalAgent(agent_1.public_key, local_node)
-                agent_1.connect()
-                agent_2.connect()
 
 
 class TestSimpleMessage:
@@ -475,3 +436,44 @@ def test_send_more_than_2_to_16_bytes_simple_message(oef_network_node):
     assert dialogue_id == 0
     assert origin == agent.public_key
     assert content == b"a" * 2 ** 16
+
+
+def test_that_two_connect_attempts_work_correctly():
+    with NetworkOEFNode():
+        agent_1 = OEFAgent("two_connect_attempt", "127.0.0.1", 3333)
+        first_status = agent_1.connect()
+        second_status = agent_1.connect()
+
+        assert first_status
+        assert second_status
+
+
+def test_that_two_connect_attempts_work_correctly_local_node():
+    with OEFLocalProxy.LocalNode() as local_node:
+        agent_1 = LocalAgent("two_connect_attempt", local_node)
+        first_status = agent_1.connect()
+        second_status = agent_1.connect()
+
+        assert first_status
+        assert second_status
+
+
+def test_connection_error_public_key_already_in_use():
+    """Test that a OEFConnectionError is raised when we try to connect two agents with the same public key."""
+    with pytest.raises(OEFConnectionError, match="Public key already in use."):
+        with NetworkOEFNode():
+            agent_1 = OEFAgent("the_same_public_key", "127.0.0.1", 3333)
+            agent_2 = OEFAgent(agent_1.public_key, "127.0.0.1", 3333)
+            agent_1.connect()
+            agent_2.connect()
+
+
+def test_connection_error_public_key_already_in_use_local_node():
+    """Test that a OEFConnectionError is raised when we try to connect two agents with the same public key.
+    Local version."""
+    with pytest.raises(OEFConnectionError, match="Public key already in use."):
+        with OEFLocalProxy.LocalNode() as local_node:
+            agent_1 = LocalAgent("the_same_public_key", local_node)
+            agent_2 = LocalAgent(agent_1.public_key, local_node)
+            agent_1.connect()
+            agent_2.connect()

@@ -245,7 +245,7 @@ class OEFLocalProxy(OEFProxy):
             self.loop = asyncio.get_event_loop()
 
         def __enter__(self):
-            self.run()
+            self._task = asyncio.ensure_future(self.run())
             return self
 
         def __exit__(self, exc_type, exc_val, exc_tb):
@@ -299,6 +299,7 @@ class OEFLocalProxy(OEFProxy):
             """
             if self._task:
                 self._task.cancel()
+                asyncio.get_event_loop().run_until_complete(self._task)
 
         def register_agent(self, public_key: str, agent_description: Description) -> None:
             """

@@ -297,14 +297,13 @@ class ConnectionInterface(ABC):
         """
 
 
-class AgentInterface(DialogueInterface, ConnectionInterface, OEFCoreInterface, ABC):
+class AgentInterface(DialogueInterface, ConnectionInterface, ABC):
     """
     Interface to be implemented by agents.
     It contains methods from:
 
     * DialogueInterface, that contains handlers for the incoming messages from other agents
     * ConnectionInterface, that contains handlers for error and search result messages from the OEF.
-    * OEFCoreInterface, that contains methods for interact with the OEF and other agents.
     """
     pass
 

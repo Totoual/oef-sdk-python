@@ -82,9 +82,8 @@ def setup_test_agents(n: int, local: bool, prefix: str="") -> List[AgentTest]:
 
 
 def _stop_agents(agents):
-    asyncio.get_event_loop().run_until_complete(
-        asyncio.gather(*[a.async_stop() for a in agents])
-    )
+    for a in agents:
+        a.stop()
 
     tasks = asyncio.Task.all_tasks()
     for t in tasks:

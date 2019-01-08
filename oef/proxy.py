@@ -81,6 +81,9 @@ class OEFNetworkProxy(OEFProxy):
         self._server_reader = None
         self._server_writer = None
 
+    def is_connected(self) -> bool:
+        return self._connection is not None
+
     async def _connect_to_server(self, event_loop) -> Awaitable[Tuple[asyncio.StreamReader, asyncio.StreamWriter]]:
         """
         Connect to the OEF Node.
@@ -214,11 +217,15 @@ class OEFNetworkProxy(OEFProxy):
         msg = Decline(dialogue_id, destination, msg_id, target)
         self._send(msg.to_envelope())
 
-    def stop(self) -> None:
+    async def stop(self) -> None:
         """
         Tear down resources associated with this Proxy, i.e. the writing connection with the server.
         """
+        await self._server_writer.drain()
         self._server_writer.close()
+        self._server_writer = None
+        self._server_reader = None
+        self._connection = None
 
 
 class OEFLocalProxy(OEFProxy):
@@ -473,5 +480,8 @@ class OEFLocalProxy(OEFProxy):
     def _send(self, msg: BaseMessage) -> None:
         self._write_queue.put_nowait((self.public_key, msg))
 
-    def stop(self):
+    async def stop(self):
         pass
+
+    def is_connected(self) -> bool:
+        return self._connection is not None

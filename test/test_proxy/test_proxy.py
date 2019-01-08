@@ -45,8 +45,6 @@ def setup_local_proxies(n: int, prefix: str):
     except BaseException:
         raise
     finally:
-        for p in proxies:
-            p.stop()
         local_node.stop()
 
 
@@ -59,9 +57,6 @@ def setup_network_proxies(n: int, prefix: str):
             yield proxies
     except BaseException:
         raise
-    finally:
-        for p in proxies:
-            p.stop()
 
 
 @contextlib.contextmanager
@@ -87,8 +82,9 @@ def setup_test_agents(n: int, local: bool, prefix: str="") -> List[AgentTest]:
 
 
 def _stop_agents(agents):
-    for a in agents:
-        a.stop()
+    asyncio.get_event_loop().run_until_complete(
+        asyncio.gather(*[a.async_stop() for a in agents])
+    )
 
     tasks = asyncio.Task.all_tasks()
     for t in tasks:

@@ -181,8 +181,9 @@ class OEFCoreInterface(ABC):
         """
 
     @abstractmethod
-    def stop(self):
+    async def stop(self):
         """Stop the proxy."""
+
 
 class DialogueInterface(ABC):
     """
@@ -326,6 +327,10 @@ class OEFProxy(OEFCoreInterface, ABC):
 
         :return: the bytes received from the communication channel.
         """
+
+    @abstractmethod
+    def is_connected(self) -> bool:
+        """Return true if the proxy has already established a connection with the OEF, false otherwise."""
 
     async def loop(self, agent: AgentInterface) -> None:  # noqa: C901
         """

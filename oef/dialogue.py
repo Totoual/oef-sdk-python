@@ -18,13 +18,15 @@
 # ------------------------------------------------------------------------------
 
 from abc import ABC, abstractmethod
-from typing import Dict, Tuple
+from typing import Dict, Tuple, List, Optional
 
 from oef.messages import CFP_TYPES, PROPOSE_TYPES
 
 from oef import agent_pb2
 from oef.agents import Agent
 from oef.core import DialogueInterface, OEFProxy
+
+import uuid
 
 DialogueKey = Tuple[str, int]
 DialogueAgent = None
@@ -34,12 +36,15 @@ class SingleDialogue(DialogueInterface, ABC):
 
     def __init__(self, agent: DialogueAgent,
                  destination: str,
-                 id_: int,
-                 is_buyer: bool):
+                 id_: Optional[int] = None):
         self.agent = agent
         self.destination = destination
         self.id = id_
-        self.is_buyer = is_buyer
+        if id_:
+            self.is_buyer = False
+        else:
+            self.id = uuid.uuid4().time_mid
+            self.is_buyer = True
 
     @abstractmethod
     def on_error(self):
@@ -126,4 +131,44 @@ class DialogueAgent(Agent, ABC):
             return self.dialogues[key]
         except KeyError:
             raise KeyError("Dialogue key {} not found.".format(key))
+
+
+class GroupDialogues:
+
+    def __init__(self,
+                 agent: DialogueAgent):
+        self.agent = agent
+        self.dialogues = {}  # type: Dict[str, SingleDialogue]
+        self.best_agent = None  # type: Optional[str]
+        self.best_price = 0
+        self.nb_answers = 0
+        self.first = True
+
+    def add_agents(self, agents: List[SingleDialogue]) -> None:
+        for a in agents:
+            self.dialogues[a.destination] = a
+            self.agent.register_dialogue(a)
+
+    @abstractmethod
+    def better(self, price1: int, price2: int) -> bool:
+        """"""
+
+    def update(self, agent: str, price: int) -> None:
+        self.nb_answers += 1
+        if self.first:
+            self.first = False
+            self.best_price = price
+            self.best_agent = agent
+        elif self.better(price, self.best_price):
+            self.best_price = price
+            self.best_agent = agent
+        else:
+            pass
+
+        if self.nb_answers >= len(self.dialogues):
+            self.finished()
+
+    @abstractmethod
+    def finished(self):
+        """"""
 

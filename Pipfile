@@ -18,6 +18,7 @@ jupyter = "*"
 
 [packages]
 protobuf = "*"
+oef = {path = "."}
 
 [requires]
 python_version = "3.6"

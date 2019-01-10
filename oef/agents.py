@@ -68,7 +68,7 @@ class Agent(AgentInterface, ABC):
 
         :return: the public key.
         """
-        return self.oef_proxy.public_key
+        return self._oef_proxy.public_key
 
     def __init__(self, oef_proxy: OEFProxy):
         """
@@ -77,7 +77,7 @@ class Agent(AgentInterface, ABC):
         :param oef_proxy: the proxy for an OEF Node.
         """
 
-        self.oef_proxy = oef_proxy
+        self._oef_proxy = oef_proxy
         self._task = None
         self._loop = asyncio.get_event_loop()
 
@@ -98,7 +98,7 @@ class Agent(AgentInterface, ABC):
         if self._task:
             logger.warning("Agent {} already scheduled for running.".format(self.public_key))
             return
-        self._task = asyncio.ensure_future(self.oef_proxy.loop(self))
+        self._task = asyncio.ensure_future(self._oef_proxy.loop(self))
         await self._task
 
     def stop(self) -> None:
@@ -128,46 +128,71 @@ class Agent(AgentInterface, ABC):
         :return: True if the connection has been established successfully, False otherwise.
         """
         logger.debug("{}: Connecting...".format(self.public_key))
-        status = await self.oef_proxy.connect()
+        status = await self._oef_proxy.connect()
         if status:
             logger.debug("{}: Connection established.".format(self.public_key))
         else:
             raise OEFConnectionError("Public key already in use.")
         return status
 
+    def disconnect(self) -> None:
+        """
+        Disconnect from the OEF Node.
+
+        :return: ``None``
+        """
+        return self._loop.run_until_complete(self.async_disconnect())
+
+    async def async_disconnect(self) -> None:
+        """
+        The asynchronous counterpart of :func:`~oef.agents.Agent.disconnect`.
+
+        :return: ``None``
+        """
+        if self._oef_proxy.is_connected():
+            await self._oef_proxy.stop()
+
     def register_agent(self, agent_description: Description) -> None:
-        self.oef_proxy.register_agent(agent_description)
+        """Register an agent. See :func:`~oef.core.OEFCoreInterface.register_agent`."""
+        self._oef_proxy.register_agent(agent_description)
 
     def unregister_agent(self) -> None:
-        self.oef_proxy.unregister_agent()
+        """Unregister an agent. See :func:`~oef.core.OEFCoreInterface.unregister_agent`."""
+        self._oef_proxy.unregister_agent()
 
     def register_service(self, service_description: Description) -> None:
-        self.oef_proxy.register_service(service_description)
+        """Unregister a service. See :func:`~oef.core.OEFCoreInterface.register_service`."""
+        self._oef_proxy.register_service(service_description)
 
     def unregister_service(self, service_description: Description) -> None:
-        self.oef_proxy.unregister_service(service_description)
+        """Unregister a service. See :func:`~oef.core.OEFCoreInterface.unregister_service`."""
+        self._oef_proxy.unregister_service(service_description)
 
     def search_agents(self, search_id: int, query: Query) -> None:
-        self.oef_proxy.search_agents(search_id, query)
+        """Search agents. See :func:`~oef.core.OEFCoreInterface.search_agents`."""
+        self._oef_proxy.search_agents(search_id, query)
 
     def search_services(self, search_id: int, query: Query) -> None:
-        self.oef_proxy.search_services(search_id, query)
+        """Search services. See :func:`~oef.core.OEFCoreInterface.search_services`."""
+        self._oef_proxy.search_services(search_id, query)
 
     def send_message(self, dialogue_id: int,
                      destination: str,
                      msg: bytes) -> None:
+        """Send a simple message. See :func:`~oef.core.OEFCoreInterface.send_message`."""
         logger.debug("Agent {}: dialogue_id={}, destination={}, msg={}"
                      .format(self.public_key,
                              dialogue_id,
                              destination,
                              msg))
-        self.oef_proxy.send_message(dialogue_id, destination, msg)
+        self._oef_proxy.send_message(dialogue_id, destination, msg)
 
     def send_cfp(self, dialogue_id: int,
                  destination: str,
                  query: CFP_TYPES,
                  msg_id: Optional[int] = 1,
                  target: Optional[int] = 0) -> None:
+        """Send a CFP. See :func:`~oef.core.OEFCoreInterface.send_cfp`."""
         logger.debug("Agent {}: dialogue_id={}, destination={}, query={}, msg_id={}, target={}"
                      .format(self.public_key,
                              dialogue_id,
@@ -175,13 +200,14 @@ class Agent(AgentInterface, ABC):
                              query,
                              msg_id,
                              target))
-        self.oef_proxy.send_cfp(dialogue_id, destination, query, msg_id, target)
+        self._oef_proxy.send_cfp(dialogue_id, destination, query, msg_id, target)
 
     def send_propose(self, dialogue_id: int,
                      destination: str,
                      proposals: PROPOSE_TYPES,
                      msg_id: int,
                      target: Optional[int] = None) -> None:
+        """Send a Propose. See :func:`~oef.core.OEFCoreInterface.send_propose`."""
         logger.debug("Agent {}: dialogue_id={}, destination={}, proposals={}, msg_id={}, target={}"
                      .format(self.public_key,
                              dialogue_id,
@@ -189,31 +215,33 @@ class Agent(AgentInterface, ABC):
                              proposals,
                              msg_id,
                              target))
-        self.oef_proxy.send_propose(dialogue_id, destination, proposals, msg_id, target)
+        self._oef_proxy.send_propose(dialogue_id, destination, proposals, msg_id, target)
 
     def send_accept(self, dialogue_id: int,
                     destination: str,
                     msg_id: int,
                     target: Optional[int] = None) -> None:
+        """Send an Accept. See :func:`~oef.core.OEFCoreInterface.send_accept`."""
         logger.debug("Agent {}: dialogue_id={}, destination={}, msg_id={}, target={}"
                      .format(self.public_key,
                              dialogue_id,
                              destination,
                              msg_id,
                              target))
-        self.oef_proxy.send_accept(dialogue_id, destination, msg_id, target)
+        self._oef_proxy.send_accept(dialogue_id, destination, msg_id, target)
 
     def send_decline(self, dialogue_id: int,
                      destination: str,
                      msg_id: int,
                      target: Optional[int] = None) -> None:
+        """Send a Decline. See :func:`~oef.core.OEFCoreInterface.send_decline`."""
         logger.debug("Agent {}: dialogue_id={}, destination={}, msg_id={}, target={}"
                      .format(self.public_key,
                              dialogue_id,
                              destination,
                              msg_id,
                              target))
-        self.oef_proxy.send_decline(dialogue_id, destination, msg_id, target)
+        self._oef_proxy.send_decline(dialogue_id, destination, msg_id, target)
 
     def on_message(self, origin: str,
                    dialogue_id: int,

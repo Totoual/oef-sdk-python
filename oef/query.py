@@ -22,42 +22,224 @@ from abc import ABC, abstractmethod
 from typing import Union, Tuple, List, Optional
 
 import oef.query_pb2 as query_pb2
-from oef.schema import ATTRIBUTE_TYPES, AttributeSchema, DataModel, ProtobufSerializable, Description
+from oef.schema import ATTRIBUTE_TYPES, AttributeSchema, DataModel, ProtobufSerializable, Description, Location
 
-RANGE_TYPES = Union[Tuple[str, str], Tuple[int, int], Tuple[float, float]]
+RANGE_TYPES = Union[Tuple[str, str], Tuple[int, int], Tuple[float, float], Tuple[Location, Location]]
+
+
+class ConstraintExpr(ProtobufSerializable, ABC):
+    """
+    This class is used to represent a constraint expression.
+    """
+
+    @abstractmethod
+    def check(self, value: ATTRIBUTE_TYPES) -> bool:
+        """
+        Check if an attribute value satisfies the constraint.
+        The implementation depends on the constraint type.
+
+        :param value: the value to check.
+        :return: ``True`` if the value satisfy the constraint, ``False`` otherwise.
+        """
+
+    @staticmethod
+    def _to_pb(expression):
+        constraint_expr_pb = query_pb2.Query.ConstraintExpr()
+        expression_pb = expression.to_pb()
+        if isinstance(expression, And):
+            constraint_expr_pb.and_.CopyFrom(expression_pb)
+        elif isinstance(expression, Or):
+            constraint_expr_pb.or_.CopyFrom(expression_pb)
+        elif isinstance(expression, Not):
+            constraint_expr_pb.not_.CopyFrom(expression_pb)
+        elif isinstance(expression, Constraint):
+            constraint_expr_pb.constraint.CopyFrom(expression_pb)
+
+        return constraint_expr_pb
+
+    @staticmethod
+    def _from_pb(expression_pb):
+        expression = expression_pb.WhichOneof("expression")
+        if expression == "and_":
+            return And.from_pb(expression_pb.and_)
+        elif expression == "or_":
+            return Or.from_pb(expression_pb.or_)
+        elif expression == "not_":
+            return Not.from_pb(expression_pb.not_)
+        elif expression == "constraint":
+            return Constraint.from_pb(expression_pb.constraint)
+
+
+class And(ConstraintExpr):
+    """
+    A constraint type that allows you to specify a conjunction of constraints.
+    That is, the ``And`` constraint is satisfied whenever all the constraints that constitute the and are satisfied.
+
+    Examples:
+
+        # >>> # all the books whose title is between 'I' and 'J' (alphanumeric order) but not equal to 'It'
+        # >>> c = Constraint(AttributeSchema("title", str, True),   And([Range(("I", "J")), NotEq("It")]))
+        # >>> c.check(Description({"title": "I, Robot"}))
+        # True
+        # >>> c.check(Description({"title": "It"}))
+        # False
+        # >>> c.check(Description({"title": "1984"}))
+        # False
+    """
+
+    def __init__(self, constraints: List[ConstraintExpr]) -> None:
+        """
+        Initialize an ``And`` constraint.
+
+        :param constraints: the list of constraints to be interpreted in conjunction.
+        """
+        self.constraints = constraints
+
+    def to_pb(self):
+        """
+        From an instance of ``And`` to its associated Protobuf object.
+
+        :return: the ConstraintExpr Protobuf object that contains the ``And`` constraint.
+        """
+        and_pb = query_pb2.Query.ConstraintExpr.And()
+        constraint_expr_pbs = [ConstraintExpr._to_pb(constraint) for constraint in self.constraints]
+        and_pb.expr.extend(constraint_expr_pbs)
+        return and_pb
+
+    def check(self, value: ATTRIBUTE_TYPES) -> bool:
+        """
+        Check if a value satisfies all the constraints of the ``And`` constraint.
+
+        :param value: the value to check.
+        :return: ``True`` if the value satisfy the constraint, ``False`` otherwise.
+        """
+        return all(expr.check(value) for expr in self.constraints)
+
+    @classmethod
+    def from_pb(cls, constraint_pb: query_pb2.Query.ConstraintExpr.And):
+        """
+        From the And Protobuf object to the associated instance of ``And``.
+
+        :param constraint_pb: the Protobuf object that represents the ``And`` constraint.
+        :return: an instance of ``And`` equivalent to the Protobuf object.
+        """
+
+        expr = [ConstraintExpr._from_pb(c) for c in constraint_pb.expr]
+        return cls(expr)
+
+    def __eq__(self, other):
+        if type(other) != And:
+            return False
+        else:
+            return self.constraints == other.constraints
+
+
+class Or(ConstraintExpr):
+    """
+    A constraint type that allows you to specify a disjunction of constraints.
+    That is, the Or constraint is satisfied whenever at least one of the constraints
+    that constitute the or is satisfied.
+
+    Examples:
+
+        >>> # all the books that have been published either before the year 1960 or after the year 1970
+        >>> c = Constraint(AttributeSchema("year", int, True),   Or([Lt(1960), Gt(1970)]))
+        >>> c.check(Description({"year": 1950}))
+        True
+        >>> c.check(Description({"year": 1975}))
+        True
+        >>> c.check(Description({"year": 1960}))
+        False
+        >>> c.check(Description({"year": 1970}))
+        False
+    """
+
+    def __init__(self, constraints: List[ConstraintExpr]) -> None:
+        """
+        Initialize an ``Or`` constraint.
+
+        :param constraints: the list of constraints to be interpreted in disjunction.
+        """
+        self.constraints = constraints
+
+    def to_pb(self):
+        """
+        From an instance of ``Or`` to its associated Protobuf object.
+
+        :return: the ConstraintType Protobuf object that contains the ``Or`` constraint.
+        """
+
+        or_pb = query_pb2.Query.ConstraintExpr.Or()
+        constraint_expr_pbs = [ConstraintExpr._to_pb(constraint) for constraint in self.constraints]
+        or_pb.expr.extend(constraint_expr_pbs)
+        return or_pb
+
+    @classmethod
+    def from_pb(cls, constraint_pb: query_pb2.Query.ConstraintExpr.Or):
+        """
+        From the ``Or`` Protobuf object to the associated instance of Or.
+
+        :param constraint_pb: the Protobuf object that represents the ``Or`` constraint.
+        :return: an instance of ``Or`` equivalent to the Protobuf object.
+        """
+        expr = [ConstraintExpr._from_pb(c) for c in constraint_pb.expr]
+        return cls(expr)
+
+    def check(self, value: ATTRIBUTE_TYPES) -> bool:
+        """
+        Check if a value satisfies one of the constraints of the ``Or`` constraint.
+
+        :param value: the value to check.
+        :return: ``True`` if the value satisfy the constraint, ``False`` otherwise.
+        """
+        return any(expr.check(value) for expr in self.constraints)
+
+    def __eq__(self, other):
+        if type(other) != Or:
+            return False
+        else:
+            return self.constraints == other.constraints
+
+
+class Not(ConstraintExpr):
+    """
+    A constraint type that allows you to specify a negation of a constraint.
+    That is, the Not constraint is satisfied whenever the constraint
+    that constitutes the Not expression is not satisfied.
+
+    Examples:
+        # todo examples for Not constraint expression
+        >>> True
+    """
+
+    def check(self, value: ATTRIBUTE_TYPES) -> bool:
+        pass
+
+    def __init__(self, constraint: ConstraintExpr) -> None:
+        self.constraint = constraint
+
+    def to_pb(self):
+        not_pb = query_pb2.Query.ConstraintExpr.Not()
+        constraint_expr_pb = ConstraintExpr._to_pb(self.constraint)
+        not_pb.expr.CopyFrom(constraint_expr_pb)
+        return not_pb
+
+    @classmethod
+    def from_pb(cls, constraint_pb: query_pb2.Query.ConstraintExpr.Not):
+        expression = ConstraintExpr._from_pb(constraint_pb.expr)
+        return cls(expression)
+
+    def __eq__(self, other):
+        if type(other) != Not:
+            return False
+        else:
+            return self.constraint == other.constraint
 
 
 class ConstraintType(ProtobufSerializable, ABC):
     """
     This class is used to represent a constraint type.
     """
-
-    @classmethod
-    def from_pb(cls, constraint_pb: query_pb2.Query.Constraint.ConstraintType):
-        """
-        From ConstraintType protobuf to a ConstraintType.
-        It returns an instance of one of the following:
-
-        * :class:`~oef.query.Relation`
-        * :class:`~oef.query.Set`
-        * :class:`~oef.query.Range`
-        * :class:`~oef.query.And`
-        * :class:`~oef.query.Or`
-
-        :param constraint_pb: the constraint protobuf object
-        :return: the associated ``ConstraintType`` instance.
-        """
-        constraint_case = constraint_pb.WhichOneof("constraint")
-        if constraint_case == "relation":
-            return Relation.from_pb(constraint_pb.relation)
-        elif constraint_case == "set_":
-            return Set.from_pb(constraint_pb.set_)
-        elif constraint_case == "range_":
-            return Range.from_pb(constraint_pb.range_)
-        elif constraint_case == "and_":
-            return And.from_pb(constraint_pb.and_)
-        elif constraint_case == "or_":
-            return Or.from_pb(constraint_pb.or_)
 
     @abstractmethod
     def check(self, value: ATTRIBUTE_TYPES) -> bool:
@@ -121,8 +303,10 @@ class Relation(ConstraintType, ABC):
             return relation_class(relation.val.i)
         elif value_case == "d":
             return relation_class(relation.val.d)
+        elif value_case == "l":
+            return relation_class(Location.from_pb(relation.val.l))
 
-    def to_pb(self) -> query_pb2.Query.Constraint.ConstraintType:
+    def to_pb(self) -> query_pb2.Query.Relation:
         """
         From an instance of Relation to its associated Protobuf object.
 
@@ -139,10 +323,10 @@ class Relation(ConstraintType, ABC):
             query_value.d = self.value
         elif isinstance(self.value, str):
             query_value.s = self.value
+        elif isinstance(self.value, Location):
+            query_value.l.CopyFrom(self.value.to_pb())
         relation.val.CopyFrom(query_value)
-        constraint_type = query_pb2.Query.Constraint.ConstraintType()
-        constraint_type.relation.CopyFrom(relation)
-        return constraint_type
+        return relation
 
     def __eq__(self, other):
         if type(other) != type(self):
@@ -335,31 +519,34 @@ class Range(ConstraintType):
         """
         self.values = values
 
-    def to_pb(self) -> query_pb2.Query.Constraint.ConstraintType:
+    def to_pb(self) -> query_pb2.Query:
         """
         From an instance of Range to its associated Protobuf object.
 
         :return: the ConstraintType Protobuf object that contains the range.
         """
         range_ = query_pb2.Query.Range()
-        if isinstance(self.values[0], str):
+        if type(self.values[0]) == str:
             values = query_pb2.Query.StringPair()
             values.first = self.values[0]
             values.second = self.values[1]
             range_.s.CopyFrom(values)
-        elif isinstance(self.values[0], int):
+        elif type(self.values[0]) == int:
             values = query_pb2.Query.IntPair()
             values.first = self.values[0]
             values.second = self.values[1]
             range_.i.CopyFrom(values)
-        elif isinstance(self.values[0], float):
+        elif type(self.values[0]) == float:
             values = query_pb2.Query.DoublePair()
             values.first = self.values[0]
             values.second = self.values[1]
             range_.d.CopyFrom(values)
-        constraint_type = query_pb2.Query.Constraint.ConstraintType()
-        constraint_type.range_.CopyFrom(range_)
-        return constraint_type
+        elif type(self.values[0]) == Location:
+            values = query_pb2.Query.LocationPair()
+            values.first.CopyFrom(self.values[0].to_pb())
+            values.second.CopyFrom(self.values[1].to_pb())
+            range_.l.CopyFrom(values)
+        return range_
 
     @classmethod
     def from_pb(cls, range_pb: query_pb2.Query.Range):
@@ -377,6 +564,8 @@ class Range(ConstraintType):
             return cls((range_pb.i.first, range_pb.i.second))
         elif range_case == "d":
             return cls((range_pb.d.first, range_pb.d.second))
+        elif range_case == "l":
+            return cls((Location.from_pb(range_pb.l.first), Location.from_pb(range_pb.l.second)))
 
     def check(self, value: ATTRIBUTE_TYPES) -> bool:
         """
@@ -395,7 +584,7 @@ class Range(ConstraintType):
             return self.values == other.values
 
 
-SET_TYPES = Union[List[float], List[str], List[bool], List[int]]
+SET_TYPES = Union[List[float], List[str], List[bool], List[int], List[Location]]
 
 
 class Set(ConstraintType, ABC):
@@ -445,10 +634,12 @@ class Set(ConstraintType, ABC):
             values = query_pb2.Query.Set.Values.Doubles()
             values.vals.extend(self.values)
             set_.vals.d.CopyFrom(values)
+        elif value_type == Location:
+            values = query_pb2.Query.Set.Values.Locations()
+            values.vals.extend([value.to_pb() for value in self.values])
+            set_.vals.l.CopyFrom(values)
 
-        constraint_type = query_pb2.Query.Constraint.ConstraintType()
-        constraint_type.set_.CopyFrom(set_)
-        return constraint_type
+        return set_
 
     @classmethod
     def from_pb(cls, set_pb: query_pb2.Query.Set):
@@ -473,6 +664,9 @@ class Set(ConstraintType, ABC):
             return set_class(set_pb.vals.i.vals)
         elif value_case == "d":
             return set_class(set_pb.vals.d.vals)
+        elif value_case == "l":
+            locations = [Location.from_pb(loc) for loc in set_pb.vals.l.vals]
+            return set_class(locations)
 
     def __eq__(self, other):
         if type(other) != type(self):
@@ -546,137 +740,28 @@ class NotIn(Set):
         return value not in self.values
 
 
-class And(ConstraintType):
+class Distance(ConstraintType):
     """
-    A constraint type that allows you to specify a conjunction of constraints over an attribute.
-    That is, the ``And`` constraint is satisfied whenever all the constraints that constitute the and are satisfied.
+    Class that implements the 'not in set' constraint type.
+    That is, the value of attribute over which the constraint is defined
+    must be not in the set of values provided.
 
     Examples:
-
-        >>> # all the books whose title is between 'I' and 'J' (alphanumeric order) but not equal to 'It'
-        >>> c = Constraint(AttributeSchema("title", str, True),   And([Range(("I", "J")), NotEq("It")]))
-        >>> c.check(Description({"title": "I, Robot"}))
-        True
-        >>> c.check(Description({"title": "It"}))
-        False
-        >>> c.check(Description({"title": "1984"}))
-        False
     """
 
-    def __init__(self, constraints: List[ConstraintType]) -> None:
-        """
-        Initialize an ``And`` constraint.
-
-        :param constraints: the list of constraints to be interpreted in conjunction.
-        """
-        self.constraints = constraints
-
-    def to_pb(self):
-        """
-        From an instance of ``And`` to its associated Protobuf object.
-
-        :return: the ConstraintType Protobuf object that contains the ``And`` constraint.
-        """
-        and_pb = query_pb2.Query.Constraint.ConstraintType.And()
-        and_pb.expr.extend([constraint.to_pb() for constraint in self.constraints])
-        constraint_type = query_pb2.Query.Constraint.ConstraintType()
-        constraint_type.and_.CopyFrom(and_pb)
-        return constraint_type
-
-    @classmethod
-    def from_pb(cls, constraint_pb: query_pb2.Query.Constraint.ConstraintType.And):
-        """
-        From the And Protobuf object to the associated instance of ``And``.
-
-        :param constraint_pb: the Protobuf object that represents the ``And`` constraint.
-        :return: an instance of ``And`` equivalent to the Protobuf object.
-        """
-
-        expr = [ConstraintType.from_pb(c) for c in constraint_pb.expr]
-        return cls(expr)
+    def __init__(self, center: Location, distance: float) -> None:
+        self.center = center
+        self.distance = distance
 
     def check(self, value: ATTRIBUTE_TYPES) -> bool:
-        """
-        Check if a value satisfies all the constraints of the ``And`` constraint.
-
-        :param value: the value to check.
-        :return: ``True`` if the value satisfy the constraint, ``False`` otherwise.
-        """
-        return all(expr.check(value) for expr in self.constraints)
-
-    def __eq__(self, other):
-        if type(other) != And:
-            return False
-        else:
-            return self.constraints == other.constraints
-
-
-class Or(ConstraintType):
-    """
-    A constraint type that allows you to specify a disjunction of constraints.
-    That is, the Or constraint is satisfied whenever at least one of the constraints
-    that constitute the or is satisfied.
-
-    Examples:
-
-        >>> # all the books that have been published either before the year 1960 or after the year 1970
-        >>> c = Constraint(AttributeSchema("year", int, True),   Or([Lt(1960), Gt(1970)]))
-        >>> c.check(Description({"year": 1950}))
-        True
-        >>> c.check(Description({"year": 1975}))
-        True
-        >>> c.check(Description({"year": 1960}))
-        False
-        >>> c.check(Description({"year": 1970}))
-        False
-    """
-
-    def __init__(self, constraints: List[ConstraintType]) -> None:
-        """
-        Initialize an ``Or`` constraint.
-
-        :param constraints: the list of constraints to be interpreted in disjunction.
-        """
-        self.constraints = constraints
+        raise NotImplementedError
 
     def to_pb(self):
-        """
-        From an instance of ``Or`` to its associated Protobuf object.
-
-        :return: the ConstraintType Protobuf object that contains the ``Or`` constraint.
-        """
-
-        or_pb = query_pb2.Query.Constraint.ConstraintType.Or()
-        or_pb.expr.extend([constraint.to_pb() for constraint in self.constraints])
-        constraint_type = query_pb2.Query.Constraint.ConstraintType()
-        constraint_type.or_.CopyFrom(or_pb)
-        return constraint_type
+        pass
 
     @classmethod
-    def from_pb(cls, constraint_pb: query_pb2.Query.Constraint.ConstraintType.Or):
-        """
-        From the ``Or`` Protobuf object to the associated instance of Or.
-
-        :param constraint_pb: the Protobuf object that represents the ``Or`` constraint.
-        :return: an instance of ``Or`` equivalent to the Protobuf object.
-        """
-        expr = [ConstraintType.from_pb(c) for c in constraint_pb.expr]
-        return cls(expr)
-
-    def check(self, value: ATTRIBUTE_TYPES) -> bool:
-        """
-        Check if a value satisfies one of the constraints of the ``Or`` constraint.
-
-        :param value: the value to check.
-        :return: ``True`` if the value satisfy the constraint, ``False`` otherwise.
-        """
-        return any(expr.check(value) for expr in self.constraints)
-
-    def __eq__(self, other):
-        if type(other) != Or:
-            return False
-        else:
-            return self.constraints == other.constraints
+    def from_pb(cls, distance_pb: query_pb2.Query.Distance):
+        pass
 
 
 class Constraint(ProtobufSerializable):
@@ -685,9 +770,9 @@ class Constraint(ProtobufSerializable):
     """
 
     def __init__(self,
-                 attribute: AttributeSchema,
+                 attribute_name: str,
                  constraint: ConstraintType) -> None:
-        self.attribute = attribute
+        self.attribute_name = attribute_name
         self.constraint = constraint
 
     def to_pb(self):
@@ -696,21 +781,44 @@ class Constraint(ProtobufSerializable):
 
         :return: a Protobuf object equivalent to the caller object.
         """
-        constraint = query_pb2.Query.Constraint()
-        constraint.attribute.CopyFrom(self.attribute.to_pb())
-        constraint.constraint.CopyFrom(self.constraint.to_pb())
+        constraint = query_pb2.Query.ConstraintExpr.Constraint()
+        constraint.attribute_name = self.attribute_name
+        constraint_type_pb = self.constraint.to_pb()
+
+        if isinstance(self.constraint, Relation):
+            constraint.relation.CopyFrom(constraint_type_pb)
+        elif isinstance(self.constraint, Range):
+            constraint.range_.CopyFrom(constraint_type_pb)
+        elif isinstance(self.constraint, Set):
+            constraint.set_.CopyFrom(constraint_type_pb)
+        elif isinstance(self.constraint, Distance):
+            constraint.distance.CopyFrom(constraint_type_pb)
+        else:
+            assert False
+
         return constraint
 
     @classmethod
-    def from_pb(cls, constraint_pb: query_pb2.Query.Constraint):
+    def from_pb(cls, constraint_pb: query_pb2.Query.ConstraintExpr.Constraint):
         """
         From the ``Constraint`` Protobuf object to the associated instance of ``Constraint``.
 
         :param constraint_pb: the Protobuf object that represents the ``Constraint`` object.
         :return: an instance of ``Constraint`` equivalent to the Protobuf object provided in input.
         """
-        constraint_type = ConstraintType.from_pb(constraint_pb.constraint)
-        return cls(AttributeSchema.from_pb(constraint_pb.attribute), constraint_type)
+
+        constraint_case = constraint_pb.WhichOneof("constraint")
+        constraint_type = None
+        if constraint_case == "relation":
+            constraint_type = Relation.from_pb(constraint_pb.relation)
+        elif constraint_case == "set_":
+            constraint_type = Set.from_pb(constraint_pb.set_)
+        elif constraint_case == "range_":
+            constraint_type = Range.from_pb(constraint_pb.range_)
+        elif constraint_case == "distance":
+            constraint_type = Distance.from_pb(constraint_pb.distance)
+
+        return cls(constraint_pb.attribute_name, constraint_type)
 
     def check(self, description: Description) -> bool:
         """
@@ -763,7 +871,7 @@ class Constraint(ProtobufSerializable):
         if type(other) != Constraint:
             return False
         else:
-            return self.attribute == other.attribute and self.constraint == other.constraint
+            return self.attribute_name == other.attribute_name and self.constraint == other.constraint
 
 
 class Query(ProtobufSerializable):
@@ -810,7 +918,9 @@ class Query(ProtobufSerializable):
         :return: a Protobuf object equivalent to the caller object.
         """
         query = query_pb2.Query.Model()
-        query.constraints.extend([constraint.to_pb() for constraint in self.constraints])
+        constraint_expr_pbs = [ConstraintExpr._to_pb(constraint) for constraint in self.constraints]
+        query.constraints.extend(constraint_expr_pbs)
+
         if self.model is not None:
             query.model.CopyFrom(self.model.to_pb())
         return query
@@ -823,7 +933,7 @@ class Query(ProtobufSerializable):
         :param query: the Protobuf object that represents the ``Query`` object.
         :return: an instance of ``Query`` equivalent to the Protobuf object provided in input.
         """
-        constraints = [Constraint.from_pb(constraint_pb) for constraint_pb in query.constraints]
+        constraints = [ConstraintExpr._from_pb(c) for c in query.constraints]
         return cls(constraints, DataModel.from_pb(query.model) if query.HasField("model") else None)
 
     def check(self, description: Description) -> bool:

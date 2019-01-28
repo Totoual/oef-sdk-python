@@ -26,90 +26,10 @@ from hypothesis.strategies import text, from_type, one_of, none
 from oef import query_pb2
 
 from oef.schema import AttributeSchema, ATTRIBUTE_TYPES, DataModel, AttributeInconsistencyException, Description, \
-    generate_schema
+    generate_schema, Location
 
 from test.hypothesis.strategies import attribute_schema_types, not_attribute_schema_types, \
-    value_type_pairs, descriptions, data_models, attributes_schema, attribute_schema_values
-
-
-class TestAttributeSchema:
-
-    @given(attributes_schema())
-    def test_to_pb(self, attribute):
-        actual_attribute_schema = attribute
-        actual_attribute_pb = actual_attribute_schema.to_pb()  # type: query_pb2.Query.Attribute
-        expected_attribute_schema = AttributeSchema.from_pb(actual_attribute_pb)
-        assert actual_attribute_schema == expected_attribute_schema
-
-    @given(data_models(), from_type(type))
-    def test_eq_different_type(self, data_model, any):
-        assert data_model != any
-
-
-class TestDataModel:
-
-    @given(data_models())
-    def test_to_pb(self, data_model):
-        actual_data_model = data_model
-        actual_data_model_pb = actual_data_model.to_pb()  # type: query_pb2.Query.DataModel
-        expected_data_model= DataModel.from_pb(actual_data_model_pb)
-        assert actual_data_model == expected_data_model
-
-    @given(attributes_schema(), from_type(type))
-    def test_schema_eq_different_type(self, attribute, any):
-        assert attribute != any
-
-
-class TestDescription:
-
-    @given(descriptions())
-    def test_to_pb(self, description):
-        actual_description = description
-        actual_description_pb = actual_description.to_pb()  # type: query_pb2.Query.DataModel
-        expected_description = Description.from_pb(actual_description_pb)
-        assert actual_description == expected_description
-
-    @given(value_type_pairs(attribute_schema_types))
-    def test_extract_value(self, value_type_pair):
-        attr_value, attr_type = value_type_pair
-
-        value = query_pb2.Query.Value()
-        if attr_type == str:
-            value.s = attr_value
-        elif attr_type == bool:
-            value.b = attr_value
-        elif attr_type == int:
-            value.i = attr_value
-        elif attr_type == float:
-            value.d = attr_value
-
-        expected_value = Description._extract_value(value)
-        assert type(expected_value) in ATTRIBUTE_TYPES.__args__ + (bool,)
-        assert attr_value == expected_value
-
-    @given(text(), attribute_schema_values)
-    def test_to_key_value(self, key: str, value: ATTRIBUTE_TYPES):
-
-        kv = Description._to_key_value_pb(key, value)  # type: query_pb2.Query.KeyValue
-
-        expected_key = kv.key
-        if isinstance(value, bool):
-            expected_value = kv.value.b
-        elif isinstance(value, int):
-            expected_value = kv.value.i
-        elif isinstance(value, float):
-            expected_value = kv.value.d
-        elif isinstance(value, str):
-            expected_value = kv.value.s
-        else:
-            raise Exception()
-
-        assert key == expected_key
-        assert value == expected_value
-
-    @given(descriptions(), from_type(type))
-    def test_eq_different_type(self, desc, any):
-        assert desc != any
+    value_type_pairs, descriptions, data_models, attributes_schema, attribute_schema_values, locations
 
 
 def check_inconsistency_checker(schema: List[AttributeSchema], values: Dict[str, ATTRIBUTE_TYPES], exception_string):
@@ -130,8 +50,127 @@ def generate_schema_checker(name: str, values: Dict[str, ATTRIBUTE_TYPES], expec
 
     assert actual_schema == expected_schema
 
-class TestGenerateSchema:
 
+class TestLocation:
+
+    @given(locations())
+    def test_serialization(self, location: Location):
+        """Test that serialization and deserialization of Location objects work correctly."""
+        actual_location = location
+        actual_location_pb = actual_location.to_pb()
+        expected_location = Location.from_pb(actual_location_pb)
+
+        assert actual_location == expected_location
+
+    @given(locations(), from_type(type))
+    def test_eq_different_type(self, location, any):
+        """Test that equality test with different types works correctly."""
+        assert location != any
+
+    @given(locations(), locations())
+    def test_ge_lt(self, location1, location2):
+        """Test that, given two locations L1 and L2, the following are equivalent:
+        - L1 is greater than or equal to L2
+        - L1 is NOT less than L2."""
+        a = location1 >= location2
+        b = not (location1 < location2)
+        assert a == b
+
+    @given(locations(), locations())
+    def test_gt_le(self, location1, location2):
+        """Test that, given two locations L1 and L2, the following are equivalent:
+        - L1 is greater than L2
+        - L1 is NOT less or equal than L2."""
+        a = location1 > location2
+        b = not (location1 <= location2)
+        assert a == b
+
+
+class TestAttributeSchema:
+
+    @given(attributes_schema())
+    def test_serialization(self, attribute):
+        actual_attribute_schema = attribute
+        actual_attribute_pb = actual_attribute_schema.to_pb()  # type: query_pb2.Query.Attribute
+        expected_attribute_schema = AttributeSchema.from_pb(actual_attribute_pb)
+        assert actual_attribute_schema == expected_attribute_schema
+
+    @given(attributes_schema(), from_type(type))
+    def test_schema_eq_different_type(self, attribute, any):
+        assert attribute != any
+
+
+class TestDataModel:
+
+    @given(data_models())
+    def test_serialization(self, data_model):
+        actual_data_model = data_model
+        actual_data_model_pb = actual_data_model.to_pb()  # type: query_pb2.Query.DataModel
+        expected_data_model= DataModel.from_pb(actual_data_model_pb)
+        assert actual_data_model == expected_data_model
+
+    @given(data_models(), from_type(type))
+    def test_eq_different_type(self, data_model, any):
+        assert data_model != any
+
+
+class TestDescription:
+
+    @given(descriptions())
+    def test_serialization(self, description):
+        actual_description = description
+        actual_description_pb = actual_description.to_pb()  # type: query_pb2.Query.DataModel
+        expected_description = Description.from_pb(actual_description_pb)
+        assert actual_description == expected_description
+
+    @given(value_type_pairs(attribute_schema_types))
+    def test_extract_value(self, value_type_pair):
+        attr_value, attr_type = value_type_pair
+
+        value = query_pb2.Query.Value()
+        if attr_type == str:
+            value.s = attr_value
+        elif attr_type == bool:
+            value.b = attr_value
+        elif attr_type == int:
+            value.i = attr_value
+        elif attr_type == float:
+            value.d = attr_value
+        elif attr_type == Location:
+            value.l.CopyFrom(attr_value.to_pb())
+
+        expected_value = Description._extract_value(value)
+        assert type(expected_value) in ATTRIBUTE_TYPES.__args__ + (bool,)
+        assert attr_value == expected_value
+
+    @given(text(), attribute_schema_values)
+    def test_to_key_value(self, key: str, value: ATTRIBUTE_TYPES):
+
+        kv = Description._to_key_value_pb(key, value)  # type: query_pb2.Query.KeyValue
+
+        expected_key = kv.key
+        if type(value) == bool:
+            expected_value = kv.value.b
+        elif type(value) == int:
+            expected_value = kv.value.i
+        elif type(value) == float:
+            expected_value = kv.value.d
+        elif type(value) == str:
+            expected_value = kv.value.s
+        elif type(value) == Location:
+            expected_value = Location.from_pb(kv.value.l)
+        else:
+            raise Exception()
+
+        assert key == expected_key
+        assert value == expected_value
+
+    @given(descriptions(), from_type(type))
+    def test_eq_different_type(self, desc, any):
+        assert desc != any
+
+
+class TestGenerateSchema:
 
     @given(text(), attribute_schema_types)
     def test_raise_when_not_required_attribute_is_omitted(self, name, attribute_type):
@@ -163,15 +202,12 @@ class TestGenerateSchema:
                                     {"foo": tuple()},
                                     "unallowed type")
 
-
     @given(text(), not_attribute_schema_types)
     def test_raise_when_disallowed_types(self, name, not_attribute_type):
         """
         Test that if an attribute has a type that is no in the allowed set, we moan
         """
         check_inconsistency_checker([], {name: not_attribute_type}, "Have extra attribute not in schema")
-
-
 
     @given(text(), )
     def test_generate_schema_empty(self, name):

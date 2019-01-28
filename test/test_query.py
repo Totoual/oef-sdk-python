@@ -21,43 +21,22 @@
 from hypothesis import given
 
 from oef import query_pb2
-from oef.query import Relation, Range, Set, And, Or, Constraint, Query, Eq, In
-from oef.schema import AttributeSchema
-from test.hypothesis.strategies import relations, ranges, query_sets, and_constraints, or_constraints, constraints, queries
+from oef.query import Relation, Range, Set, And, Or, Constraint, Query, Eq, In, Not
+from test.hypothesis.strategies import relations, ranges, query_sets, and_constraints, or_constraints, constraints, \
+    queries, not_constraints
 
 
 class TestRelation:
 
     @given(relations())
-    def test_to_pb(self, relation: Relation):
-        """Test that Relation objects are correctly packed into the associate protobuf type."""
+    def test_serialization(self, relation: Relation):
+        """Test that serialization and deserialization of ``Relation`` objects work correctly."""
 
-        actual_relation_value = relation.value
-        constraint = relation.to_pb()  # type: query_pb2.Query.Constraint.ConstraintType
-
-        if type(actual_relation_value) == bool:
-            expected_relation_value = constraint.relation.val.b
-        elif type(actual_relation_value) == int:
-            expected_relation_value = constraint.relation.val.i
-        elif type(actual_relation_value) == float:
-            expected_relation_value = constraint.relation.val.d
-        elif type(actual_relation_value) == str:
-            expected_relation_value = constraint.relation.val.s
-        else:
-            assert False
-
-        assert actual_relation_value == expected_relation_value
-
-    @given(relations())
-    def test_from_pb(self, relation: Relation):
-        """Test that Relation objects are correctly unpacked from the associated protobuf type."""
-
-        constraint_pb = relation.to_pb()  # type: query_pb2.Query.Constraint.ConstraintType
-        relation_pb = constraint_pb.relation
-
+        actual_relation = relation
+        relation_pb = actual_relation.to_pb()  # type: query_pb2.Query.Relation
         expected_relation = Relation.from_pb(relation_pb)
 
-        assert relation == expected_relation
+        assert actual_relation == expected_relation
 
     def test_eq_when_not_equal(self):
         a_relation = Eq("foo")
@@ -69,33 +48,14 @@ class TestRelation:
 class TestRange:
 
     @given(ranges())
-    def test_to_pb(self, range_: Range):
-        """Test that Range objects are correctly packed into the associated protobuf type."""
+    def test_serialization(self, range_: Range):
+        """Test that serialization and deserialization of ``Range`` objects work correctly."""
 
-        actual_range_values = range_.values
-        range_type = type(range_.values[0])
-        constraint = range_.to_pb()  # type: query_pb2.Query.Constraint.ConstraintType
+        actual_range = range_
+        range_pb = actual_range.to_pb()  # type: query_pb2.Query.Relation
+        expected_range = Range.from_pb(range_pb)
 
-        if range_type == str:
-            value_pair = constraint.range_.s
-        elif range_type == int:
-            value_pair = constraint.range_.i
-        elif range_type == float:
-            value_pair = constraint.range_.d
-        else:
-            assert False
-
-        expected_range_values = value_pair.first, value_pair.second
-        assert actual_range_values == expected_range_values
-
-    @given(ranges())
-    def test_from_pb(self, range_: Range):
-        """Test that Range objects are correctly unpacked from the associated protobuf type."""
-
-        constraint_pb = range_.to_pb()  # type: query_pb2.Query.Constraint.ConstraintType
-        expected_range = Range.from_pb(constraint_pb.range_)
-
-        assert range_ == expected_range
+        assert actual_range == expected_range
 
     def test_eq_when_not_equal(self):
         a_range = Range(("foo", "bar"))
@@ -107,13 +67,13 @@ class TestRange:
 class TestSet:
 
     @given(query_sets())
-    def test_from_pb(self, set_: Set):
-        """Test that Set objects are correctly unpacked from the associated protobuf type."""
+    def test_serialization(self, set_: Set):
+        """Test that serialization and deserialization of ``Set`` objects work correctly."""
+        actual_set = set_
+        set_pb = actual_set.to_pb()
+        expected_set = Set.from_pb(set_pb)
 
-        constraint_pb = set_.to_pb()  # type: query_pb2.Query.Constraint.ConstraintType
-        expected_set = Set.from_pb(constraint_pb.set_)
-
-        assert set_ == expected_set
+        assert actual_set == expected_set
 
     def test_eq_when_not_equal(self):
         a_set = In(["foo", "bar"])
@@ -122,16 +82,35 @@ class TestSet:
         assert a_set != not_a_set
 
 
+class TestConstraint:
+
+    @given(constraints())
+    def test_serialization(self, constraint: Constraint):
+        """Test that serialization and deserialization of ``Constraint`` objects work correctly."""
+        actual_constraint = constraint
+        constraint_pb = constraint.to_pb()
+        expected_constraint = Constraint.from_pb(constraint_pb)
+
+        assert actual_constraint == expected_constraint
+
+    def test_eq_when_not_equal(self):
+        a_constraint = Constraint("foo", In([]))
+        not_a_constraint = tuple()
+
+        assert a_constraint != not_a_constraint
+
+
 class TestAnd:
 
     @given(and_constraints())
-    def test_from_pb(self, and_: And):
-        """Test that And objects are correctly unpacked from the associated protobuf type."""
+    def test_serialization(self, and_: And):
+        """Test that serialization and deserialization of ``And`` objects work correctly."""
 
-        constraint_pb = and_.to_pb()  # type: query_pb2.Query.Constraint.ConstraintType
-        expected_and = And.from_pb(constraint_pb.and_)
+        actual_and = and_
+        and_pb = and_.to_pb()  # type: query_pb2.Query.ConstraintExpr.And
+        expected_and = And.from_pb(and_pb)
 
-        assert and_ == expected_and
+        assert actual_and == expected_and
 
     def test_eq_when_not_equal(self):
         a_and = And([])
@@ -143,13 +122,14 @@ class TestAnd:
 class TestOr:
 
     @given(or_constraints())
-    def test_or_from_pb(self, or_: Or):
-        """Test that Or objects are correctly unpacked from the associated protobuf type."""
+    def test_serialization(self, or_: Or):
+        """Test that serialization and deserialization of ``Or`` objects work correctly."""
 
-        constraint_pb = or_.to_pb()  # type: query_pb2.Query.Constraint.ConstraintType
-        expected_or = Or.from_pb(constraint_pb.or_)
+        actual_or = or_
+        or_pb = or_.to_pb()  # type: query_pb2.Query.ConstraintExpr.Or
+        expected_or = Or.from_pb(or_pb)
 
-        assert or_ == expected_or
+        assert actual_or == expected_or
 
     def test_eq_when_not_equal(self):
         a_or = Or([])
@@ -158,22 +138,23 @@ class TestOr:
         assert a_or != not_a_or
 
 
-class TestConstraint:
+class TestNot:
 
-    @given(constraints())
-    def test_from_pb(self, constraint: Constraint):
-        """Test that Constraint objects are correctly unpacked from the associated protobuf type."""
+    @given(not_constraints())
+    def test_serialization(self, not_: Not):
+        """Test that serialization and deserialization of ``Not`` objects work correctly."""
 
-        constraint_pb = constraint.to_pb()
-        expected_constraint = Constraint.from_pb(constraint_pb)
+        actual_not = not_
+        not_pb = not_.to_pb()  # type: query_pb2.Query.ConstraintExpr.Not
+        expected_not = Not.from_pb(not_pb)
 
-        assert constraint == expected_constraint
+        assert actual_not == expected_not
 
     def test_eq_when_not_equal(self):
-        a_constraint = Constraint(AttributeSchema("foo", str, True), And([]))
-        not_a_constraint = tuple()
+        a_or = Or([])
+        not_a_or = tuple()
 
-        assert a_constraint != not_a_constraint
+        assert a_or != not_a_or
 
 
 class TestQuery:

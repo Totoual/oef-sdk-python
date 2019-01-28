@@ -57,10 +57,60 @@ class ProtobufSerializable(ABC):
         """
 
 
+class Location(ProtobufSerializable):
+    """Data structure to represent locations (i.e. a pair of latitude and longitude)."""
+
+    def __init__(self, latitude: float, longitude: float):
+        """
+        Initialize a location.
+
+        :param latitude: the latitude of the location.
+        :param longitude: the longitude of the location.
+        """
+        self.latitude = latitude
+        self.longitude = longitude
+
+    @classmethod
+    def from_pb(cls, obj: query_pb2.Query.Location):
+        latitude = obj.lat
+        longitude = obj.lon
+        return cls(latitude, longitude)
+
+    def to_pb(self) -> query_pb2.Query.Location:
+        location_pb = query_pb2.Query.Location()
+        location_pb.lat = self.latitude
+        location_pb.lon = self.longitude
+        return location_pb
+
+    def __eq__(self, other):
+        if type(other) != Location:
+            return False
+        else:
+            return self.latitude == other.latitude and self.longitude == other.longitude
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __ge__(self, other):
+        return self.latitude >= other.latitude
+
+    def __gt__(self, other):
+        return self.latitude > other.latitude
+
+    def __le__(self, other):
+        return not self.__gt__(other)
+
+    def __lt__(self, other):
+        return not self.__ge__(other)
+
+    def __repr__(self):
+        return "{},{}".format(self.latitude, self.longitude)
+
+
 """
 The allowable types that an Attribute can have
 """
-ATTRIBUTE_TYPES = Union[float, str, bool, int]
+ATTRIBUTE_TYPES = Union[float, str, bool, int, Location]
 
 
 class AttributeSchema(ProtobufSerializable):
@@ -87,6 +137,7 @@ class AttributeSchema(ProtobufSerializable):
         int: query_pb2.Query.Attribute.INT,
         float: query_pb2.Query.Attribute.DOUBLE,
         str: query_pb2.Query.Attribute.STRING,
+        Location: query_pb2.Query.Attribute.LOCATION
     }
 
     def __init__(self,
@@ -99,7 +150,7 @@ class AttributeSchema(ProtobufSerializable):
 
         :param attribute_name: the name of this attribute.
         :param attribute_type: the type of this attribute, must be a type in ATTRIBUTE_TYPES.
-        :param is_attribute_required: does this attribute have to be included.
+        :param is_attribute_required: whether does this attribute have to be included.
         :param attribute_description: optional description of this attribute.
         """
         self.name = attribute_name
@@ -301,6 +352,8 @@ class Description(ProtobufSerializable):
             return value.i
         elif value_case == "d":
             return value.d
+        elif value_case == "l":
+            return Location.from_pb(value.l)
 
     @classmethod
     def from_pb(cls, query_instance: query_pb2.Query.Instance):
@@ -326,14 +379,17 @@ class Description(ProtobufSerializable):
 
         kv = query_pb2.Query.KeyValue()
         kv.key = key
-        if isinstance(value, bool):
+        if type(value) == bool:
             kv.value.b = value
-        elif isinstance(value, int):
+        elif type(value) == int:
             kv.value.i = value
-        elif isinstance(value, float):
+        elif type(value) == float:
             kv.value.d = value
-        elif isinstance(value, str):
+        elif type(value) == str:
             kv.value.s = value
+        elif type(value) == Location:
+            kv.value.l.CopyFrom(value.to_pb())
+
         return kv
 
     def to_pb(self) -> query_pb2.Query.Instance:
@@ -385,7 +441,7 @@ class Description(ProtobufSerializable):
                     if not isinstance(self.values[schema.name], schema.type):
                         # values does not match type in schema
                         raise AttributeInconsistencyException(
-                            "Attribute {} has incorrect type".format(schema.name))
+                            "Attribute {} has incorrect type: {}".format(schema.name, schema.type))
                     elif not isinstance(self.values[schema.name], ATTRIBUTE_TYPES.__args__):
                         # value type matches schema, but it is not an allowed type
                         raise AttributeInconsistencyException(

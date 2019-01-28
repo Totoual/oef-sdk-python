@@ -107,17 +107,17 @@ class TestSimpleMessage:
 
             msg = b"hello"
 
-            agent_0.send_message(0, agent_0.public_key, msg)
-            agent_0.send_message(0, agent_1.public_key, msg)
-            agent_0.send_message(0, agent_2.public_key, msg)
+            agent_0.send_message(0, 0, agent_0.public_key, msg)
+            agent_0.send_message(0, 0, agent_1.public_key, msg)
+            agent_0.send_message(0, 0, agent_2.public_key, msg)
 
-            agent_1.send_message(0, agent_0.public_key, msg)
-            agent_1.send_message(0, agent_1.public_key, msg)
-            agent_1.send_message(0, agent_2.public_key, msg)
+            agent_1.send_message(0, 0, agent_0.public_key, msg)
+            agent_1.send_message(0, 0, agent_1.public_key, msg)
+            agent_1.send_message(0, 0, agent_2.public_key, msg)
 
-            agent_2.send_message(0, agent_0.public_key, msg)
-            agent_2.send_message(0, agent_1.public_key, msg)
-            agent_2.send_message(0, agent_2.public_key, msg)
+            agent_2.send_message(0, 0, agent_0.public_key, msg)
+            agent_2.send_message(0, 0, agent_1.public_key, msg)
+            agent_2.send_message(0, 0, agent_2.public_key, msg)
 
             asyncio.ensure_future(asyncio.gather(
                     agent_0.async_run(),
@@ -266,19 +266,19 @@ class TestSearchServices:
             dummy_datamodel = DataModel("dummy_datamodel", [foo_attr, bar_attr])
             desc_1 = Description({"foo": 15, "bar": "BAR"}, dummy_datamodel)
             desc_2 = Description({"foo": 5, "bar": "ABC"}, dummy_datamodel)
-            agent_1.register_service(desc_1)
-            agent_2.register_service(desc_2)
+            agent_1.register_service(0, desc_1)
+            agent_2.register_service(0, desc_2)
 
             agent_0.search_services(0, Query([], dummy_datamodel))
             agent_0.search_services(0, Query([
-                Constraint(foo_attr, Gt(10)),
-                Constraint(bar_attr, Gt("B")),
+                Constraint("foo", Gt(10)),
+                Constraint("bar", Gt("B")),
             ], dummy_datamodel))
 
             asyncio.ensure_future(agent_0.async_run())
             asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
-            agent_1.unregister_service(desc_1)
-            agent_2.unregister_service(desc_2)
+            agent_1.unregister_service(0, desc_1)
+            agent_2.unregister_service(0, desc_2)
 
         assert len(agent_0.received_msg) == 2
         assert agent_0.received_msg[0] == (0, [agent_1.public_key, agent_2.public_key])
@@ -304,20 +304,20 @@ class TestSearchAgents:
             bar_attr = AttributeSchema("bar", str, False, "A bar attribute.")
 
             dummy_datamodel = DataModel("dummy_datamodel", [foo_attr, bar_attr])
-            agent_1.register_agent(Description({"foo": 15, "bar": "BAR"}, dummy_datamodel))
-            agent_2.register_agent(Description({"foo": 5, "bar": "ABC"}, dummy_datamodel))
+            agent_1.register_agent(0, Description({"foo": 15, "bar": "BAR"}, dummy_datamodel))
+            agent_2.register_agent(0, Description({"foo": 5, "bar": "ABC"}, dummy_datamodel))
 
             agent_0.search_agents(0, Query([], dummy_datamodel))
 
             agent_0.search_agents(0, Query([
-                Constraint(foo_attr, Gt(10)),
-                Constraint(bar_attr, Gt("B")),
+                Constraint("foo", Gt(10)),
+                Constraint("bar", Gt("B")),
             ], dummy_datamodel))
 
             asyncio.ensure_future(agent_0.async_run())
             asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
-            agent_1.unregister_agent()
-            agent_2.unregister_agent()
+            agent_1.unregister_agent(0)
+            agent_2.unregister_agent(0)
 
         assert len(agent_0.received_msg) == 2
         assert agent_0.received_msg[0] == (0, [agent_1.public_key, agent_2.public_key])
@@ -340,8 +340,8 @@ class TestUnregisterAgent:
             agent_0, agent_1 = agents
 
             dummy_datamodel = DataModel("dummy_datamodel", [])
-            agent_1.register_agent(Description({}, dummy_datamodel))
-            agent_1.unregister_agent()
+            agent_1.register_agent(0, Description({}, dummy_datamodel))
+            agent_1.unregister_agent(0)
 
             agent_0.search_agents(0, Query([], dummy_datamodel))
             asyncio.ensure_future(agent_0.async_run())
@@ -368,8 +368,8 @@ class TestUnregisterService:
 
             dummy_datamodel = DataModel("dummy_datamodel", [])
             dummy_service_description = Description({}, dummy_datamodel)
-            agent_1.register_service(dummy_service_description)
-            agent_1.unregister_service(dummy_service_description)
+            agent_1.register_service(0, dummy_service_description)
+            agent_1.unregister_service(0, dummy_service_description)
 
             agent_0.search_services(0, Query([], dummy_datamodel))
             asyncio.ensure_future(agent_0.async_run())
@@ -386,7 +386,7 @@ def test_connection_error_on_send():
         with pytest.raises(OEFConnectionError, match="Connection not established yet."):
             proxy = OEFNetworkProxy("test_oef_connection_error_when_send", "127.0.0.1", 3333)
             agent = Agent(proxy)
-            agent.send_message(0, proxy.public_key, b"message")
+            agent.send_message(0, 0, proxy.public_key, b"message")
 
 
 def test_connection_error_on_receive():
@@ -418,7 +418,7 @@ def test_send_more_than_2_to_16_bytes_simple_message():
         proxy = OEFNetworkProxy("test_send_more_than_2_to_16_bytes_simple_message", "127.0.0.1", 3333)
         agent = AgentTest(proxy)
         agent.connect()
-        agent.send_message(0, agent.public_key, b"a"*2**16)
+        agent.send_message(0, 0, agent.public_key, b"a"*2**16)
         asyncio.ensure_future(agent.async_run())
         asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
 
@@ -473,3 +473,4 @@ def test_connection_error_public_key_already_in_use_local_node():
             agent_2 = LocalAgent(agent_1.public_key, local_node)
             agent_1.connect()
             agent_2.connect()
+

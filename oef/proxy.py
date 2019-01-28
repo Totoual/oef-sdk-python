@@ -161,20 +161,20 @@ class OEFNetworkProxy(OEFProxy):
         pb_status.ParseFromString(data)
         return pb_status.status
 
-    def register_agent(self, agent_description: Description) -> None:
-        msg = RegisterDescription(agent_description)
+    def register_agent(self, msg_id: int, agent_description: Description):
+        msg = RegisterDescription(msg_id, agent_description)
         self._send(msg.to_envelope())
 
-    def register_service(self, service_description: Description) -> None:
-        msg = RegisterService(service_description)
+    def register_service(self, msg_id: int, service_description: Description):
+        msg = RegisterService(msg_id, service_description)
         self._send(msg.to_envelope())
 
-    def unregister_agent(self) -> None:
-        msg = UnregisterDescription()
+    def unregister_agent(self, msg_id: int):
+        msg = UnregisterDescription(msg_id)
         self._send(msg.to_envelope())
 
-    def unregister_service(self, service_description: Description) -> None:
-        msg = UnregisterService(service_description)
+    def unregister_service(self, msg_id: int, service_description: Description):
+        msg = UnregisterService(msg_id, service_description)
         self._send(msg.to_envelope())
 
     def search_agents(self, search_id: int, query: Query) -> None:
@@ -185,8 +185,8 @@ class OEFNetworkProxy(OEFProxy):
         msg = SearchServices(search_id, query)
         self._send(msg.to_envelope())
 
-    def send_message(self, dialogue_id: int, destination: str, msg: bytes) -> None:
-        msg = Message(dialogue_id, destination, msg)
+    def send_message(self, msg_id: int, dialogue_id: int, destination: str, msg: bytes) -> None:
+        msg = Message(msg_id, dialogue_id, destination, msg)
         self._send(msg.to_envelope())
 
     def send_cfp(self, dialogue_id: int,
@@ -391,6 +391,7 @@ class OEFLocalProxy(OEFProxy):
             destination = e.send_message.destination
 
             new_msg = agent_pb2.Server.AgentMessage()
+            new_msg.answer_id = msg.msg_id
             new_msg.content.origin = origin
             new_msg.content.dialogue_id = e.send_message.dialogue_id
 
@@ -412,7 +413,7 @@ class OEFLocalProxy(OEFProxy):
             :return:
             """
             msg = agent_pb2.Server.AgentMessage()
-            msg.agents.search_id = search_id
+            msg.answer_id = search_id
             msg.agents.agents.extend(agents)
             self._queues[public_key].put_nowait(msg.SerializeToString())
 
@@ -423,10 +424,10 @@ class OEFLocalProxy(OEFProxy):
         self._read_queue = None
         self._write_queue = None
 
-    def register_agent(self, agent_description: Description) -> None:
+    def register_agent(self, msg_id: int, agent_description: Description) -> None:
         self.local_node.register_agent(self.public_key, agent_description)
 
-    def register_service(self, service_description: Description) -> None:
+    def register_service(self, msg_id: int, service_description: Description) -> None:
         self.local_node.register_service(self.public_key, service_description)
 
     def search_agents(self, search_id: int, query: Query) -> None:
@@ -435,14 +436,14 @@ class OEFLocalProxy(OEFProxy):
     def search_services(self, search_id: int, query: Query) -> None:
         self.local_node.search_services(self.public_key, search_id, query)
 
-    def unregister_agent(self) -> None:
+    def unregister_agent(self, msg_id: int) -> None:
         self.local_node.unregister_agent(self.public_key)
 
-    def unregister_service(self, service_description: Description) -> None:
+    def unregister_service(self, msg_id: int, service_description: Description) -> None:
         self.local_node.unregister_service(self.public_key, service_description)
 
-    def send_message(self, dialogue_id: int, destination: str, msg: bytes) -> None:
-        msg = Message(dialogue_id, destination, msg)
+    def send_message(self, msg_id: int, dialogue_id: int, destination: str, msg: bytes):
+        msg = Message(msg_id, dialogue_id, destination, msg)
         self._send(msg)
 
     def send_cfp(self, dialogue_id: int, destination: str, query: CFP_TYPES, msg_id: Optional[int] = 1,

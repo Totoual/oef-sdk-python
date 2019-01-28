@@ -32,7 +32,7 @@ def test_agent_on_message_handler_warning():
             agent = OEFAgent("test_agent_on_message_warning", "127.0.0.1", 3333)
             agent.connect()
 
-            agent.send_message(0, agent.public_key, b"message")
+            agent.send_message(0, 0, agent.public_key, b"message")
 
             asyncio.ensure_future(agent.async_run())
             asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))

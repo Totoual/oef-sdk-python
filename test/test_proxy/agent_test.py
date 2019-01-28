@@ -79,8 +79,10 @@ class AgentTest(Agent):
                    target: int):
         self._process_message((origin, dialogue_id, msg_id, target))
 
-    def on_error(self,
-                 operation: agent_pb2.Server.AgentMessage.Error.Operation,
-                 dialogue_id: int,
-                 message_id: int):
+    def on_dialogue_error(self, answer_id: int,
+                          dialogue_id: int,
+                          origin: str):
+        pass
+
+    def on_oef_error(self, answer_id: int, operation: agent_pb2.Server.AgentMessage.OEFError.Operation):
         pass

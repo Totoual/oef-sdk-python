@@ -51,75 +51,81 @@ class OEFCoreInterface(ABC):
         """
 
     @abstractmethod
-    def register_agent(self, agent_description: Description) -> None:
+    def register_agent(self, msg_id: int, agent_description: Description) -> None:
         """
         Adds a description of an agent to the OEF so that it can be understood/ queried by
         other agents in the OEF.
 
+        :param msg_id: the identifier of the message.
         :param agent_description: description of the agent to add
         :return: ``None``
         """
 
     @abstractmethod
-    def register_service(self, service_description: Description) -> None:
+    def register_service(self, msg_id: int, service_description: Description) -> None:
         """
         Adds a description of the respective service so that it can be understood/queried by
         other agents in the OEF.
 
+        :param msg_id: the identifier of the message.
         :param service_description: description of the services to add
         :return: ``None``
         """
 
     @abstractmethod
-    def search_agents(self, search_id: int, query: Query) -> None:
+    def search_agents(self, msg_id: int, query: Query) -> None:
         """
         Search for other agents it is interested in communicating with. This can
         be useful when an agent wishes to directly proposition the provision of a service that it
         thinks another agent may wish to be able to offer it. All matching agents are returned
         (potentially including ourselves).
 
-        :param search_id: the identifier of the search to whom the result is answering.
+        :param msg_id: the identifier of the message.
         :param query: specifications of the constraints on the agents that are matched
         :return: ``None``.
         """
 
     @abstractmethod
-    def search_services(self, search_id: int, query: Query) -> None:
+    def search_services(self, msg_id: int, query: Query) -> None:
         """
         Search for a particular service. This allows constrained search of all
         services that have been registered with the OEF. All matching services will be returned
         (potentially including services offered by ourselves).
 
-        :param search_id: the identifier of the search to whom the result is answering.
+        :param msg_id: the identifier of the message.
         :param query: the constraint on the matching services
         :return: ``None``.
         """
 
     @abstractmethod
-    def unregister_agent(self) -> None:
+    def unregister_agent(self, msg_id: int) -> None:
         """
         Remove the description of an agent from the OEF. This agent will no longer be queryable
         by other agents in the OEF. A conversation handler must be provided that allows the agent
         to receive and manage conversations from other agents wishing to communicate with it.
 
+        :param msg_id: the identifier of the message.
+
         :return: ``None``
         """
 
     @abstractmethod
-    def unregister_service(self, service_description: Description) -> None:
+    def unregister_service(self, msg_id: int, service_description: Description) -> None:
         """
         Add a description of the respective service so that it can be understood/queried by
         other agents in the OEF.
 
+        :param msg_id: the identifier of the message.
         :param service_description: description of the services to add
         :return: ``None``
         """
 
     @abstractmethod
-    def send_message(self, dialogue_id: int, destination: str, msg: bytes) -> None:
+    def send_message(self, msg_id: int, dialogue_id: int, destination: str, msg: bytes) -> None:
         """
         Send a simple message.
 
+        :param msg_id: the identifier of the message.
         :param dialogue_id: the identifier of the dialogue in which the message is sent.
         :param destination: the agent identifier to whom the message is sent.
         :param msg: the message (in bytes).
@@ -274,15 +280,27 @@ class ConnectionInterface(ABC):
     """Methods to handle error and search result messages from the OEF Node."""
 
     @abstractmethod
-    def on_error(self, operation: agent_pb2.Server.AgentMessage.Error.Operation,
-                 dialogue_id: int,
-                 message_id: int) -> None:
+    def on_oef_error(self, answer_id: int, operation: agent_pb2.Server.AgentMessage.OEFError.Operation) -> None:
         """
-        Handler for Error messages.
+        Handler for error messages from the OEF node.
 
-        :param operation: the operation
+        :param answer_id: the id of the message that generated the error.
+        :param operation: the operation that caused the error.
+
+        :return: ``None``
+        """
+
+    @abstractmethod
+    def on_dialogue_error(self, answer_id: int,
+                          dialogue_id: int,
+                          origin: str) -> None:
+        """
+        Handler for error messages concerning dialogues between agents.
+
+        :param answer_id: the id of the message that generated the error.
         :param dialogue_id: the identifier of the dialogue in which the message is sent.
-        :param message_id: the message identifier for the dialogue.
+        :param origin: the identifier of the agent that generated the error.
+
         :return: ``None``
         """
 
@@ -342,14 +360,14 @@ class OEFProxy(OEFCoreInterface, ABC):
             try:
                 data = await self._receive()
             except asyncio.CancelledError:
-                logger.debug("Proxy {}: loop cancelled".format(self.public_key))
+                logger.debug("Proxy {}: loop cannnncelled".format(self.public_key))
                 break
             msg = agent_pb2.Server.AgentMessage()
             msg.ParseFromString(data)
             case = msg.WhichOneof("payload")
             logger.debug("loop {0}".format(case))
             if case == "agents":
-                agent.on_search_result(msg.agents.search_id, msg.agents.agents)
+                agent.on_search_result(msg.answer_id, msg.agents.agents)
             elif case == "error":
                 agent.on_error(msg.error.operation, msg.error.dialogue_id, msg.error.msg_id)
             elif case == "content":
@@ -370,18 +388,18 @@ class OEFProxy(OEFCoreInterface, ABC):
                             query = Query.from_pb(fipa.cfp.query)
                         else:
                             raise Exception("Query type not valid.")
-                        agent.on_cfp(msg.content.origin, msg.content.dialogue_id, fipa.msg_id, fipa.target, query)
+                        agent.on_cfp(msg.content.origin, msg.content.dialogue_id, msg.answer_id, fipa.target, query)
                     elif fipa_case == "propose":
                         propose_case = fipa.propose.WhichOneof("payload")
                         if propose_case == "content":
                             proposals = fipa.propose.content
                         else:
                             proposals = [Description.from_pb(propose) for propose in fipa.propose.proposals.objects]
-                        agent.on_propose(msg.content.origin, msg.content.dialogue_id, fipa.msg_id, fipa.target,
+                        agent.on_propose(msg.content.origin, msg.content.dialogue_id, msg.answer_id, fipa.target,
                                          proposals)
                     elif fipa_case == "accept":
-                        agent.on_accept(msg.content.origin, msg.content.dialogue_id, fipa.msg_id, fipa.target)
+                        agent.on_accept(msg.content.origin, msg.content.dialogue_id, msg.answer_id, fipa.target)
                     elif fipa_case == "decline":
-                        agent.on_decline(msg.content.origin, msg.content.dialogue_id, fipa.msg_id, fipa.target)
+                        agent.on_decline(msg.content.origin, msg.content.dialogue_id, msg.answer_id, fipa.target)
                     else:
                         logger.warning("Not implemented yet: fipa {0}".format(fipa_case))

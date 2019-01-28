@@ -152,21 +152,21 @@ class Agent(AgentInterface, ABC):
         if self._oef_proxy.is_connected():
             await self._oef_proxy.stop()
 
-    def register_agent(self, agent_description: Description) -> None:
+    def register_agent(self, msg_id: int, agent_description: Description) -> None:
         """Register an agent. See :func:`~oef.core.OEFCoreInterface.register_agent`."""
-        self._oef_proxy.register_agent(agent_description)
+        self._oef_proxy.register_agent(msg_id, agent_description)
 
-    def unregister_agent(self) -> None:
+    def unregister_agent(self, msg_id: int) -> None:
         """Unregister an agent. See :func:`~oef.core.OEFCoreInterface.unregister_agent`."""
-        self._oef_proxy.unregister_agent()
+        self._oef_proxy.unregister_agent(msg_id)
 
-    def register_service(self, service_description: Description) -> None:
+    def register_service(self, msg_id: int, service_description: Description) -> None:
         """Unregister a service. See :func:`~oef.core.OEFCoreInterface.register_service`."""
-        self._oef_proxy.register_service(service_description)
+        self._oef_proxy.register_service(msg_id, service_description)
 
-    def unregister_service(self, service_description: Description) -> None:
+    def unregister_service(self, msg_id: int, service_description: Description) -> None:
         """Unregister a service. See :func:`~oef.core.OEFCoreInterface.unregister_service`."""
-        self._oef_proxy.unregister_service(service_description)
+        self._oef_proxy.unregister_service(msg_id, service_description)
 
     def search_agents(self, search_id: int, query: Query) -> None:
         """Search agents. See :func:`~oef.core.OEFCoreInterface.search_agents`."""
@@ -176,7 +176,8 @@ class Agent(AgentInterface, ABC):
         """Search services. See :func:`~oef.core.OEFCoreInterface.search_services`."""
         self._oef_proxy.search_services(search_id, query)
 
-    def send_message(self, dialogue_id: int,
+    def send_message(self, msg_id: int,
+                     dialogue_id: int,
                      destination: str,
                      msg: bytes) -> None:
         """Send a simple message. See :func:`~oef.core.OEFCoreInterface.send_message`."""
@@ -185,7 +186,7 @@ class Agent(AgentInterface, ABC):
                              dialogue_id,
                              destination,
                              msg))
-        self._oef_proxy.send_message(dialogue_id, destination, msg)
+        self._oef_proxy.send_message(msg_id, dialogue_id, destination, msg)
 
     def send_cfp(self, dialogue_id: int,
                  destination: str,
@@ -279,11 +280,15 @@ class Agent(AgentInterface, ABC):
         logger.debug("on_propose: {}, {}, {}, {}, {}".format(origin, dialogue_id, msg_id, target, proposal))
         _warning_not_implemented_method(self.on_propose.__name__)
 
-    def on_error(self, operation: agent_pb2.Server.AgentMessage.Error.Operation,
-                 dialogue_id: int,
-                 message_id: int):
-        logger.debug("on_error: {}, {}, {}".format(operation, dialogue_id, message_id))
-        _warning_not_implemented_method(self.on_error.__name__)
+    def on_oef_error(self, answer_id: int, operation: agent_pb2.Server.AgentMessage.OEFError.Operation):
+        logger.debug("on_oef_error: {}, {}".format(answer_id, operation))
+        _warning_not_implemented_method(self.on_oef_error.__name__)
+
+    def on_dialogue_error(self, answer_id: int,
+                          dialogue_id: int,
+                          origin: str):
+        logger.debug("on_dialogue_error: {}, {}, {}".format(answer_id, dialogue_id, origin))
+        _warning_not_implemented_method(self.on_dialogue_error.__name__)
 
     def on_search_result(self, search_id: int, agents: List[str]):
         logger.debug("on_search_result: {}, {}".format(search_id, agents))

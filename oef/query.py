@@ -772,21 +772,49 @@ class Distance(ConstraintType):
     must be not in the set of values provided.
 
     Examples:
+        >>> tour_eiffel = Location(48.8581064, 2.29447)
+        >>> le_jules_verne_restaurant = Location(48.8579675, 2.2951849)
+        >>> colosseum = Location(41.8902102, 12.4922309)
+        >>> close_to_tour_eiffel = Distance(tour_eiffel, 1.0)
+        >>> close_to_tour_eiffel.check(le_jules_verne_restaurant)
+        True
+        >>> close_to_tour_eiffel.check(colosseum)
+        False
+
     """
 
     def __init__(self, center: Location, distance: float) -> None:
+        """
+
+
+        :param center: the center from where compute the distance.
+        :param distance: the distance from the center, in km.
+        """
         self.center = center
         self.distance = distance
 
-    def check(self, value: ATTRIBUTE_TYPES) -> bool:
-        raise NotImplementedError
+    def check(self, value: Location) -> bool:
+        return self.center.distance(value) <= self.distance
 
-    def to_pb(self):
-        pass
+    def to_pb(self) -> query_pb2.Query.Distance:
+        distance_pb = query_pb2.Query.Distance()
+        distance_pb.distance = self.distance
+        distance_pb.center.CopyFrom(self.center.to_pb())
+        return distance_pb
 
     @classmethod
     def from_pb(cls, distance_pb: query_pb2.Query.Distance):
-        pass
+        center = Location.from_pb(distance_pb.center)
+        distance = distance_pb.distance
+        return cls(center, distance)
+
+    def _get_type(self) -> Optional[Type[ATTRIBUTE_TYPES]]:
+        return Location
+
+    def __eq__(self, other):
+        if type(other) != Distance:
+            return False
+        return self.center == other.center and self.distance == other.distance
 
 
 class Constraint(ConstraintExpr):
@@ -808,19 +836,17 @@ class Constraint(ConstraintExpr):
         """
         constraint = query_pb2.Query.ConstraintExpr.Constraint()
         constraint.attribute_name = self.attribute_name
-        constraint_type_pb = self.constraint.to_pb()
 
         if isinstance(self.constraint, Relation):
-            constraint.relation.CopyFrom(constraint_type_pb)
+            constraint.relation.CopyFrom(self.constraint.to_pb())
         elif isinstance(self.constraint, Range):
-            constraint.range_.CopyFrom(constraint_type_pb)
+            constraint.range_.CopyFrom(self.constraint.to_pb())
         elif isinstance(self.constraint, Set):
-            constraint.set_.CopyFrom(constraint_type_pb)
+            constraint.set_.CopyFrom(self.constraint.to_pb())
         elif isinstance(self.constraint, Distance):
-            constraint.distance.CopyFrom(constraint_type_pb)
+            constraint.distance.CopyFrom(self.constraint.to_pb())
         else:
-            assert False
-
+            raise Exception("The constraint type is not valid: {}".format(self.constraint))
         return constraint
 
     @classmethod
@@ -876,6 +902,8 @@ class Constraint(ConstraintExpr):
             If the type of some attribute of the description is not correct, the result is ``False``.
             In this case, the field ``"year"`` has a string instead of an integer:
             >>> c2.check(Description({"author": "Stephen King", "year": "1991"}))
+            False
+            >>> Constraint("position", Distance(Location(0.0, 0.0), 1.0)).check(Description({"position": "1.0,1.0"}))
             False
 
         """

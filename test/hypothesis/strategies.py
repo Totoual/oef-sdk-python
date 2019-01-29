@@ -29,11 +29,10 @@ from typing import List
 
 import hypothesis
 from hypothesis import assume
-from hypothesis._strategies import floats, register_type_strategy
-from hypothesis.searchstrategy import strings
-from hypothesis.strategies import sampled_from, from_type, composite, text, booleans, one_of, none, lists, tuples
+from hypothesis.strategies import sampled_from, from_type, composite, text, booleans, one_of, none, lists, tuples,\
+                                  floats, register_type_strategy
 
-from oef.query import Eq, NotEq, Lt, LtEq, Gt, GtEq, Range, In, NotIn, And, Or, Constraint, Query, Not
+from oef.query import Eq, NotEq, Lt, LtEq, Gt, GtEq, Range, In, NotIn, And, Or, Constraint, Query, Not, Distance
 from oef.schema import ATTRIBUTE_TYPES, AttributeSchema, DataModel, Description, Location
 
 
@@ -78,12 +77,13 @@ def value_type_pairs(draw, type_strategy):
 
 @composite
 def locations(draw):
-    latitude = draw(floats().filter(lambda x: - 90.0 <= x <= 90.0))
-    longitude = draw(floats().filter(lambda x: - 180.0 <= x <= 180.0))
+    latitude = draw(floats(min_value=-90.0, max_value=90.0))
+    longitude = draw(floats(min_value=-180.0, max_value=180.0))
     return Location(latitude, longitude)
 
 
 register_type_strategy(Location, locations())
+
 
 @composite
 def attributes_schema(draw):
@@ -154,29 +154,34 @@ def query_sets(draw):
 
 
 @composite
+def distances(draw):
+    return Distance(draw(locations()), draw(floats(min_value=0.0)))
+
+
+@composite
 def constraint_expressions(draw):
-    return draw(one_of(constraints(), and_constraints(), or_constraints()))
+    return draw(one_of(constraints(), and_constraints(), or_constraints(), not_constraints()))
 
 
 @composite
 def constraints(draw):
     return Constraint(draw(text()),
-                      draw(one_of(relations(), ranges(), query_sets())))
+                      draw(one_of(relations(), ranges(), query_sets(), distances())))
 
 
 @composite
 def and_constraints(draw):
-    return And(draw(lists(constraints())))
+    return And(draw(lists(constraint_expressions(), max_size=3)))
 
 
 @composite
 def or_constraints(draw):
-    return Or(draw(lists(constraints())))
+    return Or(draw(lists(constraint_expressions(), max_size=3)))
 
 
 @composite
 def not_constraints(draw):
-    return Not(draw(constraints()))
+    return Not(draw(constraint_expressions()))
 
 
 @composite

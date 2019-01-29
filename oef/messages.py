@@ -30,6 +30,8 @@ This module contains classes to manage serialization of data in Protobuf message
 from abc import ABC, abstractmethod
 from typing import Optional, Union, List
 
+from enum import Enum
+
 from oef.schema import Description
 
 from oef import agent_pb2, fipa_pb2
@@ -38,6 +40,14 @@ from oef.query import Query
 NoneType = type(None)
 CFP_TYPES = Union[Query, bytes, NoneType]
 PROPOSE_TYPES = Union[bytes, List[Description]]
+
+
+class OEFErrorOperation(Enum):
+    """Operation code for the OEF. It is returned in the OEF Error messages."""
+    REGISTER_SERVICE = 0
+    UNREGISTER_SERVICE = 1
+    REGISTER_DESCRIPTION = 2
+    UNREGISTER_DESCRIPTION = 3
 
 
 class BaseMessage(ABC):

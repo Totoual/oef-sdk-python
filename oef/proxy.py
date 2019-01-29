@@ -134,7 +134,7 @@ class OEFNetworkProxy(OEFProxy):
         return data
 
     async def connect(self) -> bool:
-        if self._connection is not None and not self._server_writer.transport.is_closing():
+        if self.is_connected() and not self._server_writer.transport.is_closing():
             return True
 
         event_loop = asyncio.get_event_loop()
@@ -482,7 +482,9 @@ class OEFLocalProxy(OEFProxy):
         self._write_queue.put_nowait((self.public_key, msg))
 
     async def stop(self):
-        pass
+        self._connection = None
+        self._read_queue = None
+        self._write_queue = None
 
     def is_connected(self) -> bool:
         return self._connection is not None

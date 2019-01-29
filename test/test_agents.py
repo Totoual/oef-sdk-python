@@ -21,6 +21,7 @@ from unittest.mock import patch
 
 from oef.agents import OEFAgent
 from oef.query import Query
+from oef.schema import Description
 from .conftest import _ASYNCIO_DELAY, NetworkOEFNode
 
 
@@ -124,3 +125,41 @@ def test_agent_on_search_result_handler_warning():
             agent.stop()
 
             mock.assert_called_with("You should implement on_search_result in your OEFAgent class.")
+
+
+def test_agent_on_oef_error_handler_warning():
+    """Test that we give a warning when the handler on_search_result is not implemented."""
+
+    with NetworkOEFNode():
+        with patch('logging.Logger.warning') as mock:
+            agent = OEFAgent("test_agent_on_oef_error_warning", "127.0.0.1", 3333)
+            agent.connect()
+
+            # generate and OEFError with the unregister_service operation,
+            # by trying to unregister a not-registered service
+            agent.unregister_service(0, Description({"foo": 1}))
+
+            asyncio.ensure_future(agent.async_run())
+            asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
+            agent.stop()
+
+            mock.assert_called_with("You should implement on_oef_error in your OEFAgent class.")
+
+
+def test_agent_on_dialogue_error_handler_warning():
+    """Test that we give a warning when the handler on_search_result is not implemented."""
+
+    with NetworkOEFNode():
+        with patch('logging.Logger.warning') as mock:
+            agent = OEFAgent("test_agent_on_dialogue_error_warning", "127.0.0.1", 3333)
+            agent.connect()
+
+            # send a message to an unconnected agent
+            agent.send_message(0, 0, "unconnected_agent", b"dummy_message")
+
+            asyncio.ensure_future(agent.async_run())
+            asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
+            agent.stop()
+
+            mock.assert_called_with("You should implement on_dialogue_error in your OEFAgent class.")
+

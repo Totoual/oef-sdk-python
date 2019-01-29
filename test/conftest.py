@@ -24,6 +24,7 @@ import time
 
 from hypothesis import settings
 
+"""The delay to """
 _ASYNCIO_DELAY = 0.1
 settings(max_examples=100)
 

@@ -34,6 +34,7 @@ from typing import Optional, List
 
 from oef import agent_pb2
 from oef.core import OEFProxy, AgentInterface
+from oef.messages import OEFErrorOperation
 from oef.proxy import OEFNetworkProxy, PROPOSE_TYPES, CFP_TYPES, OEFLocalProxy, OEFConnectionError
 from oef.query import Query
 from oef.schema import Description
@@ -280,7 +281,7 @@ class Agent(AgentInterface, ABC):
         logger.debug("on_propose: {}, {}, {}, {}, {}".format(origin, dialogue_id, msg_id, target, proposal))
         _warning_not_implemented_method(self.on_propose.__name__)
 
-    def on_oef_error(self, answer_id: int, operation: agent_pb2.Server.AgentMessage.OEFError.Operation):
+    def on_oef_error(self, answer_id: int, operation: OEFErrorOperation):
         logger.debug("on_oef_error: {}, {}".format(answer_id, operation))
         _warning_not_implemented_method(self.on_oef_error.__name__)
 

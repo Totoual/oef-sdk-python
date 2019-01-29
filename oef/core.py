@@ -32,7 +32,7 @@ from abc import ABC, abstractmethod
 from typing import List, Optional
 
 from oef import agent_pb2 as agent_pb2
-from oef.messages import CFP_TYPES, PROPOSE_TYPES
+from oef.messages import CFP_TYPES, PROPOSE_TYPES, OEFErrorOperation
 from oef.query import Query
 from oef.schema import Description
 
@@ -280,7 +280,7 @@ class ConnectionInterface(ABC):
     """Methods to handle error and search result messages from the OEF Node."""
 
     @abstractmethod
-    def on_oef_error(self, answer_id: int, operation: agent_pb2.Server.AgentMessage.OEFError.Operation) -> None:
+    def on_oef_error(self, answer_id: int, operation: OEFErrorOperation) -> None:
         """
         Handler for error messages from the OEF node.
 
@@ -360,7 +360,7 @@ class OEFProxy(OEFCoreInterface, ABC):
             try:
                 data = await self._receive()
             except asyncio.CancelledError:
-                logger.debug("Proxy {}: loop cannnncelled".format(self.public_key))
+                logger.debug("Proxy {}: loop cancelled".format(self.public_key))
                 break
             msg = agent_pb2.Server.AgentMessage()
             msg.ParseFromString(data)
@@ -368,8 +368,10 @@ class OEFProxy(OEFCoreInterface, ABC):
             logger.debug("loop {0}".format(case))
             if case == "agents":
                 agent.on_search_result(msg.answer_id, msg.agents.agents)
-            elif case == "error":
-                agent.on_error(msg.error.operation, msg.error.dialogue_id, msg.error.msg_id)
+            elif case == "oef_error":
+                agent.on_oef_error(msg.answer_id, OEFErrorOperation(msg.oef_error.operation))
+            elif case == "dialogue_error":
+                agent.on_dialogue_error(msg.answer_id, msg.dialogue_error.dialogue_id, msg.dialogue_error.origin)
             elif case == "content":
                 content_case = msg.content.WhichOneof("payload")
                 logger.debug("msg content {0}".format(content_case))

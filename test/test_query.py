@@ -17,13 +17,14 @@
 #   limitations under the License.
 #
 # ------------------------------------------------------------------------------
-
+import pytest
 from hypothesis import given
 
 from oef import query_pb2
-from oef.query import Relation, Range, Set, And, Or, Constraint, Query, Eq, In, Not
+from oef.query import Relation, Range, Set, And, Or, Constraint, Query, Eq, In, Not, Distance
+from oef.schema import Location
 from test.hypothesis.strategies import relations, ranges, query_sets, and_constraints, or_constraints, constraints, \
-    queries, not_constraints
+    queries, not_constraints, distances
 
 
 class TestRelation:
@@ -32,13 +33,13 @@ class TestRelation:
     def test_serialization(self, relation: Relation):
         """Test that serialization and deserialization of ``Relation`` objects work correctly."""
 
-        actual_relation = relation
-        relation_pb = actual_relation.to_pb()  # type: query_pb2.Query.Relation
-        expected_relation = Relation.from_pb(relation_pb)
+        expected_relation = relation
+        relation_pb = expected_relation.to_pb()  # type: query_pb2.Query.Relation
+        actual_relation = Relation.from_pb(relation_pb)
 
-        assert actual_relation == expected_relation
+        assert expected_relation == actual_relation
 
-    def test_eq_when_not_equal(self):
+    def test_equality_when_not_equal(self):
         a_relation = Eq("foo")
         not_a_relation = tuple()
 
@@ -51,13 +52,13 @@ class TestRange:
     def test_serialization(self, range_: Range):
         """Test that serialization and deserialization of ``Range`` objects work correctly."""
 
-        actual_range = range_
-        range_pb = actual_range.to_pb()  # type: query_pb2.Query.Relation
-        expected_range = Range.from_pb(range_pb)
+        expected_range = range_
+        range_pb = expected_range.to_pb()  # type: query_pb2.Query.Relation
+        actual_range = Range.from_pb(range_pb)
 
-        assert actual_range == expected_range
+        assert expected_range == actual_range
 
-    def test_eq_when_not_equal(self):
+    def test_equality_when_not_equal(self):
         a_range = Range(("foo", "bar"))
         not_a_range = tuple()
 
@@ -69,17 +70,35 @@ class TestSet:
     @given(query_sets())
     def test_serialization(self, set_: Set):
         """Test that serialization and deserialization of ``Set`` objects work correctly."""
-        actual_set = set_
-        set_pb = actual_set.to_pb()
-        expected_set = Set.from_pb(set_pb)
+        expected_set = set_
+        set_pb = expected_set.to_pb()
+        actual_set = Set.from_pb(set_pb)
 
-        assert actual_set == expected_set
+        assert expected_set == actual_set
 
-    def test_eq_when_not_equal(self):
+    def test_equality_when_not_equal(self):
         a_set = In(["foo", "bar"])
         not_a_set = tuple()
 
         assert a_set != not_a_set
+
+
+class TestDistance:
+
+    @given(distances())
+    def test_serialization(self, distance):
+        """Test that serialization and deserialization of ``Distance`` objects work correctly."""
+        expected_distance = distance
+        distance_pb = distance.to_pb()
+        actual_distance = Distance.from_pb(distance_pb)
+        
+        assert expected_distance == actual_distance
+
+    def test_equality_when_not_equal(self):
+        a_distance = Distance(Location(45.0, 45.0), 1.0)
+        not_a_distance = tuple()
+
+        assert a_distance != not_a_distance
 
 
 class TestConstraint:
@@ -87,17 +106,22 @@ class TestConstraint:
     @given(constraints())
     def test_serialization(self, constraint: Constraint):
         """Test that serialization and deserialization of ``Constraint`` objects work correctly."""
-        actual_constraint = constraint
+        expected_constraint = constraint
         constraint_pb = constraint.to_pb()
-        expected_constraint = Constraint.from_pb(constraint_pb)
+        actual_constraint = Constraint.from_pb(constraint_pb)
 
-        assert actual_constraint == expected_constraint
+        assert expected_constraint == actual_constraint
 
-    def test_eq_when_not_equal(self):
+    def test_equality_when_not_equal(self):
         a_constraint = Constraint("foo", In([]))
         not_a_constraint = tuple()
 
         assert a_constraint != not_a_constraint
+
+    def test_raise_exception_when_not_supported_constrainttype(self):
+        with pytest.raises(Exception, match="The constraint type is not valid"):
+            a_constraint = Constraint("foo", tuple())
+            a_constraint.to_pb()
 
 
 class TestAnd:
@@ -106,13 +130,13 @@ class TestAnd:
     def test_serialization(self, and_: And):
         """Test that serialization and deserialization of ``And`` objects work correctly."""
 
-        actual_and = and_
+        expected_and = and_
         and_pb = and_.to_pb()  # type: query_pb2.Query.ConstraintExpr.And
-        expected_and = And.from_pb(and_pb)
+        actual_and = And.from_pb(and_pb)
 
-        assert actual_and == expected_and
+        assert expected_and == actual_and
 
-    def test_eq_when_not_equal(self):
+    def test_equality_when_not_equal(self):
         a_and = And([])
         not_a_and = tuple()
 
@@ -125,13 +149,13 @@ class TestOr:
     def test_serialization(self, or_: Or):
         """Test that serialization and deserialization of ``Or`` objects work correctly."""
 
-        actual_or = or_
+        expected_or = or_
         or_pb = or_.to_pb()  # type: query_pb2.Query.ConstraintExpr.Or
-        expected_or = Or.from_pb(or_pb)
+        actual_or = Or.from_pb(or_pb)
 
-        assert actual_or == expected_or
+        assert expected_or == actual_or
 
-    def test_eq_when_not_equal(self):
+    def test_equality_when_not_equal(self):
         a_or = Or([])
         not_a_or = tuple()
 
@@ -144,17 +168,17 @@ class TestNot:
     def test_serialization(self, not_: Not):
         """Test that serialization and deserialization of ``Not`` objects work correctly."""
 
-        actual_not = not_
+        expected_not = not_
         not_pb = not_.to_pb()  # type: query_pb2.Query.ConstraintExpr.Not
-        expected_not = Not.from_pb(not_pb)
+        actual_not = Not.from_pb(not_pb)
 
-        assert actual_not == expected_not
+        assert expected_not == actual_not
 
-    def test_eq_when_not_equal(self):
-        a_or = Or([])
-        not_a_or = tuple()
+    def test_equality_when_not_equal(self):
+        a_not = Not(Constraint("foo", Eq(0)))
+        not_a_not = tuple()
 
-        assert a_or != not_a_or
+        assert a_not != not_a_not
 
 
 class TestQuery:
@@ -163,12 +187,13 @@ class TestQuery:
     def test_from_pb(self, query: Query):
         """Test that Query objects are correctly unpacked from the associated protobuf type."""
 
-        query_pb = query.to_pb()
-        expected_query = Query.from_pb(query_pb)
+        expected_query = query
+        query_pb = expected_query.to_pb()
+        actual_query = Query.from_pb(query_pb)
 
-        assert query == expected_query
+        assert expected_query == actual_query
 
-    def test_eq_when_not_equal(self):
+    def test_equality_when_not_equal(self):
         a_query = Query([])
         not_a_query = tuple()
 

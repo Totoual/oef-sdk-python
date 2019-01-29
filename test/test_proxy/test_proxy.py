@@ -19,12 +19,13 @@
 import asyncio
 import contextlib
 from typing import List
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 import pytest
 
 from oef.agents import Agent, OEFAgent, LocalAgent
 from oef.core import OEFProxy
+from oef.messages import OEFErrorOperation
 from oef.proxy import OEFNetworkProxy, OEFLocalProxy, OEFConnectionError
 from oef.query import Query, Gt, Constraint
 from oef.schema import Description, AttributeSchema, DataModel
@@ -379,98 +380,171 @@ class TestUnregisterService:
         assert agent_0.received_msg[0] == (0, [])
 
 
-def test_connection_error_on_send():
-    """Test that a OEFConnectionError is raised when we try to send a message before
-    the connection has been established."""
-    with NetworkOEFNode():
-        with pytest.raises(OEFConnectionError, match="Connection not established yet."):
-            proxy = OEFNetworkProxy("test_oef_connection_error_when_send", "127.0.0.1", 3333)
-            agent = Agent(proxy)
-            agent.send_message(0, 0, proxy.public_key, b"message")
+class TestOEFError:
+
+    def test_oef_error_when_failing_in_unregistering_service(self):
+        """Test that we receive an OEF Error message when we try to unregister a non existing service."""
+
+        with setup_test_agents(1, False, prefix="oef_error_unregister_description") as agents:
+
+            for a in agents:
+                a.connect()
+
+            agent_0 = agents[0]  # type: AgentTest
+            agent_0.on_oef_error = MagicMock()
+
+            agent_0.unregister_service(0, Description({"foo": 1}))
+
+            asyncio.ensure_future(agent_0.async_run())
+            asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
+
+        agent_0.on_oef_error.assert_called_with(0, OEFErrorOperation.UNREGISTER_SERVICE)
 
 
-def test_connection_error_on_receive():
-    """Test that a OEFConnectionError is raised when we try to send a message before
-    the connection has been established."""
-    with NetworkOEFNode():
-        with pytest.raises(OEFConnectionError, match="Connection not established yet."):
-            proxy = OEFNetworkProxy("test_oef_connection_error_when_receive", "127.0.0.1", 3333)
-            agent = Agent(proxy)
-            agent.run()
+class TestDialogueError:
+
+    def test_dialogue_error_when_destination_is_not_connected(self):
+        """Test that we receive an ``DialogueError`` message when we try to send a message to an unconnected agent."""
+
+        with setup_test_agents(1, False, prefix="dialogue_error_unconnected_destination") as agents:
+
+            for a in agents:
+                a.connect()
+
+            agent_0 = agents[0]  # type: AgentTest
+            agent_0.on_dialogue_error = MagicMock()
+
+            # send a message to an unconnected agent
+            agent_0.send_message(0, 0, "unconnected_agent", b"dummy_message")
+
+            asyncio.ensure_future(agent_0.async_run())
+            asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
+
+        agent_0.on_dialogue_error.assert_called_with(0, 0, "unconnected_agent")
 
 
-def test_more_than_one_async_run_call():
-    with NetworkOEFNode():
-        with patch('logging.Logger.warning') as mock:
-            proxy = OEFNetworkProxy("test_more_than_one_async_run_call", "127.0.0.1", 3333)
-            agent = Agent(proxy)
+class TestConnect:
+
+    def test_connection_error_on_send(self):
+        """Test that a OEFConnectionError is raised when we try to send a message before
+        the connection has been established."""
+        with NetworkOEFNode():
+            with pytest.raises(OEFConnectionError, match="Connection not established yet."):
+                proxy = OEFNetworkProxy("test_oef_connection_error_when_send", "127.0.0.1", 3333)
+                agent = Agent(proxy)
+                agent.send_message(0, 0, proxy.public_key, b"message")
+
+    def test_connection_error_on_receive(self):
+        """Test that a OEFConnectionError is raised when we try to send a message before
+        the connection has been established."""
+        with NetworkOEFNode():
+            with pytest.raises(OEFConnectionError, match="Connection not established yet."):
+                proxy = OEFNetworkProxy("test_oef_connection_error_when_receive", "127.0.0.1", 3333)
+                agent = Agent(proxy)
+                agent.run()
+
+    def test_that_two_connect_attempts_work_correctly(self):
+        """Test that two call to the :func:'~agents.Agent.connect()' method work correctly.
+        Use the local implementation of the OEF."""
+        with NetworkOEFNode():
+            agent_1 = OEFAgent("two_connect_attempt", "127.0.0.1", 3333)
+            first_status = agent_1.connect()
+            second_status = agent_1.connect()
+
+        assert first_status
+        assert second_status
+
+    def test_that_two_connect_attempts_work_correctly_local_node(self):
+        """Test that two call to the :func:'~agents.Agent.connect()' method work correctly."""
+        with OEFLocalProxy.LocalNode() as local_node:
+            agent_1 = LocalAgent("two_connect_attempt", local_node)
+            first_status = agent_1.connect()
+            second_status = agent_1.connect()
+
+        assert first_status
+        assert second_status
+
+    def test_connection_error_public_key_already_in_use(self):
+        """Test that a OEFConnectionError is raised when we try to connect two agents with the same public key."""
+        with pytest.raises(OEFConnectionError, match="Public key already in use."):
+            with NetworkOEFNode():
+                agent_1 = OEFAgent("the_same_public_key", "127.0.0.1", 3333)
+                agent_2 = OEFAgent(agent_1.public_key, "127.0.0.1", 3333)
+                agent_1.connect()
+                agent_2.connect()
+
+    def test_connection_error_public_key_already_in_use_local_node(self):
+        """Test that a OEFConnectionError is raised when we try to connect two agents with the same public key.
+        Use the local implementation of the OEF."""
+        with pytest.raises(OEFConnectionError, match="Public key already in use."):
+            with OEFLocalProxy.LocalNode() as local_node:
+                agent_1 = LocalAgent("the_same_public_key", local_node)
+                agent_2 = LocalAgent(agent_1.public_key, local_node)
+                agent_1.connect()
+                agent_2.connect()
+
+
+class TestDisconnect:
+
+    def test_disconnect(self):
+        """Test that the disconnect method works correctly."""
+
+        with NetworkOEFNode():
+            agent_1 = OEFAgent("disconnect", "127.0.0.1", 3333)
+            assert not agent_1._oef_proxy.is_connected()
+            agent_1.connect()
+            assert agent_1._oef_proxy.is_connected()
+            agent_1.disconnect()
+            assert not agent_1._oef_proxy.is_connected()
+
+    def test_disconnect_local(self):
+        """Test that the disconnect method works correctly."""
+
+        with OEFLocalProxy.LocalNode() as local_node:
+            agent_1 = LocalAgent("disconnect", local_node)
+            assert not agent_1._oef_proxy.is_connected()
+            agent_1.connect()
+            assert agent_1._oef_proxy.is_connected()
+            agent_1.disconnect()
+            assert not agent_1._oef_proxy.is_connected()
+
+
+class TestMisc:
+
+    def test_more_than_once_async_run_call(self):
+        """Test that when we call async_run more than once we get a warning message."""
+        with NetworkOEFNode():
+            with patch('logging.Logger.warning') as mock:
+                proxy = OEFNetworkProxy("test_more_than_one_async_run_call", "127.0.0.1", 3333)
+                agent = Agent(proxy)
+                agent.connect()
+
+                asyncio.ensure_future(agent.async_run())
+                asyncio.ensure_future(agent.async_run())
+                asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
+
+                mock.assert_called_with("Agent {} already scheduled for running.".format(agent.public_key))
+
+    def test_send_more_than_2_to_16_bytes_simple_message(self):
+        """Test that """
+        with NetworkOEFNode():
+            huge_message = b"a"*2**16
+            proxy = OEFNetworkProxy("test_send_more_than_2_to_16_bytes_simple_message", "127.0.0.1", 3333)
+            agent = AgentTest(proxy)
             agent.connect()
-
-            asyncio.ensure_future(agent.async_run())
+            agent.send_message(0, 0, agent.public_key, huge_message)
             asyncio.ensure_future(agent.async_run())
             asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
 
-            mock.assert_called_with("Agent {} already scheduled for running.".format(agent.public_key))
+            agent.stop()
 
+        # assert that we received only one message
+        assert len(agent.received_msg) == 1
 
-def test_send_more_than_2_to_16_bytes_simple_message():
-    with NetworkOEFNode():
-        proxy = OEFNetworkProxy("test_send_more_than_2_to_16_bytes_simple_message", "127.0.0.1", 3333)
-        agent = AgentTest(proxy)
-        agent.connect()
-        agent.send_message(0, 0, agent.public_key, b"a"*2**16)
-        asyncio.ensure_future(agent.async_run())
-        asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
+        # assert that the message contains what we've sent.
+        origin, dialogue_id, content = agent.received_msg[0]
+        assert dialogue_id == 0
+        assert origin == agent.public_key
+        assert content == huge_message
 
-        agent.stop()
-
-    # assert that we received only one message
-    assert len(agent.received_msg) == 1
-
-    # assert that the message contains what we've sent.
-    origin, dialogue_id, content = agent.received_msg[0]
-    assert dialogue_id == 0
-    assert origin == agent.public_key
-    assert content == b"a" * 2 ** 16
-
-
-def test_that_two_connect_attempts_work_correctly():
-    with NetworkOEFNode():
-        agent_1 = OEFAgent("two_connect_attempt", "127.0.0.1", 3333)
-        first_status = agent_1.connect()
-        second_status = agent_1.connect()
-
-    assert first_status
-    assert second_status
-
-
-def test_that_two_connect_attempts_work_correctly_local_node():
-    with OEFLocalProxy.LocalNode() as local_node:
-        agent_1 = LocalAgent("two_connect_attempt", local_node)
-        first_status = agent_1.connect()
-        second_status = agent_1.connect()
-
-    assert first_status
-    assert second_status
-
-
-def test_connection_error_public_key_already_in_use():
-    """Test that a OEFConnectionError is raised when we try to connect two agents with the same public key."""
-    with pytest.raises(OEFConnectionError, match="Public key already in use."):
-        with NetworkOEFNode():
-            agent_1 = OEFAgent("the_same_public_key", "127.0.0.1", 3333)
-            agent_2 = OEFAgent(agent_1.public_key, "127.0.0.1", 3333)
-            agent_1.connect()
-            agent_2.connect()
-
-
-def test_connection_error_public_key_already_in_use_local_node():
-    """Test that a OEFConnectionError is raised when we try to connect two agents with the same public key.
-    Local version."""
-    with pytest.raises(OEFConnectionError, match="Public key already in use."):
-        with OEFLocalProxy.LocalNode() as local_node:
-            agent_1 = LocalAgent("the_same_public_key", local_node)
-            agent_2 = LocalAgent(agent_1.public_key, local_node)
-            agent_1.connect()
-            agent_2.connect()
 

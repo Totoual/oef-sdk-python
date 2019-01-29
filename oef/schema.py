@@ -35,6 +35,7 @@ from typing import Union, Type, Optional, List, Dict
 
 import oef.agent_pb2 as agent_pb2
 import oef.query_pb2 as query_pb2
+from oef.helpers import haversine
 
 
 class ProtobufSerializable(ABC):
@@ -82,6 +83,9 @@ class Location(ProtobufSerializable):
         location_pb.lon = self.longitude
         return location_pb
 
+    def distance(self, other):
+        return haversine(self.latitude, self.longitude, other.latitude, other.longitude)
+
     def __eq__(self, other):
         if type(other) != Location:
             return False
@@ -102,9 +106,6 @@ class Location(ProtobufSerializable):
 
     def __lt__(self, other):
         return not self.__ge__(other)
-
-    def __repr__(self):
-        return "{},{}".format(self.latitude, self.longitude)
 
 
 """

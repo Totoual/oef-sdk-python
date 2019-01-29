@@ -15,10 +15,10 @@ Sphinx = "*"
 sphinx_rtd_theme = "*"
 ipython = "*"
 jupyter = "*"
+pylint = "*"
 
 [packages]
 protobuf = "*"
-google = "*"
 
 [requires]
 python_version = "3"

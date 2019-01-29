@@ -32,7 +32,6 @@ import logging
 from abc import ABC
 from typing import Optional, List
 
-from oef import agent_pb2
 from oef.core import OEFProxy, AgentInterface
 from oef.messages import OEFErrorOperation
 from oef.proxy import OEFNetworkProxy, PROPOSE_TYPES, CFP_TYPES, OEFLocalProxy, OEFConnectionError

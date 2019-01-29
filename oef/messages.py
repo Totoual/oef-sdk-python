@@ -153,7 +153,7 @@ class UnregisterService(BaseMessage):
     It is used in the method :func:`~oef.core.OEFCoreInterface.unregister_service`.
     """
 
-    def __init__(self, msg_id:int, service_description):
+    def __init__(self, msg_id: int, service_description):
         """
         Initialize a UnregisterService message.
 

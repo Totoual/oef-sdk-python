@@ -83,7 +83,7 @@ class Location(ProtobufSerializable):
         location_pb.lon = self.longitude
         return location_pb
 
-    def distance(self, other):
+    def distance(self, other) -> float:
         return haversine(self.latitude, self.longitude, other.latitude, other.longitude)
 
     def __eq__(self, other):

@@ -32,7 +32,7 @@ import asyncio
 import logging
 import struct
 from collections import defaultdict
-from typing import Optional, Awaitable, Tuple, List, Dict
+from typing import Optional, Awaitable, Tuple, List
 
 import oef.agent_pb2 as agent_pb2
 from oef.core import OEFProxy
@@ -370,7 +370,7 @@ class OEFLocalProxy(OEFProxy):
         def search_services(self, public_key: str, search_id: int, query: Query) -> None:
             """Since the service directory and the instance checking are not implemented,
             just send a dummy search result message, returning all the connected agents."""
-            
+
             result = []
             for agent_public_key, descriptions in self.services.items():
                 for description in descriptions:

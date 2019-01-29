@@ -24,7 +24,7 @@ import time
 
 from hypothesis import settings
 
-"""The delay to """
+"""The timeout used to test asynchronicity."""
 _ASYNCIO_DELAY = 0.1
 settings(max_examples=100)
 

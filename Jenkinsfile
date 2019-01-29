@@ -2,18 +2,17 @@ pipeline {
 
     agent {
         docker {
-                image "gcr.io/organic-storm-201412/oef-python-ci-build:latest"
+            image "gcr.io/organic-storm-201412/oef-sdk-python-image:latest"
             }
         }
 
     stages {
 
-
         stage('Pre-build'){
 
             steps {
-                sh 'apt-get install -y protobuf-compiler'
-                sh 'pip3 install -r requirements.txt'
+                sh 'pipenv run pipenv install --dev'
+                sh 'pipenv run python3 scripts/setup_test.py'
             }
         }
 
@@ -21,36 +20,22 @@ pipeline {
 
             parallel{
 
-                stage('Build & Test'){
-                    stages{
-                        stage('Build') {
-                            steps {
-                                sh 'python3 setup.py install'
-                                sh 'python3 -m py_compile oef/*.py'
-                            }
-                        }
-                        stage('Test') {
-                            steps {
-                                dir ("oef-core"){
-                                    git url: 'https://github.com/uvue-git/oef-core.git'
-                                }
-                                sh 'cd oef-core && mkdir build && cd build && cmake .. && make -j4'
-                                sh 'tox'
-                            }
-                        }
+                stage('Test') {
+                    steps {
+                        sh 'pipenv run tox -e py36'
                     }
                 }
 
                 stage('Lint'){
                     steps{
-                        sh 'flake8 oef --exclude=oef/*_pb2.py'
-                        sh 'pylint -d all oef'
+                        sh 'pipenv run flake8 oef --exclude=oef/*_pb2.py'
+                        sh 'pipenv run pylint -d all oef'
                     }
                 }
 
-                stage('Build docs'){
+                stage('Docs'){
                     steps{
-                        sh 'cd docs && make html'
+                        sh 'cd docs && pipenv run make html'
                     }
                 }
 

@@ -171,12 +171,12 @@ def constraints(draw):
 
 @composite
 def and_constraints(draw):
-    return And(draw(lists(constraint_expressions(), max_size=3)))
+    return And(draw(lists(constraint_expressions(), min_size=2, max_size=3)))
 
 
 @composite
 def or_constraints(draw):
-    return Or(draw(lists(constraint_expressions(), max_size=3)))
+    return Or(draw(lists(constraint_expressions(), min_size=2, max_size=3)))
 
 
 @composite

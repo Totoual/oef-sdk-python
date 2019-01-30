@@ -86,7 +86,7 @@ def _stop_agents(agents):
     for a in agents:
         a.stop()
 
-    tasks = asyncio.Task.all_tasks()
+    tasks = asyncio.all_tasks(asyncio.get_event_loop())
     for t in tasks:
         asyncio.get_event_loop().run_until_complete(t)
 

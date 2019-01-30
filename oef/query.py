@@ -25,6 +25,8 @@ import oef.query_pb2 as query_pb2
 from oef.schema import ATTRIBUTE_TYPES, AttributeSchema, DataModel, ProtobufSerializable, Description, Location
 
 RANGE_TYPES = Union[Tuple[str, str], Tuple[int, int], Tuple[float, float], Tuple[Location, Location]]
+ORDERED_TYPES = Union[int, str, float]
+SET_TYPES = Union[List[float], List[str], List[bool], List[int], List[Location]]
 
 
 class ConstraintExpr(ProtobufSerializable, ABC):
@@ -40,6 +42,13 @@ class ConstraintExpr(ProtobufSerializable, ABC):
         :param description: the description to check.
         :return: ``True`` if the description satisfy the constraint expression, ``False`` otherwise.
         """
+
+    def _check_validity(self) -> None:
+        """Check whether a Constraint Expression is valid.
+
+        :return ``None``
+        :raises ValueError: if the object contains invalid values."""
+        return
 
     @staticmethod
     def _to_pb(expression):
@@ -94,6 +103,8 @@ class And(ConstraintExpr):
         """
         self.constraints = constraints
 
+        self._check_validity()
+
     def to_pb(self):
         """
         From an instance of ``And`` to its associated Protobuf object.
@@ -125,6 +136,13 @@ class And(ConstraintExpr):
         :return: ``True`` if the description satisfy the constraint expression, ``False`` otherwise.
         """
         return all(expr.check(description) for expr in self.constraints)
+
+    def _check_validity(self):
+        if len(self.constraints) < 2:
+            raise ValueError("Invalid input value for type '{}': number of "
+                             "subexpression must be at least 2.".format(type(self).__name__))
+        for c in self.constraints:
+            c._check_validity()
 
     def __eq__(self, other):
         if type(other) != And:
@@ -161,6 +179,8 @@ class Or(ConstraintExpr):
         """
         self.constraints = constraints
 
+        self._check_validity()
+
     def to_pb(self):
         """
         From an instance of ``Or`` to its associated Protobuf object.
@@ -193,6 +213,13 @@ class Or(ConstraintExpr):
         """
         return any(expr.check(description) for expr in self.constraints)
 
+    def _check_validity(self):
+        if len(self.constraints) < 2:
+            raise ValueError("Invalid input value for type '{}': number of "
+                             "subexpression must be at least 2.".format(type(self).__name__))
+        for c in self.constraints:
+            c._check_validity()
+
     def __eq__(self, other):
         if type(other) != Or:
             return False
@@ -215,6 +242,9 @@ class Not(ConstraintExpr):
         True
     """
 
+    def __init__(self, constraint: ConstraintExpr) -> None:
+        self.constraint = constraint
+
     def check(self, description: Description) -> bool:
         """
         Check if a value satisfies the ``Not`` constraint expression.
@@ -223,9 +253,6 @@ class Not(ConstraintExpr):
         :return: ``True`` if the description satisfy the constraint expression, ``False`` otherwise.
         """
         return not self.constraint.check(description)
-
-    def __init__(self, constraint: ConstraintExpr) -> None:
-        self.constraint = constraint
 
     def to_pb(self):
         not_pb = query_pb2.Query.ConstraintExpr.Not()
@@ -354,6 +381,13 @@ class Relation(ConstraintType, ABC):
         return type(self.value)
 
 
+class OrderingRelation(Relation, ABC):
+    """A specialization of the :class:`~oef.query.Relation` class to represent ordering relation (e.g. greater-than)"""
+
+    def __init__(self, value: ORDERED_TYPES):
+        super().__init__(value)
+
+
 class Eq(Relation):
     """
     The equality relation.
@@ -408,7 +442,7 @@ class NotEq(Relation):
         return value != self.value
 
 
-class Lt(Relation):
+class Lt(OrderingRelation):
     """Less-than relation.
 
     Examples:
@@ -434,7 +468,7 @@ class Lt(Relation):
         return value < self.value
 
 
-class LtEq(Relation):
+class LtEq(OrderingRelation):
     """
     Less-than-equal relation.
 
@@ -461,7 +495,7 @@ class LtEq(Relation):
         return value <= self.value
 
 
-class Gt(Relation):
+class Gt(OrderingRelation):
     """
     Greater-than relation.
 
@@ -487,7 +521,7 @@ class Gt(Relation):
         return value > self.value
 
 
-class GtEq(Relation):
+class GtEq(OrderingRelation):
     """
     Greater-than-equal relation.
 
@@ -604,9 +638,6 @@ class Range(ConstraintType):
             return False
         else:
             return self.values == other.values
-
-
-SET_TYPES = Union[List[float], List[str], List[bool], List[int], List[Location]]
 
 
 class Set(ConstraintType, ABC):
@@ -767,17 +798,25 @@ class NotIn(Set):
 
 class Distance(ConstraintType):
     """
-    Class that implements the 'not in set' constraint type.
-    That is, the value of attribute over which the constraint is defined
-    must be not in the set of values provided.
+    Class that implements the 'distance' constraint type.
+    That is, the locations we are looking for
+    must be within a given distance from a given location.
+    The distance is interpreted as a radius from a center.
 
     Examples:
+        # define a location of interest, e.g. the Tour Eiffel
         >>> tour_eiffel = Location(48.8581064, 2.29447)
-        >>> le_jules_verne_restaurant = Location(48.8579675, 2.2951849)
-        >>> colosseum = Location(41.8902102, 12.4922309)
+
+        # find all the locations close to the Tour Eiffel within 1 km
         >>> close_to_tour_eiffel = Distance(tour_eiffel, 1.0)
+
+        # Le Jules Verne, a famous restaurant close to the Tour Eiffel, satisfies the constraint.
+        >>> le_jules_verne_restaurant = Location(48.8579675, 2.2951849)
         >>> close_to_tour_eiffel.check(le_jules_verne_restaurant)
         True
+
+        # The Colosseum does not satisfy the constraint (farther than 1 km from the Tour Eiffel).
+        >>> colosseum = Location(41.8902102, 12.4922309)
         >>> close_to_tour_eiffel.check(colosseum)
         False
 
@@ -785,10 +824,10 @@ class Distance(ConstraintType):
 
     def __init__(self, center: Location, distance: float) -> None:
         """
-
+        Instantiate the ``Distance`` constraint.
 
         :param center: the center from where compute the distance.
-        :param distance: the distance from the center, in km.
+        :param distance: the maximum distance from the center, in km.
         """
         self.center = center
         self.distance = distance
@@ -846,7 +885,7 @@ class Constraint(ConstraintExpr):
         elif isinstance(self.constraint, Distance):
             constraint.distance.CopyFrom(self.constraint.to_pb())
         else:
-            raise Exception("The constraint type is not valid: {}".format(self.constraint))
+            raise ValueError("The constraint type is not valid: {}".format(self.constraint))
         return constraint
 
     @classmethod

@@ -119,7 +119,7 @@ class TestConstraint:
         assert a_constraint != not_a_constraint
 
     def test_raise_exception_when_not_supported_constrainttype(self):
-        with pytest.raises(Exception, match="The constraint type is not valid"):
+        with pytest.raises(ValueError, match="The constraint type is not valid"):
             a_constraint = Constraint("foo", tuple())
             a_constraint.to_pb()
 
@@ -137,10 +137,17 @@ class TestAnd:
         assert expected_and == actual_and
 
     def test_equality_when_not_equal(self):
-        a_and = And([])
-        not_a_and = tuple()
+        an_and = And([Constraint("foo", Eq(True)), Constraint("bar", Eq(False))])
+        not_an_and = tuple()
 
-        assert a_and != not_a_and
+        assert an_and != not_an_and
+
+    def test_raise_exception_when_and_has_less_than_2_subexpressions(self):
+        """Test that we raise an exception when we try to instantiate an
+        ``And`` object with a list of subexpressions of length less than 2."""
+
+        with pytest.raises(ValueError, match="Invalid input value.*number of subexpression must be at least 2."):
+            an_and = And([])
 
 
 class TestOr:
@@ -156,10 +163,17 @@ class TestOr:
         assert expected_or == actual_or
 
     def test_equality_when_not_equal(self):
-        a_or = Or([])
-        not_a_or = tuple()
+        an_or = Or([Constraint("foo", Eq(True)), Constraint("bar", Eq(False))])
+        not_an_or = tuple()
 
-        assert a_or != not_a_or
+        assert an_or != not_an_or
+
+    def test_raise_exception_when_and_has_less_than_2_subexpressions(self):
+        """Test that we raise an exception when we try to instantiate an
+        ``Or`` object with a list of subexpressions of length less than 2."""
+
+        with pytest.raises(ValueError, match="Invalid input value.*number of subexpression must be at least 2."):
+            an_or = Or([])
 
 
 class TestNot:
@@ -175,7 +189,7 @@ class TestNot:
         assert expected_not == actual_not
 
     def test_equality_when_not_equal(self):
-        a_not = Not(Constraint("foo", Eq(0)))
+        a_not = Not(Constraint("foo", Eq(True)))
         not_a_not = tuple()
 
         assert a_not != not_a_not

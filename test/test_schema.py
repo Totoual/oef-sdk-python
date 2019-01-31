@@ -28,7 +28,7 @@ from oef import query_pb2
 from oef.schema import AttributeSchema, ATTRIBUTE_TYPES, DataModel, AttributeInconsistencyException, Description, \
     generate_schema, Location
 
-from test.hypothesis.strategies import attribute_schema_values, descriptions, data_models, attributes_schema, locations
+from test.strategies import attribute_schema_values, descriptions, data_models, attributes_schema, locations
 
 
 def check_inconsistency_checker(schema: List[AttributeSchema], values: Dict[str, ATTRIBUTE_TYPES], exception_string):

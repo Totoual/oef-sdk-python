@@ -29,6 +29,7 @@ from oef.schema import Description, AttributeSchema, DataModel
 from test.conftest import _ASYNCIO_DELAY, NetworkOEFNode
 from test.common import AgentTest, setup_test_agents
 
+"""Parametrization to switch tests between the networked OEF Node and the local implementation of the OEF NOde."""
 parametrize_node_configurations = pytest.mark.parametrize("local", [True, False], ids=["local", "networked"])
 
 
@@ -490,10 +491,10 @@ class TestMisc:
 
                 mock.assert_called_with("Agent {} already scheduled for running.".format(agent.public_key))
 
-    def test_send_more_than_2_to_16_bytes_simple_message(self):
-        """Test that """
+    def test_send_more_than_64_kilobytes(self):
+        """Test that we can send more than 64KB messages."""
         with NetworkOEFNode():
-            proxy = OEFNetworkProxy("test_send_more_than_2_to_16_bytes_simple_message", "127.0.0.1", 3333)
+            proxy = OEFNetworkProxy("test_send_more_than_64_kilobytes", "127.0.0.1", 3333)
             agent = AgentTest(proxy)
 
             expected_content = b"a"*2**16

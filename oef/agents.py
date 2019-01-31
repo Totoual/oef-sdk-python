@@ -207,7 +207,7 @@ class Agent(AgentInterface, ABC):
                      destination: str,
                      proposals: PROPOSE_TYPES,
                      msg_id: int,
-                     target: Optional[int] = None) -> None:
+                     target: Optional[int] = 0) -> None:
         """Send a Propose. See :func:`~oef.core.OEFCoreInterface.send_propose`."""
         logger.debug("Agent {}: dialogue_id={}, destination={}, proposals={}, msg_id={}, target={}"
                      .format(self.public_key,
@@ -221,7 +221,7 @@ class Agent(AgentInterface, ABC):
     def send_accept(self, dialogue_id: int,
                     destination: str,
                     msg_id: int,
-                    target: Optional[int] = None) -> None:
+                    target: Optional[int] = 0) -> None:
         """Send an Accept. See :func:`~oef.core.OEFCoreInterface.send_accept`."""
         logger.debug("Agent {}: dialogue_id={}, destination={}, msg_id={}, target={}"
                      .format(self.public_key,
@@ -234,7 +234,7 @@ class Agent(AgentInterface, ABC):
     def send_decline(self, dialogue_id: int,
                      destination: str,
                      msg_id: int,
-                     target: Optional[int] = None) -> None:
+                     target: Optional[int] = 0) -> None:
         """Send a Decline. See :func:`~oef.core.OEFCoreInterface.send_decline`."""
         logger.debug("Agent {}: dialogue_id={}, destination={}, msg_id={}, target={}"
                      .format(self.public_key,

@@ -62,7 +62,7 @@ class SingleDialogue(DialogueInterface, ABC):
         self.agent = agent
         self.destination = destination
         self.id = id_
-        if id_:
+        if id_ is not None:
             self.is_buyer = False
         else:
             self.id = uuid.uuid4().time_mid
@@ -106,7 +106,7 @@ class DialogueAgent(Agent, ABC):
         """
         dialogue_key = dialogue.key
         if dialogue_key not in self.dialogues:
-            raise ValueError("Dialogue key {} already in use.".format(dialogue_key))
+            raise ValueError("Dialogue key {} not found.".format(dialogue_key))
         self.dialogues.pop(dialogue_key)
 
     @abstractmethod
@@ -123,7 +123,7 @@ class DialogueAgent(Agent, ABC):
         """
 
     @abstractmethod
-    def on_new_message(self, from_: str, dialogue_id: int, content: str) -> None:
+    def on_new_message(self, from_: str, dialogue_id: int, content: bytes) -> None:
         """
         Handle a new :class:`~oef.messages.Message` message.
 
@@ -145,16 +145,22 @@ class DialogueAgent(Agent, ABC):
     def on_message(self, origin: str,
                    dialogue_id: int,
                    content: bytes):
-        dialogue = self._get_dialogue((origin, dialogue_id))
-        dialogue.on_message(origin, dialogue_id, content)
+        try:
+            dialogue = self._get_dialogue((origin, dialogue_id))
+            dialogue.on_message(origin, dialogue_id, content)
+        except KeyError:
+            self.on_new_message(origin, dialogue_id, content)
 
     def on_cfp(self, origin: str,
                dialogue_id: int,
                msg_id: int,
                target: int,
                query: CFP_TYPES):
-        dialogue = self._get_dialogue((origin, dialogue_id))
-        dialogue.on_cfp(origin, dialogue_id, msg_id, target, query)
+        try:
+            dialogue = self._get_dialogue((origin, dialogue_id))
+            dialogue.on_cfp(origin, dialogue_id, msg_id, target, query)
+        except KeyError:
+            self.on_new_cfp(origin, dialogue_id, msg_id, target, query)
 
     def on_propose(self, origin: str,
                    dialogue_id: int,

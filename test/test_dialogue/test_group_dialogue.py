@@ -17,3 +17,10 @@
 #
 # ------------------------------------------------------------------------------
 
+
+"""
+This module contains tests on the usage of :class:`~oef.dialogue.GroupDialogues`.
+"""
+
+
+

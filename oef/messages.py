@@ -332,7 +332,7 @@ class CFP(AgentMessage):
         self.dialogue_id = dialogue_id
         self.destination = destination
         self.query = query
-        self.target = target
+        self.target = target if target is not None else (msg_id - 1)
 
     def to_envelope(self) -> agent_pb2.Agent.Message:
         fipa_msg = fipa_pb2.Fipa.Message()
@@ -393,7 +393,7 @@ class Propose(AgentMessage):
         self.dialogue_id = dialogue_id
         self.destination = destination
         self.proposals = proposals
-        self.target = target
+        self.target = target if target is not None else (msg_id - 1)
 
     def to_envelope(self) -> agent_pb2.Agent.Message:
         fipa_msg = fipa_pb2.Fipa.Message()
@@ -448,7 +448,7 @@ class Accept(AgentMessage):
         super().__init__(msg_id)
         self.dialogue_id = dialogue_id
         self.destination = destination
-        self.target = target
+        self.target = target if target is not None else (msg_id - 1)
 
     def to_envelope(self) -> agent_pb2.Agent.Message:
         fipa_msg = fipa_pb2.Fipa.Message()
@@ -498,7 +498,7 @@ class Decline(AgentMessage):
         super().__init__(msg_id)
         self.dialogue_id = dialogue_id
         self.destination = destination
-        self.target = target
+        self.target = target if target is not None else (msg_id - 1)
 
     def to_envelope(self):
         fipa_msg = fipa_pb2.Fipa.Message()

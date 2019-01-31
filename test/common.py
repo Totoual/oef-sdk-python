@@ -32,12 +32,13 @@ from test.conftest import NetworkOEFNode
 
 class AgentTest(Agent):
     """
-    An agent used for tests.
+    An agent used for tests. The only thing he does is to store all the messages he receives, so
+    we can track the history of the received messages and assert some properties on it.
     """
 
     def __init__(self, proxy: OEFProxy):
         """
-        Initialize an Local OEFAgent for tests.
+        Initialize a OEFAgent for tests.
         """
         super().__init__(proxy)
         self.received_msg = []

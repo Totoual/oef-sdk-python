@@ -23,7 +23,7 @@ from hypothesis import given
 from oef import query_pb2
 from oef.query import Relation, Range, Set, And, Or, Constraint, Query, Eq, In, Not, Distance
 from oef.schema import Location, DataModel
-from test.hypothesis.strategies import relations, ranges, query_sets, and_constraints, or_constraints, constraints, \
+from test.strategies import relations, ranges, query_sets, and_constraints, or_constraints, constraints, \
     queries, not_constraints, distances
 
 

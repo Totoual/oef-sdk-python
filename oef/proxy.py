@@ -101,9 +101,7 @@ class OEFNetworkProxy(OEFProxy):
         :return: ``None``
         :raises OEFConnectionError: if the connection has not been established yet.
         """
-        try:
-            assert self._server_writer is not None
-        except AssertionError:
+        if self._server_writer is None:
             raise OEFConnectionError("Connection not established yet. Please use 'connect()'.")
         serialized_msg = protobuf_msg.SerializeToString()
         nbytes = struct.pack("I", len(serialized_msg))
@@ -118,9 +116,7 @@ class OEFNetworkProxy(OEFProxy):
         :return: ``None``
         :raises OEFConnectionError: if the connection has not been established yet.
         """
-        try:
-            assert self._server_reader is not None
-        except AssertionError:
+        if self._server_reader is None:
             raise OEFConnectionError("Connection not established yet. Please use 'connect()'.")
         nbytes_packed = await self._server_reader.read(len(struct.pack("I", 0)))
         logger.debug("received ${0}".format(nbytes_packed))

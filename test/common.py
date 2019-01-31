@@ -17,7 +17,8 @@
 #   limitations under the License.
 #
 # ------------------------------------------------------------------------------
-
+import asyncio
+import contextlib
 
 from typing import Tuple, List
 
@@ -25,6 +26,8 @@ from oef import agent_pb2
 from oef.agents import Agent
 from oef.core import OEFProxy
 from oef.messages import CFP_TYPES, PROPOSE_TYPES
+from oef.proxy import OEFLocalProxy, OEFNetworkProxy
+from test.conftest import NetworkOEFNode
 
 
 class AgentTest(Agent):
@@ -40,7 +43,7 @@ class AgentTest(Agent):
         self.received_msg = []
 
     def _process_message(self, arguments: Tuple):
-        """Add the message to the """
+        """Store the message into the state of the agent."""
         self.received_msg.append(arguments)
 
     def on_message(self, origin: str, dialogue_id: int, content: bytes):
@@ -86,3 +89,80 @@ class AgentTest(Agent):
 
     def on_oef_error(self, answer_id: int, operation: agent_pb2.Server.AgentMessage.OEFError.Operation):
         pass
+
+
+@contextlib.contextmanager
+def setup_local_proxies(n: int, prefix: str) -> List[OEFNetworkProxy]:
+    """
+    Set up a list of :class:`oef.proxy.OEFLocalProxy`.
+
+    :param n: the number of proxies to set up.
+    :param prefix: the prefix to add to the proxies' public keys.
+    """
+    public_key_prefix = prefix + "-" if prefix else ""
+    local_node = OEFLocalProxy.LocalNode()
+    proxies = [OEFLocalProxy("{}agent-{}".format(public_key_prefix, i), local_node) for i in range(n)]
+    try:
+        asyncio.ensure_future(local_node.run())
+        yield proxies
+    except BaseException:
+        raise
+    finally:
+        local_node.stop()
+
+
+@contextlib.contextmanager
+def setup_network_proxies(n: int, prefix: str) -> List[OEFNetworkProxy]:
+    """
+    Set up a list of :class:`oef.proxy.OEFNetworkProxy`.
+
+    :param n: the number of proxies to set up.
+    :param prefix: the prefix to add to the proxies' public keys.
+    """
+    public_key_prefix = prefix + "-" if prefix else ""
+    proxies = [OEFNetworkProxy("{}agent-{}".format(public_key_prefix, i), "127.0.0.1", 3333) for i in range(n)]
+    try:
+        with NetworkOEFNode():
+            yield proxies
+    except BaseException:
+        raise
+
+
+@contextlib.contextmanager
+def setup_test_proxies(n: int, local: bool, prefix: str="") -> List[OEFProxy]:
+    """
+    Set up a list of proxies.
+
+    :param n: the number of proxies to set up.
+    :param local: whether the proxies are local (i.e. connecting to a :class:`~oef.proxy.OEFLocalProxy.LocalNode`)
+                | or networked.
+    :param prefix: the prefix to add to the proxies' public keys.
+    :return:
+    """
+    if local:
+        context = setup_local_proxies(n, prefix)
+    else:
+        context = setup_network_proxies(n, prefix)
+
+    with context as proxies:
+        yield proxies
+
+
+@contextlib.contextmanager
+def setup_test_agents(n: int, local: bool, prefix: str="") -> List[AgentTest]:
+    with setup_test_proxies(n, local, prefix) as proxies:
+        agents = [AgentTest(proxy) for proxy in proxies]
+        try:
+            yield agents
+        except Exception:
+            raise
+    _stop_agents(agents)
+
+
+def _stop_agents(agents):
+    for a in agents:
+        a.stop()
+
+    tasks = asyncio.all_tasks(asyncio.get_event_loop())
+    for t in tasks:
+        asyncio.get_event_loop().run_until_complete(t)

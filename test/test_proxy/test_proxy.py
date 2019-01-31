@@ -17,78 +17,19 @@
 #
 # ------------------------------------------------------------------------------
 import asyncio
-import contextlib
-from typing import List
 from unittest.mock import patch, MagicMock
 
 import pytest
 
 from oef.agents import Agent, OEFAgent, LocalAgent
-from oef.core import OEFProxy
 from oef.messages import OEFErrorOperation
 from oef.proxy import OEFNetworkProxy, OEFLocalProxy, OEFConnectionError
 from oef.query import Query, Gt, Constraint, Eq
 from oef.schema import Description, AttributeSchema, DataModel
 from test.conftest import _ASYNCIO_DELAY, NetworkOEFNode
-from test.test_proxy.agent_test import AgentTest
+from test.common import AgentTest, setup_test_agents
 
 parametrize_node_configurations = pytest.mark.parametrize("local", [True, False], ids=["local", "networked"])
-
-
-@contextlib.contextmanager
-def setup_local_proxies(n: int, prefix: str):
-    public_key_prefix = prefix + "-" if prefix else ""
-    local_node = OEFLocalProxy.LocalNode()
-    proxies = [OEFLocalProxy("{}agent-{}".format(public_key_prefix, i), local_node) for i in range(n)]
-    try:
-        asyncio.ensure_future(local_node.run())
-        yield proxies
-    except BaseException:
-        raise
-    finally:
-        local_node.stop()
-
-
-@contextlib.contextmanager
-def setup_network_proxies(n: int, prefix: str):
-    public_key_prefix = prefix + "-" if prefix else ""
-    proxies = [OEFNetworkProxy("{}agent-{}".format(public_key_prefix, i), "127.0.0.1", 3333) for i in range(n)]
-    try:
-        with NetworkOEFNode():
-            yield proxies
-    except BaseException:
-        raise
-
-
-@contextlib.contextmanager
-def setup_test_proxies(n: int, local: bool, prefix: str="") -> List[OEFProxy]:
-    if local:
-        context = setup_local_proxies(n, prefix)
-    else:
-        context = setup_network_proxies(n, prefix)
-
-    with context as proxies:
-        yield proxies
-
-
-@contextlib.contextmanager
-def setup_test_agents(n: int, local: bool, prefix: str="") -> List[AgentTest]:
-    with setup_test_proxies(n, local, prefix) as proxies:
-        agents = [AgentTest(proxy) for proxy in proxies]
-        try:
-            yield agents
-        except Exception:
-            raise
-    _stop_agents(agents)
-
-
-def _stop_agents(agents):
-    for a in agents:
-        a.stop()
-
-    tasks = asyncio.all_tasks(asyncio.get_event_loop())
-    for t in tasks:
-        asyncio.get_event_loop().run_until_complete(t)
 
 
 class TestSimpleMessage:

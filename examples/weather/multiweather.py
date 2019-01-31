@@ -28,7 +28,7 @@ from weather_schema import WEATHER_DATA_MODEL
 from oef.schema import Description
 
 
-from oef.messages import PROPOSE_TYPES, CFP_TYPES
+from oef.messages import PROPOSE_TYPES, CFP_TYPES, OEFErrorOperation
 from oef.agents import Agent
 
 import random
@@ -36,24 +36,24 @@ import random
 
 class WeatherClient(DialogueAgent):
     """Class that implements the behavior of the weather client."""
-    
+
     def __init__(self, oef_proxy: OEFProxy):
         super().__init__(oef_proxy)
         self.group = None
-
-    def on_new_cfp(self):
-        pass
-
-    def on_new_message(self):
-        pass
-
-    def on_connection_error(self):
-        pass
 
     def on_search_result(self, search_id: int, agents: List[str]):
         """For every agent returned in the service search, send a CFP to obtain resources from them."""
         print("Agent found: {0}".format(agents))
         self.group = WeatherGroupDialogues(self, agents)
+
+    def on_new_cfp(self, from_: str, dialogue_id: int, msg_id: int, target: int, query: CFP_TYPES) -> None:
+        pass
+
+    def on_new_message(self, from_: str, dialogue_id: int, content: str) -> None:
+        pass
+
+    def on_connection_error(self, operation: OEFErrorOperation) -> None:
+        pass
 
 
 class WeatherClientDialogue(SingleDialogue):
@@ -71,7 +71,6 @@ class WeatherClientDialogue(SingleDialogue):
         pass
 
     def on_propose(self, origin: str, dialogue_id: int, msg_id: int, target: int, proposals: PROPOSE_TYPES):
-        """When we receive a Propose message, answer with an Accept."""
         print("Received propose from agent {0}".format(origin))
         assert type(proposals) == list and len(proposals) == 1
         proposal = proposals[0]

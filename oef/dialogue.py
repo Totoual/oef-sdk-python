@@ -30,7 +30,7 @@ This module contains classes to implement more complex dialogues.
 from abc import ABC, abstractmethod
 from typing import Dict, Tuple, List, Optional
 
-from oef.messages import CFP_TYPES, PROPOSE_TYPES
+from oef.messages import CFP_TYPES, PROPOSE_TYPES, OEFErrorOperation
 
 from oef.agents import Agent
 from oef.core import DialogueInterface, OEFProxy
@@ -68,14 +68,6 @@ class SingleDialogue(DialogueInterface, ABC):
             self.id = uuid.uuid4().time_mid
             self.is_buyer = True
 
-    @abstractmethod
-    def on_error(self) -> None:
-        """
-        A callback that is called whenever an error occurs.
-
-        :return: ``None``
-        """
-
     @property
     def key(self) -> DialogueKey:
         """The identifier for this dialogue."""
@@ -100,7 +92,7 @@ class DialogueAgent(Agent, ABC):
         :raises ValueError: if the dialogue key is already present.
         """
         dialogue_key = dialogue.key
-        if dialogue_key not in self.dialogues:
+        if dialogue_key in self.dialogues:
             raise ValueError("Dialogue key {} already in use.".format(dialogue_key))
         self.dialogues[dialogue_key] = dialogue
 
@@ -118,16 +110,37 @@ class DialogueAgent(Agent, ABC):
         self.dialogues.pop(dialogue_key)
 
     @abstractmethod
-    def on_new_cfp(self):
-        """Handle a new CFP message."""
+    def on_new_cfp(self, from_: str, dialogue_id: int, msg_id: int, target: int, query: CFP_TYPES) -> None:
+        """
+        Handle a new CFP message.
+
+        :param from_: the id of the agent who sent the CFP.
+        :param dialogue_id: the dialogue identifier that the CFP refers to
+        :param msg_id: the message identifier
+        :param target: the identifier of the target message
+        :param query: the query associated with the CFP.
+        :return: ``None``
+        """
 
     @abstractmethod
-    def on_new_message(self):
-        """Handle a new :class:`~oef.messages.Message` message."""
+    def on_new_message(self, from_: str, dialogue_id: int, content: str) -> None:
+        """
+        Handle a new :class:`~oef.messages.Message` message.
+
+        :param from_: the agent id of the source.
+        :param dialogue_id: the dialogue id.
+        :param content: the content of the message.
+        :return: ``None``
+        """
 
     @abstractmethod
-    def on_connection_error(self):
-        """Handle a connection error."""
+    def on_connection_error(self, operation: OEFErrorOperation) -> None:
+        """
+        Handle a connection error.
+
+        :param operation: the OEF error
+        :return: ``None``
+        """
 
     def on_message(self, origin: str,
                    dialogue_id: int,
@@ -166,10 +179,9 @@ class DialogueAgent(Agent, ABC):
         dialogue.on_decline(origin, dialogue_id, msg_id, target)
 
     def _get_dialogue(self, key: DialogueKey) -> SingleDialogue:
-        try:
-            return self.dialogues[key]
-        except KeyError:
+        if key not in self.dialogues:
             raise KeyError("Dialogue key {} not found.".format(key))
+        return self.dialogues[key]
 
 
 class GroupDialogues:
@@ -241,4 +253,3 @@ class GroupDialogues:
 
         :return: ``None``
         """
-

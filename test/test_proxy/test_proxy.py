@@ -27,7 +27,7 @@ from oef.agents import Agent, OEFAgent, LocalAgent
 from oef.core import OEFProxy
 from oef.messages import OEFErrorOperation
 from oef.proxy import OEFNetworkProxy, OEFLocalProxy, OEFConnectionError
-from oef.query import Query, Gt, Constraint
+from oef.query import Query, Gt, Constraint, Eq
 from oef.schema import Description, AttributeSchema, DataModel
 from test.conftest import _ASYNCIO_DELAY, NetworkOEFNode
 from test.test_proxy.agent_test import AgentTest
@@ -126,19 +126,19 @@ class TestSimpleMessage:
                     agent_2.async_run()))
             asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
 
-        assert len(agent_0.received_msg) == 3
-        assert len(agent_1.received_msg) == 3
-        assert len(agent_2.received_msg) == 3
+        assert 3 == len(agent_0.received_msg)
+        assert 3 == len(agent_1.received_msg)
+        assert 3 == len(agent_2.received_msg)
 
-        assert agent_0.received_msg[0] == (agent_0.public_key, 0, msg)
-        assert agent_0.received_msg[1] == (agent_1.public_key, 0, msg)
-        assert agent_0.received_msg[2] == (agent_2.public_key, 0, msg)
-        assert agent_1.received_msg[0] == (agent_0.public_key, 0, msg)
-        assert agent_1.received_msg[1] == (agent_1.public_key, 0, msg)
-        assert agent_1.received_msg[2] == (agent_2.public_key, 0, msg)
-        assert agent_2.received_msg[0] == (agent_0.public_key, 0, msg)
-        assert agent_2.received_msg[1] == (agent_1.public_key, 0, msg)
-        assert agent_2.received_msg[2] == (agent_2.public_key, 0, msg)
+        assert (agent_0.public_key, 0, msg) == agent_0.received_msg[0]
+        assert (agent_1.public_key, 0, msg) == agent_0.received_msg[1]
+        assert (agent_2.public_key, 0, msg) == agent_0.received_msg[2]
+        assert (agent_0.public_key, 0, msg) == agent_1.received_msg[0]
+        assert (agent_1.public_key, 0, msg) == agent_1.received_msg[1]
+        assert (agent_2.public_key, 0, msg) == agent_1.received_msg[2]
+        assert (agent_0.public_key, 0, msg) == agent_2.received_msg[0]
+        assert (agent_1.public_key, 0, msg) == agent_2.received_msg[1]
+        assert (agent_2.public_key, 0, msg) == agent_2.received_msg[2]
 
 
 class TestCFP:
@@ -158,15 +158,19 @@ class TestCFP:
 
             agent_0.send_cfp(0, agent_1.public_key, None, 1, 0)
             agent_0.send_cfp(0, agent_1.public_key, b"hello", 1, 0)
-            agent_0.send_cfp(0, agent_1.public_key, Query([]), 1, 0)
+            agent_0.send_cfp(0, agent_1.public_key, Query([Constraint("foo", Eq(0))]), 1, 0)
 
             asyncio.ensure_future(agent_1.async_run())
             asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
 
-        assert len(agent_1.received_msg) == 3
-        assert agent_1.received_msg[0] == (agent_0.public_key, 0, 1, 0, None)
-        assert agent_1.received_msg[1] == (agent_0.public_key, 0, 1, 0, b"hello")
-        assert agent_1.received_msg[2] == (agent_0.public_key, 0, 1, 0, Query([]))
+        expected_message_01 = (agent_0.public_key, 0, 1, 0, None)
+        expected_message_02 = (agent_0.public_key, 0, 1, 0, b"hello")
+        expected_message_03 = (agent_0.public_key, 0, 1, 0, Query([Constraint("foo", Eq(0))]))
+
+        assert 3 == len(agent_1.received_msg)
+        assert expected_message_01 == agent_1.received_msg[0]
+        assert expected_message_02 == agent_1.received_msg[1]
+        assert expected_message_03 == agent_1.received_msg[2]
 
 
 class TestPropose:
@@ -192,11 +196,16 @@ class TestPropose:
             asyncio.ensure_future(agent_1.async_run())
             asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
 
-        assert len(agent_1.received_msg) == 4
-        assert agent_1.received_msg[0] == (agent_0.public_key, 0, 1, 0, b"hello")
-        assert agent_1.received_msg[1] == (agent_0.public_key, 0, 1, 0, [])
-        assert agent_1.received_msg[2] == (agent_0.public_key, 0, 1, 0, [Description({})])
-        assert agent_1.received_msg[3] == (agent_0.public_key, 0, 1, 0, [Description({}), Description({})])
+        expected_message_01 = (agent_0.public_key, 0, 1, 0, b"hello")
+        expected_message_02 = (agent_0.public_key, 0, 1, 0, [])
+        expected_message_03 = (agent_0.public_key, 0, 1, 0, [Description({})])
+        expected_message_04 = (agent_0.public_key, 0, 1, 0, [Description({}), Description({})])
+
+        assert 4 == len(agent_1.received_msg)
+        assert expected_message_01 == agent_1.received_msg[0]
+        assert expected_message_02 == agent_1.received_msg[1]
+        assert expected_message_03 == agent_1.received_msg[2]
+        assert expected_message_04 == agent_1.received_msg[3]
 
 
 class TestAccept:
@@ -219,8 +228,8 @@ class TestAccept:
             asyncio.ensure_future(agent_1.async_run())
             asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
 
-        assert len(agent_1.received_msg) == 1
-        assert agent_1.received_msg[0] == (agent_0.public_key, 0, 1, 0)
+        assert 1 == len(agent_1.received_msg)
+        assert (agent_0.public_key, 0, 1, 0) == agent_1.received_msg[0]
 
 
 class TestDecline:
@@ -242,8 +251,8 @@ class TestDecline:
             asyncio.ensure_future(agent_1.async_run())
             asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
 
-        assert len(agent_1.received_msg) == 1
-        assert agent_1.received_msg[0] == (agent_0.public_key, 0, 1, 0)
+        assert 1 == len(agent_1.received_msg)
+        assert (agent_0.public_key, 0, 1, 0) == agent_1.received_msg[0]
 
 
 class TestSearchServices:
@@ -270,10 +279,13 @@ class TestSearchServices:
             agent_1.register_service(0, desc_1)
             agent_2.register_service(0, desc_2)
 
-            agent_0.search_services(0, Query([], dummy_datamodel))
+            agent_0.search_services(0, Query([Constraint("foo", Eq(0))], dummy_datamodel))
             agent_0.search_services(0, Query([
                 Constraint("foo", Gt(10)),
                 Constraint("bar", Gt("B")),
+            ], dummy_datamodel))
+            agent_0.search_services(0, Query([
+                Constraint("bar", Gt("A")),
             ], dummy_datamodel))
 
             asyncio.ensure_future(agent_0.async_run())
@@ -281,9 +293,14 @@ class TestSearchServices:
             agent_1.unregister_service(0, desc_1)
             agent_2.unregister_service(0, desc_2)
 
-        assert len(agent_0.received_msg) == 2
-        assert agent_0.received_msg[0] == (0, [agent_1.public_key, agent_2.public_key])
-        assert agent_0.received_msg[1] == (0, [agent_1.public_key])
+        expected_message_01 = (0, [])
+        expected_message_02 = (0, [agent_1.public_key])
+        expected_message_03 = (0, [agent_1.public_key, agent_2.public_key])
+
+        assert 3 == len(agent_0.received_msg)
+        assert expected_message_01 == agent_0.received_msg[0]
+        assert expected_message_02 == agent_0.received_msg[1]
+        assert expected_message_03 == agent_0.received_msg[2]
 
 
 class TestSearchAgents:
@@ -308,11 +325,13 @@ class TestSearchAgents:
             agent_1.register_agent(0, Description({"foo": 15, "bar": "BAR"}, dummy_datamodel))
             agent_2.register_agent(0, Description({"foo": 5, "bar": "ABC"}, dummy_datamodel))
 
-            agent_0.search_agents(0, Query([], dummy_datamodel))
-
+            agent_0.search_agents(0, Query([Constraint("foo", Eq(0))], dummy_datamodel))
             agent_0.search_agents(0, Query([
                 Constraint("foo", Gt(10)),
                 Constraint("bar", Gt("B")),
+            ], dummy_datamodel))
+            agent_0.search_agents(0, Query([
+                Constraint("bar", Gt("A")),
             ], dummy_datamodel))
 
             asyncio.ensure_future(agent_0.async_run())
@@ -320,9 +339,14 @@ class TestSearchAgents:
             agent_1.unregister_agent(0)
             agent_2.unregister_agent(0)
 
-        assert len(agent_0.received_msg) == 2
-        assert agent_0.received_msg[0] == (0, [agent_1.public_key, agent_2.public_key])
-        assert agent_0.received_msg[1] == (0, [agent_1.public_key])
+        expected_message_01 = (0, [])
+        expected_message_02 = (0, [agent_1.public_key])
+        expected_message_03 = (0, [agent_1.public_key, agent_2.public_key])
+
+        assert 3 == len(agent_0.received_msg)
+        assert expected_message_01 == agent_0.received_msg[0]
+        assert expected_message_02 == agent_0.received_msg[1]
+        assert expected_message_03 == agent_0.received_msg[2]
 
 
 class TestUnregisterAgent:
@@ -340,16 +364,16 @@ class TestUnregisterAgent:
 
             agent_0, agent_1 = agents
 
-            dummy_datamodel = DataModel("dummy_datamodel", [])
+            dummy_datamodel = DataModel("dummy_datamodel", [AttributeSchema("foo", int, False)])
             agent_1.register_agent(0, Description({}, dummy_datamodel))
             agent_1.unregister_agent(0)
 
-            agent_0.search_agents(0, Query([], dummy_datamodel))
+            agent_0.search_agents(0, Query([Constraint("foo", Eq(0))], dummy_datamodel))
             asyncio.ensure_future(agent_0.async_run())
             asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
 
-        assert len(agent_0.received_msg) == 1
-        assert agent_0.received_msg[0] == (0, [])
+        assert 1 == len(agent_0.received_msg)
+        assert (0, []) == agent_0.received_msg[0]
 
 
 class TestUnregisterService:
@@ -367,17 +391,17 @@ class TestUnregisterService:
 
             agent_0, agent_1 = agents
 
-            dummy_datamodel = DataModel("dummy_datamodel", [])
+            dummy_datamodel = DataModel("dummy_datamodel", [AttributeSchema("foo", int, False)])
             dummy_service_description = Description({}, dummy_datamodel)
             agent_1.register_service(0, dummy_service_description)
             agent_1.unregister_service(0, dummy_service_description)
 
-            agent_0.search_services(0, Query([], dummy_datamodel))
+            agent_0.search_services(0, Query([Constraint("foo", Eq(0))], dummy_datamodel))
             asyncio.ensure_future(agent_0.async_run())
             asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
 
-        assert len(agent_0.received_msg) == 1
-        assert agent_0.received_msg[0] == (0, [])
+        assert 1 == len(agent_0.received_msg)
+        assert (0, []) == agent_0.received_msg[0]
 
 
 class TestOEFError:
@@ -528,23 +552,26 @@ class TestMisc:
     def test_send_more_than_2_to_16_bytes_simple_message(self):
         """Test that """
         with NetworkOEFNode():
-            huge_message = b"a"*2**16
             proxy = OEFNetworkProxy("test_send_more_than_2_to_16_bytes_simple_message", "127.0.0.1", 3333)
             agent = AgentTest(proxy)
+
+            expected_content = b"a"*2**16
+            expected_dialogue_id = 0
+            expected_origin = agent.public_key
+
             agent.connect()
-            agent.send_message(0, 0, agent.public_key, huge_message)
+            agent.send_message(0, 0, agent.public_key, expected_content)
             asyncio.ensure_future(agent.async_run())
             asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
 
             agent.stop()
 
+        actual_origin, actual_dialogue_id, actual_content = agent.received_msg[0]
+
         # assert that we received only one message
-        assert len(agent.received_msg) == 1
+        assert 1 == len(agent.received_msg)
 
         # assert that the message contains what we've sent.
-        origin, dialogue_id, content = agent.received_msg[0]
-        assert dialogue_id == 0
-        assert origin == agent.public_key
-        assert content == huge_message
-
-
+        assert expected_dialogue_id == actual_dialogue_id
+        assert expected_origin == actual_origin
+        assert expected_content == actual_content

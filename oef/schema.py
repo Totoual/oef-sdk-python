@@ -92,21 +92,6 @@ class Location(ProtobufSerializable):
         else:
             return self.latitude == other.latitude and self.longitude == other.longitude
 
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __ge__(self, other):
-        return self.latitude >= other.latitude
-
-    def __gt__(self, other):
-        return self.latitude > other.latitude
-
-    def __le__(self, other):
-        return not self.__gt__(other)
-
-    def __lt__(self, other):
-        return not self.__ge__(other)
-
 
 """
 The allowable types that an Attribute can have
@@ -234,6 +219,8 @@ class DataModel(ProtobufSerializable):
         self.name = name
         self.attribute_schemas = copy.deepcopy(attribute_schemas)
         self.description = description
+        self.attributes_by_name = {a.name: a for a in self.attribute_schemas}
+        self._check_validity()
 
     @classmethod
     def from_pb(cls, model: query_pb2.Query.DataModel):
@@ -261,6 +248,13 @@ class DataModel(ProtobufSerializable):
         if self.description is not None:
             model.description = self.description
         return model
+
+    def _check_validity(self):
+        # check if there are duplicated attribute names
+        attribute_names = [attribute.name for attribute in self.attribute_schemas]
+        if len(attribute_names) != len(set(attribute_names)):
+            raise ValueError("Invalid input value for type '{}': duplicated attribute name."
+                             .format(type(self).__name__))
 
     def __eq__(self, other):
         if type(other) != DataModel:
@@ -327,14 +321,15 @@ class Description(ProtobufSerializable):
                | will not be checked against a schema. Schemas are extremely useful for preventing
                | problems hard to debug, and are highly recommended.
         :param data_model_name: the name of the default data model. If a data model is provided,
-               | this paramter is ignored.
+               | this parameter is ignored.
         """
         self.values = copy.deepcopy(attribute_values)
         if data_model is not None:
             self.data_model = data_model
-            self._check_consistency()
         else:
             self.data_model = generate_schema(data_model_name, attribute_values)
+
+        self._check_consistency()
 
     @staticmethod
     def _extract_value(value: query_pb2.Query.Value) -> ATTRIBUTE_TYPES:
@@ -425,28 +420,28 @@ class Description(ProtobufSerializable):
         :raises AttributeInconsistencyException: if values do not meet the schema, or if no schema is present
                                                | if they have disallowed types.
         """
-        if self.data_model is not None:
-            # check that all required attributes in the schema are contained in
-            required_attributes = [s.name for s in self.data_model.attribute_schemas if s.required]
-            if not all(a in self.values for a in required_attributes):
-                raise AttributeInconsistencyException("Missing required attribute.")
 
-            # check that all values are defined in the schema
-            all_schema_attributes = [s.name for s in self.data_model.attribute_schemas]
-            if not all(k in all_schema_attributes for k in self.values):
-                raise AttributeInconsistencyException("Have extra attribute not in schema")
+        # check that all required attributes in the schema are contained in the description
+        required_attributes = [s.name for s in self.data_model.attribute_schemas if s.required]
+        if not all(a in self.values for a in required_attributes):
+            raise AttributeInconsistencyException("Missing required attribute.")
 
-            # check that each of the values are consistent with that specified in the schema
-            for schema in self.data_model.attribute_schemas:
-                if schema.name in self.values:
-                    if not isinstance(self.values[schema.name], schema.type):
-                        # values does not match type in schema
-                        raise AttributeInconsistencyException(
-                            "Attribute {} has incorrect type: {}".format(schema.name, schema.type))
-                    elif not isinstance(self.values[schema.name], ATTRIBUTE_TYPES.__args__):
-                        # value type matches schema, but it is not an allowed type
-                        raise AttributeInconsistencyException(
-                            "Attribute {} has unallowed type".format(schema.name))
+        # check that all values are defined in the schema
+        all_schema_attributes = [s.name for s in self.data_model.attribute_schemas]
+        if not all(k in all_schema_attributes for k in self.values):
+            raise AttributeInconsistencyException("Have extra attribute not in schema")
+
+        # check that each of the values are consistent with that specified in the schema
+        for schema in self.data_model.attribute_schemas:
+            if schema.name in self.values:
+                if type(self.values[schema.name]) != schema.type:
+                    # values does not match type in schema
+                    raise AttributeInconsistencyException(
+                        "Attribute {} has incorrect type: {}".format(schema.name, schema.type))
+                elif not isinstance(self.values[schema.name], ATTRIBUTE_TYPES.__args__):
+                    # value type matches schema, but it is not an allowed type
+                    raise AttributeInconsistencyException(
+                        "Attribute {} has unallowed type".format(schema.name))
 
     def __eq__(self, other):
         if type(other) != Description:

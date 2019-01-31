@@ -32,7 +32,7 @@ import asyncio
 import logging
 import struct
 from collections import defaultdict
-from typing import Optional, Awaitable, Tuple, List
+from typing import Optional, Awaitable, Tuple, List, Dict
 
 import oef.agent_pb2 as agent_pb2
 from oef.core import OEFProxy

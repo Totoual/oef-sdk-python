@@ -19,60 +19,21 @@
 # ------------------------------------------------------------------------------
 
 
-"""This module contains Hypothesis strategies for some of the package data types
+"""This module contains Hypothesis strategies for some of the data types
 (e.g. AttributeSchema, DataModel, Description, ...)"""
 
 
-import typing
-from math import isnan
-from typing import List
+from typing import List, Optional, Type
 
 import hypothesis
-from hypothesis import assume
-from hypothesis.strategies import sampled_from, from_type, composite, text, booleans, one_of, none, lists, tuples,\
+from hypothesis.strategies import integers, sampled_from, composite, text, booleans, one_of, none, lists, tuples,\
                                   floats, register_type_strategy
 
 from oef.query import Eq, NotEq, Lt, LtEq, Gt, GtEq, Range, In, NotIn, And, Or, Constraint, Query, Not, Distance
-from oef.schema import ATTRIBUTE_TYPES, AttributeSchema, DataModel, Description, Location
+from oef.schema import AttributeSchema, DataModel, Description, Location, ATTRIBUTE_TYPES
 
-
-def _is_attribute_type(t: typing.Type) -> bool:
-    """
-    Check if a type is a valid attribute schema type.
-    :param t: the type.
-    :return: True if the type belongs to `ATTRIBUTE_TYPES`, False otherwise.
-    """
-    return issubclass(t, ATTRIBUTE_TYPES.__args__)
-
-
-"""Strategy that sample a valid attribute type"""
-attribute_schema_types = sampled_from(ATTRIBUTE_TYPES.__args__ + (bool,))
-
-"""Strategy that sample a not valid attribute type."""
-not_attribute_schema_types = from_type(type).filter(lambda t: not _is_attribute_type(t))
-
-
-def is_correct_attribute_value(value: ATTRIBUTE_TYPES):
-    if type(value) == int and abs(value) >= 0xFFFFFFFF:
-        return False
-    if type(value) == float and isnan(value):
-        return False
-
-    return True
-
-
-"""Strategy that sample a value from valid attribute types."""
-attribute_schema_values = attribute_schema_types.flatmap(lambda x: from_type(x)).filter(is_correct_attribute_value)
-
-
-@composite
-def value_type_pairs(draw, type_strategy):
-    """
-    Return a value-type pair.
-    """
-    type_ = draw(type_strategy)
-    value = draw(from_type(type_).filter(is_correct_attribute_value))
-    return value, type_
+integers_32 = integers(min_value=-2**32 + 1, max_value=2**32 - 1)
+floats_no_nan = floats(allow_nan=False)
 
 
 @composite
@@ -84,6 +45,26 @@ def locations(draw):
 
 register_type_strategy(Location, locations())
 
+strategies_by_type = {
+    int: integers_32,
+    float: floats_no_nan,
+    bool: booleans(),
+    str: text(),
+    Location: locations()
+}
+
+attribute_schema_types = sampled_from(ATTRIBUTE_TYPES.__args__ + (bool, ))
+attribute_schema_values = one_of(integers_32, floats_no_nan, text(), booleans(), locations())
+ordered_values = one_of(integers_32, floats_no_nan, text())
+set_values = one_of(lists(integers_32),
+                    lists(floats_no_nan),
+                    lists(text()),
+                    lists(booleans()),
+                    lists(locations))
+range_values = one_of(*[tuples(integers_32, integers_32),
+                        tuples(floats_no_nan, floats_no_nan),
+                        tuples(text(), text()),
+                        tuples(locations(), locations())])
 
 @composite
 def attributes_schema(draw):
@@ -96,10 +77,12 @@ def attributes_schema(draw):
 
 
 @composite
-def data_models(draw):
+def data_models(draw, min_size=0):
     data_model_name = draw(text())
     data_model_description = draw(one_of(none(), text()))
-    attributes = draw(lists(attributes_schema()))
+
+    # data model must have attributes with unique names
+    attributes = draw(lists(attributes_schema(), unique_by=lambda x: x.name, min_size=min_size, max_size=3))
 
     data_model = DataModel(data_model_name, attributes, data_model_description)
     return data_model
@@ -111,18 +94,19 @@ def schema_instances(draw, attributes: List[AttributeSchema]):
         return {}
     else:
         keys, types, required_flags = zip(*[(a.name, a.type, a.required) for a in attributes])
-        values = [draw(from_type(type_).filter(is_correct_attribute_value)) for type_ in types]
+        values = [draw(strategies_by_type[type_]) for type_ in types]
         return {k: v for k, v, r in zip(keys, values, required_flags) if r or draw(booleans())}
 
 
 @composite
 def descriptions(draw, from_data_model=False):
+
     if from_data_model:
         data_model = draw(data_models())
         attributes = data_model.attribute_schemas
     else:
         data_model = None
-        attributes = draw(lists(attributes_schema()))
+        attributes = draw(lists(attributes_schema(), max_size=3))
     attributes_values = draw(schema_instances(attributes))
 
     d = Description(attributes_values, data_model)
@@ -130,64 +114,128 @@ def descriptions(draw, from_data_model=False):
 
 
 relation_types = sampled_from([Eq, NotEq, Lt, LtEq, Gt, GtEq])
+ordered_relation_types = sampled_from([Lt, LtEq, Gt, GtEq])
+equality_relation_types = sampled_from([Eq, NotEq])
 
 
 @composite
-def relations(draw):
-    return draw(relation_types)(draw(attribute_schema_values))
+def ordered_relations(draw, type_: Type[ATTRIBUTE_TYPES] = None):
+    if type_:
+        return draw(ordered_relation_types)(draw(strategies_by_type[type_]))
+    else:
+        return draw(ordered_relation_types)(draw(ordered_values))
 
 
 @composite
-def ranges(draw):
-    value_pairs = draw(sampled_from([str, int, float, Location]).map(lambda x: tuples(from_type(x), from_type(x))))
-    value_pair = draw(value_pairs)
-    assume(is_correct_attribute_value(value_pair[0]) and is_correct_attribute_value(value_pair[1]))
-    return Range(value_pair)
+def equality_relations(draw, type_: Type[ATTRIBUTE_TYPES] = None):
+    if type_:
+        return draw(equality_relation_types)(draw(strategies_by_type[type_]))
+    else:
+        return draw(equality_relation_types)(draw(attribute_schema_values))
+
+
+@composite
+def relations(draw, type_: Type[ATTRIBUTE_TYPES] = None):
+    return draw(one_of(ordered_relations(type_), equality_relations(type_)))
+
+
+@composite
+def ranges(draw, type_: Type[ATTRIBUTE_TYPES] = None):
+    if type_:
+        type_strategy = strategies_by_type[type_]
+        return Range(draw(tuples(type_strategy, type_strategy)))
+    else:
+        return Range(draw(range_values))
 
 
 set_types = sampled_from([In, NotIn])
 
 
 @composite
-def query_sets(draw):
-    return draw(set_types)(draw(lists(from_type(draw(attribute_schema_types)).filter(is_correct_attribute_value))))
+def query_sets(draw, type_: Type[ATTRIBUTE_TYPES] = None):
+    if type_:
+        return draw(set_types)(draw(lists(strategies_by_type[type_], max_size=3)))
+    else:
+        return draw(set_types)(draw(lists(strategies_by_type[draw(attribute_schema_types)], max_size=3)))
 
 
 @composite
-def distances(draw):
-    return Distance(draw(locations()), draw(floats(min_value=0.0)))
+def distances(draw, type_: Type[ATTRIBUTE_TYPES] = None):
+    return Distance(draw(locations()), draw(floats(min_value=0.0, allow_nan=False)))
+
+
+type_to_compatible_constraint_types = {
+    int:      [equality_relations, ordered_relations, ranges, query_sets],
+    str:      [equality_relations, ordered_relations, ranges, query_sets],
+    bool:     [equality_relations, query_sets],
+    float:    [equality_relations, ordered_relations, ranges, query_sets],
+    Location: [equality_relations, ranges, query_sets, distances],
+}
 
 
 @composite
-def constraint_expressions(draw):
-    return draw(one_of(constraints(), and_constraints(), or_constraints(), not_constraints()))
+def constraint_expressions(draw, attributes: Optional[List[AttributeSchema]] = None):
+    return draw(one_of(constraints(attributes),
+                       and_constraints(attributes),
+                       or_constraints(attributes),
+                       not_constraints(attributes)))
 
 
 @composite
-def constraints(draw):
-    return Constraint(draw(text()),
-                      draw(one_of(relations(), ranges(), query_sets(), distances())))
+def _constraints_from_attributes(draw, attributes: List[AttributeSchema]):
+    attribute = draw(sampled_from(attributes))
+    attributes_name = attribute.name
+    attribute_type = attribute.type
+
+    compatible_constraint_types = type_to_compatible_constraint_types[attribute_type]
+    constraint_type_strategy = draw(sampled_from(compatible_constraint_types))
+    return Constraint(attributes_name,
+                      draw(constraint_type_strategy(type_=attribute_type)))
 
 
 @composite
-def and_constraints(draw):
-    return And(draw(lists(constraint_expressions(), min_size=2, max_size=3)))
+def constraints(draw, attributes: Optional[List[AttributeSchema]] = None):
+    """
+    Generate ``Constraint`` objects. Optionally, you can specify a list of desired attribute names.
+    """
+    if attributes is None:
+        return Constraint(draw(text()),
+                          draw(one_of(relations(),
+                                      ranges(),
+                                      query_sets(),
+                                      distances())))
+    else:
+        return draw(_constraints_from_attributes(attributes))
 
 
 @composite
-def or_constraints(draw):
-    return Or(draw(lists(constraint_expressions(), min_size=2, max_size=3)))
+def and_constraints(draw, attributes: Optional[List[AttributeSchema]] = None):
+    return And(draw(lists(constraints(attributes), min_size=2, max_size=3)))
 
 
 @composite
-def not_constraints(draw):
-    return Not(draw(constraint_expressions()))
+def or_constraints(draw, attributes: Optional[List[AttributeSchema]] = None):
+    return Or(draw(lists(constraints(attributes), min_size=2, max_size=3)))
+
+
+@composite
+def not_constraints(draw, attributes: Optional[List[AttributeSchema]] = None):
+    return Not(draw(constraints(attributes)))
 
 
 @composite
 def queries(draw):
-    return Query(draw(lists(constraints())),
-                 draw(one_of(none(), data_models())))
+    # a proper data model for a valid query is either None or a non-empty Data Model (hence min_size=1)
+    data_model = draw(one_of(none(), data_models(min_size=1)))
+
+    # if the data model is not None:
+    if data_model:
+        # generate constraints from attributes name
+        attributes = data_model.attribute_schemas
+    else:
+        attributes = None
+
+    return Query(draw(lists(constraint_expressions(attributes), min_size=1, max_size=3)), data_model)
 
 
 hypothesis.strategies.register_type_strategy(AttributeSchema, attributes_schema)

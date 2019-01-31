@@ -20,8 +20,8 @@ import asyncio
 from unittest.mock import patch
 
 from oef.agents import OEFAgent
-from oef.query import Query
-from oef.schema import Description
+from oef.query import Query, Constraint, Eq
+from oef.schema import Description, AttributeSchema
 from .conftest import _ASYNCIO_DELAY, NetworkOEFNode
 
 
@@ -118,7 +118,7 @@ def test_agent_on_search_result_handler_warning():
             agent = OEFAgent("test_agent_on_search_result_warning", "127.0.0.1", 3333)
             agent.connect()
 
-            agent.search_agents(0, Query([]))
+            agent.search_agents(0, Query([Constraint("foo", Eq(0))]))
 
             asyncio.ensure_future(agent.async_run())
             asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))

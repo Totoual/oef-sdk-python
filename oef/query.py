@@ -27,6 +27,7 @@ from oef.schema import ATTRIBUTE_TYPES, AttributeSchema, DataModel, ProtobufSeri
 RANGE_TYPES = Union[Tuple[str, str], Tuple[int, int], Tuple[float, float], Tuple[Location, Location]]
 ORDERED_TYPES = Union[int, str, float]
 SET_TYPES = Union[List[float], List[str], List[bool], List[int], List[Location]]
+Query = None
 
 
 class ConstraintExpr(ProtobufSerializable, ABC):
@@ -43,11 +44,23 @@ class ConstraintExpr(ProtobufSerializable, ABC):
         :return: ``True`` if the description satisfy the constraint expression, ``False`` otherwise.
         """
 
+    @abstractmethod
+    def is_valid(self, data_model: DataModel) -> bool:
+        """
+        Check whether a constraint expression is valid wrt a data model. Specifically, check the following conditions:
+
+        - If all the attributes referenced by the constraints are correctly associated with the Data Model attributes.
+
+        :param data_model: the data model used to check the validity of the constraint expression.
+        :return: ``True`` if the constraint expression is valid wrt the data model, ``False`` otherwise.
+        """
+
     def _check_validity(self) -> None:
-        """Check whether a Constraint Expression is valid.
+        """Check whether a Constraint Expression satisfies some basic requirements.
+        E.g. and And expression must have at least 2 subexpressions.
 
         :return ``None``
-        :raises ValueError: if the object contains invalid values."""
+        :raises ValueError: if the object does not satisfy some requirements."""
         return
 
     @staticmethod
@@ -137,6 +150,9 @@ class And(ConstraintExpr):
         """
         return all(expr.check(description) for expr in self.constraints)
 
+    def is_valid(self, data_model: DataModel) -> bool:
+        return all(c.is_valid(data_model) for c in self.constraints)
+
     def _check_validity(self):
         if len(self.constraints) < 2:
             raise ValueError("Invalid input value for type '{}': number of "
@@ -213,6 +229,10 @@ class Or(ConstraintExpr):
         """
         return any(expr.check(description) for expr in self.constraints)
 
+    def is_valid(self, data_model: DataModel) -> bool:
+        for c in self.constraints:
+            return all(c.is_valid(data_model) for c in self.constraints)
+
     def _check_validity(self):
         if len(self.constraints) < 2:
             raise ValueError("Invalid input value for type '{}': number of "
@@ -265,6 +285,9 @@ class Not(ConstraintExpr):
         expression = ConstraintExpr._from_pb(constraint_pb.expr)
         return cls(expression)
 
+    def is_valid(self, data_model: DataModel) -> bool:
+        return self.constraint.is_valid(data_model)
+
     def __eq__(self, other):
         if type(other) != Not:
             return False
@@ -286,6 +309,15 @@ class ConstraintType(ProtobufSerializable, ABC):
         :param value: the value to check.
         :return: ``True`` if the value satisfy the constraint, ``False`` otherwise.
         """
+
+    def is_valid(self, attribute: AttributeSchema) -> bool:
+        """
+        Check if the constraint type is valid wrt a given attribute.
+
+        :param attribute: the data model used to check the validity of the constraint type.
+        :return: ``True`` if the constraint type is valid wrt the attribute, ``False`` otherwise.
+        """
+        return self._get_type() is None or self._get_type() == attribute.type
 
     @abstractmethod
     def _get_type(self) -> Optional[Type[ATTRIBUTE_TYPES]]:
@@ -371,18 +403,18 @@ class Relation(ConstraintType, ABC):
         relation.val.CopyFrom(query_value)
         return relation
 
+    def _get_type(self) -> Type[ATTRIBUTE_TYPES]:
+        return type(self.value)
+
     def __eq__(self, other):
         if type(other) != type(self):
             return False
         else:
             return self.value == other.value
 
-    def _get_type(self) -> Type[ATTRIBUTE_TYPES]:
-        return type(self.value)
-
 
 class OrderingRelation(Relation, ABC):
-    """A specialization of the :class:`~oef.query.Relation` class to represent ordering relation (e.g. greater-than)"""
+    """A specialization of the :class:`~oef.query.Relation` class to represent ordering relation (e.g. greater-than)."""
 
     def __init__(self, value: ORDERED_TYPES):
         super().__init__(value)
@@ -620,7 +652,7 @@ class Range(ConstraintType):
         elif range_case == "l":
             return cls((Location.from_pb(range_pb.l.first), Location.from_pb(range_pb.l.second)))
 
-    def check(self, value: ATTRIBUTE_TYPES) -> bool:
+    def check(self, value: RANGE_TYPES) -> bool:
         """
         Check if a value is in the range specified by the constraint.
 
@@ -959,6 +991,14 @@ class Constraint(ConstraintExpr):
         # dispatch the check to the right implementation for the concrete constraint type.
         return self.constraint.check(value)
 
+    def is_valid(self, data_model: DataModel) -> bool:
+        # if the attribute name of the constraint is not present in the data model, the constraint is not valid.
+        if self.attribute_name not in data_model.attributes_by_name:
+            return False
+
+        attribute = data_model.attributes_by_name[self.attribute_name]
+        return self.constraint.is_valid(attribute)
+
     def __eq__(self, other):
         if type(other) != Constraint:
             return False
@@ -992,7 +1032,7 @@ class Query(ProtobufSerializable):
     """
 
     def __init__(self,
-                 constraints: List[Constraint],
+                 constraints: List[ConstraintExpr],
                  model: Optional[DataModel] = None) -> None:
         """
         Initialize a query.
@@ -1002,6 +1042,8 @@ class Query(ProtobufSerializable):
         """
         self.constraints = constraints
         self.model = model
+
+        self._check_validity()
 
     def to_pb(self) -> query_pb2.Query.Model:
         """
@@ -1037,6 +1079,30 @@ class Query(ProtobufSerializable):
         :return: ``True`` if the description satisfies all the constraints, ``False`` otherwise.
         """
         return all(c.check(description) for c in self.constraints)
+
+    def is_valid(self, data_model: DataModel) -> bool:
+        """
+        Given a data model, check whether the query is valid for that data model.
+
+        :return: ``True`` if the query is compliant with the data model, ``False`` otherwise.
+        """
+        if self.model is None:
+            return True
+
+        return all(c.is_valid(data_model) for c in self.constraints)
+
+    def _check_validity(self):
+        """Check whether the ``Query`` object is valid.
+
+        :return ``None``
+        :raises ValueError: if the query does not satisfy some requirements."""
+
+        if len(self.constraints) < 1:
+            raise ValueError("Invalid input value for type '{}': empty list of constraints. The number of "
+                             "constraints must be at least 1.".format(type(self).__name__))
+        if not self.is_valid(self.model):
+            raise ValueError("Invalid input value for type '{}': the query is not valid "
+                             "for the given data model.".format(type(self).__name__))
 
     def __eq__(self, other):
         if type(other) != Query:

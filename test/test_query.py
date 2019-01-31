@@ -22,7 +22,7 @@ from hypothesis import given
 
 from oef import query_pb2
 from oef.query import Relation, Range, Set, And, Or, Constraint, Query, Eq, In, Not, Distance
-from oef.schema import Location
+from oef.schema import Location, DataModel
 from test.hypothesis.strategies import relations, ranges, query_sets, and_constraints, or_constraints, constraints, \
     queries, not_constraints, distances
 
@@ -39,7 +39,7 @@ class TestRelation:
 
         assert expected_relation == actual_relation
 
-    def test_equality_when_not_equal(self):
+    def test_not_equal_when_compared_with_different_type(self):
         a_relation = Eq("foo")
         not_a_relation = tuple()
 
@@ -58,7 +58,7 @@ class TestRange:
 
         assert expected_range == actual_range
 
-    def test_equality_when_not_equal(self):
+    def test_not_equal_when_compared_with_different_type(self):
         a_range = Range(("foo", "bar"))
         not_a_range = tuple()
 
@@ -76,7 +76,7 @@ class TestSet:
 
         assert expected_set == actual_set
 
-    def test_equality_when_not_equal(self):
+    def test_not_equal_when_compared_with_different_type(self):
         a_set = In(["foo", "bar"])
         not_a_set = tuple()
 
@@ -94,7 +94,7 @@ class TestDistance:
         
         assert expected_distance == actual_distance
 
-    def test_equality_when_not_equal(self):
+    def test_not_equal_when_compared_with_different_type(self):
         a_distance = Distance(Location(45.0, 45.0), 1.0)
         not_a_distance = tuple()
 
@@ -112,7 +112,7 @@ class TestConstraint:
 
         assert expected_constraint == actual_constraint
 
-    def test_equality_when_not_equal(self):
+    def test_not_equal_when_compared_with_different_type(self):
         a_constraint = Constraint("foo", In([]))
         not_a_constraint = tuple()
 
@@ -136,7 +136,7 @@ class TestAnd:
 
         assert expected_and == actual_and
 
-    def test_equality_when_not_equal(self):
+    def test_not_equal_when_compared_with_different_type(self):
         an_and = And([Constraint("foo", Eq(True)), Constraint("bar", Eq(False))])
         not_an_and = tuple()
 
@@ -162,7 +162,7 @@ class TestOr:
 
         assert expected_or == actual_or
 
-    def test_equality_when_not_equal(self):
+    def test_not_equal_when_compared_with_different_type(self):
         an_or = Or([Constraint("foo", Eq(True)), Constraint("bar", Eq(False))])
         not_an_or = tuple()
 
@@ -188,7 +188,7 @@ class TestNot:
 
         assert expected_not == actual_not
 
-    def test_equality_when_not_equal(self):
+    def test_not_equal_when_compared_with_different_type(self):
         a_not = Not(Constraint("foo", Eq(True)))
         not_a_not = tuple()
 
@@ -207,8 +207,21 @@ class TestQuery:
 
         assert expected_query == actual_query
 
-    def test_equality_when_not_equal(self):
-        a_query = Query([])
+    def test_not_equal_when_compared_with_different_type(self):
+        a_query = Query([Constraint("foo", Eq(0))])
         not_a_query = tuple()
 
         assert a_query != not_a_query
+
+    def test_query_invalid_when_list_of_constraint_is_empty(self):
+        """Test that we raise an exception when the list of query constraint is empty."""
+        with pytest.raises(ValueError, match="Invalid input value for type.*empty list of constraints. "
+                                             "The number of constraints must be at least 1."):
+            a_query = Query([])
+
+    def test_query_invalid_when_constraint_attribute_name_not_in_data_model(self):
+        """Test that we raise an exception when at least one constraint attribute name
+        is not present in the data model."""
+
+        with pytest.raises(ValueError, match=""):
+            a_query = Query([Constraint("an_attribute_name", Eq(0))], DataModel("a_data_model", []))

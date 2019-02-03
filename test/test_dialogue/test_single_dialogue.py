@@ -28,7 +28,7 @@ import pytest
 from oef.proxy import OEFNetworkProxy
 from test.conftest import _ASYNCIO_DELAY, NetworkOEFNode
 
-from test.test_dialogue.dialogue_agents import ServerAgentDialogueTest, SimpleSingleDialogueTest
+from test.test_dialogue.dialogue_agents import SimpleSingleDialogueTest, AgentSingleDialogueTest
 
 
 class TestRegisterDialogues:
@@ -37,7 +37,7 @@ class TestRegisterDialogues:
     def test_register_dialogue(self):
         """Test that registering a dialogue works correctly."""
 
-        agent = ServerAgentDialogueTest(OEFNetworkProxy("test_register_dialogue", "127.0.0.1"))
+        agent = AgentSingleDialogueTest(OEFNetworkProxy("test_register_dialogue", "127.0.0.1"))
         dialogue = SimpleSingleDialogueTest(agent, "foo")
         agent.register_dialogue(dialogue)
 
@@ -47,7 +47,7 @@ class TestRegisterDialogues:
     def test_unregister_dialogue(self):
         """Test that unregistering a dialogue works correctly."""
 
-        agent = ServerAgentDialogueTest(OEFNetworkProxy("test_register_dialogue", "127.0.0.1"))
+        agent = AgentSingleDialogueTest(OEFNetworkProxy("test_register_dialogue", "127.0.0.1"))
         dialogue = SimpleSingleDialogueTest(agent, "foo")
         agent.register_dialogue(dialogue)
         agent.unregister_dialogue(dialogue)
@@ -58,7 +58,7 @@ class TestRegisterDialogues:
         """Test that registering twice the same dialogue raises an error."""
 
         with pytest.raises(ValueError, match="Dialogue key.*already in use"):
-            agent = ServerAgentDialogueTest(OEFNetworkProxy("test_unregister_dialogue", "127.0.0.1"))
+            agent = AgentSingleDialogueTest(OEFNetworkProxy("test_unregister_dialogue", "127.0.0.1"))
             dialogue = SimpleSingleDialogueTest(agent, "foo")
             agent.register_dialogue(dialogue)
             agent.register_dialogue(dialogue)
@@ -67,7 +67,7 @@ class TestRegisterDialogues:
         """Test that unregistering a dialogue that has not been registered yet raises an error."""
 
         with pytest.raises(ValueError, match="Dialogue key.*not found"):
-            agent = ServerAgentDialogueTest(OEFNetworkProxy("test_unregister_dialogue", "127.0.0.1"))
+            agent = AgentSingleDialogueTest(OEFNetworkProxy("test_unregister_dialogue", "127.0.0.1"))
             dialogue = SimpleSingleDialogueTest(agent, "foo")
             agent.unregister_dialogue(dialogue)
 
@@ -78,7 +78,7 @@ class TestSimpleMessage:
         """Test that a dialogue agent can receive and handle a simple message correctly."""
 
         with NetworkOEFNode():
-            dialogue_agent_0 = ServerAgentDialogueTest(OEFNetworkProxy("dialogue_agent_0", "127.0.0.1"))
+            dialogue_agent_0 = AgentSingleDialogueTest(OEFNetworkProxy("dialogue_agent_0", "127.0.0.1"))
             dialogue_agent_0.connect()
 
             dialogue_agent_0.send_message(0, 0, "dialogue_agent_0", b"message")
@@ -90,7 +90,7 @@ class TestSimpleMessage:
             dialogue = next(iter(dialogue_agent_0.dialogues.values()))  # type: SimpleSingleDialogueTest
 
             assert 1 == len(dialogue.received_msg)
-            assert ("dialogue_agent_0", 0, b"message") == dialogue.received_msg[0]
+            assert (b"message", ) == dialogue.received_msg[0]
 
 
 class TestCFP:
@@ -99,7 +99,7 @@ class TestCFP:
         """Test that a dialogue agent can receive and handle a CFP correctly."""
 
         with NetworkOEFNode():
-            dialogue_agent_0 = ServerAgentDialogueTest(OEFNetworkProxy("dialogue_agent_0", "127.0.0.1"))
+            dialogue_agent_0 = AgentSingleDialogueTest(OEFNetworkProxy("dialogue_agent_0", "127.0.0.1"))
             dialogue_agent_0.connect()
 
             dialogue_agent_0.send_cfp(0, "dialogue_agent_0", None, 0, 0)
@@ -111,7 +111,7 @@ class TestCFP:
             dialogue = next(iter(dialogue_agent_0.dialogues.values()))  # type: SimpleSingleDialogueTest
 
             assert 1 == len(dialogue.received_msg)
-            assert ("dialogue_agent_0", 0, 0, 0, None) == dialogue.received_msg[0]
+            assert (0, 0, None) == dialogue.received_msg[0]
 
 
 class TestPropose:
@@ -120,7 +120,7 @@ class TestPropose:
         """Test that if the dialogue agent sends a propose as first message we get an Error."""
         with pytest.raises(KeyError, match="Dialogue key .* not found"):
             with NetworkOEFNode():
-                dialogue_agent_0 = ServerAgentDialogueTest(OEFNetworkProxy("dialogue_agent_0", "127.0.0.1"))
+                dialogue_agent_0 = AgentSingleDialogueTest(OEFNetworkProxy("dialogue_agent_0", "127.0.0.1"))
                 dialogue_agent_0.connect()
 
                 dialogue_agent_0.send_propose(0, "dialogue_agent_0", [], 0, 0)
@@ -131,7 +131,7 @@ class TestPropose:
     def test_on_propose(self):
         """Test that a dialogue agent can receive and handle a Propose correctly."""
         with NetworkOEFNode():
-            dialogue_agent_0 = ServerAgentDialogueTest(OEFNetworkProxy("dialogue_agent_0", "127.0.0.1"))
+            dialogue_agent_0 = AgentSingleDialogueTest(OEFNetworkProxy("dialogue_agent_0", "127.0.0.1"))
             dialogue_agent_0.connect()
 
             dialogue_agent_0.send_cfp(0, "dialogue_agent_0", None, 0, 0)
@@ -144,8 +144,8 @@ class TestPropose:
             dialogue = next(iter(dialogue_agent_0.dialogues.values()))  # type: SimpleSingleDialogueTest
 
             assert 2 == len(dialogue.received_msg)
-            assert ("dialogue_agent_0", 0, 0, 0, None) == dialogue.received_msg[0]
-            assert ("dialogue_agent_0", 0, 0, 0, []) == dialogue.received_msg[1]
+            assert (0, 0, None) == dialogue.received_msg[0]
+            assert (0, 0, []) == dialogue.received_msg[1]
 
 
 class TestAccept:
@@ -154,7 +154,7 @@ class TestAccept:
         """Test that if the dialogue agent sends an accept as first message we get an Error."""
         with pytest.raises(KeyError, match="Dialogue key .* not found"):
             with NetworkOEFNode():
-                dialogue_agent_0 = ServerAgentDialogueTest(OEFNetworkProxy("dialogue_agent_0", "127.0.0.1"))
+                dialogue_agent_0 = AgentSingleDialogueTest(OEFNetworkProxy("dialogue_agent_0", "127.0.0.1"))
                 dialogue_agent_0.connect()
 
                 dialogue_agent_0.send_accept(0, "dialogue_agent_0", 0, 0)
@@ -165,7 +165,7 @@ class TestAccept:
     def test_on_propose(self):
         """Test that a dialogue agent can receive and handle a Accept correctly."""
         with NetworkOEFNode():
-            dialogue_agent_0 = ServerAgentDialogueTest(OEFNetworkProxy("dialogue_agent_0", "127.0.0.1"))
+            dialogue_agent_0 = AgentSingleDialogueTest(OEFNetworkProxy("dialogue_agent_0", "127.0.0.1"))
             dialogue_agent_0.connect()
 
             dialogue_agent_0.send_cfp(0, "dialogue_agent_0", None, 0, 0)
@@ -179,9 +179,9 @@ class TestAccept:
             dialogue = next(iter(dialogue_agent_0.dialogues.values()))  # type: SimpleSingleDialogueTest
 
             assert 3 == len(dialogue.received_msg)
-            assert ("dialogue_agent_0", 0, 0, 0, None) == dialogue.received_msg[0]
-            assert ("dialogue_agent_0", 0, 0, 0, []) == dialogue.received_msg[1]
-            assert ("dialogue_agent_0", 0, 0, 0) == dialogue.received_msg[2]
+            assert (0, 0, None) == dialogue.received_msg[0]
+            assert (0, 0, []) == dialogue.received_msg[1]
+            assert (0, 0) == dialogue.received_msg[2]
 
 
 class TestDecline:
@@ -190,7 +190,7 @@ class TestDecline:
         """Test that if the dialogue agent sends an accept as first message we get an Error."""
         with pytest.raises(KeyError, match="Dialogue key .* not found"):
             with NetworkOEFNode():
-                dialogue_agent_0 = ServerAgentDialogueTest(OEFNetworkProxy("dialogue_agent_0", "127.0.0.1"))
+                dialogue_agent_0 = AgentSingleDialogueTest(OEFNetworkProxy("dialogue_agent_0", "127.0.0.1"))
                 dialogue_agent_0.connect()
 
                 dialogue_agent_0.send_decline(0, "dialogue_agent_0", 0, 0)
@@ -201,7 +201,7 @@ class TestDecline:
     def test_on_decline(self):
         """Test that a dialogue agent can receive and handle a Accept correctly."""
         with NetworkOEFNode():
-            dialogue_agent_0 = ServerAgentDialogueTest(OEFNetworkProxy("dialogue_agent_0", "127.0.0.1"))
+            dialogue_agent_0 = AgentSingleDialogueTest(OEFNetworkProxy("dialogue_agent_0", "127.0.0.1"))
             dialogue_agent_0.connect()
 
             dialogue_agent_0.send_cfp(0, "dialogue_agent_0", None, 0, 0)
@@ -215,6 +215,6 @@ class TestDecline:
             dialogue = next(iter(dialogue_agent_0.dialogues.values()))  # type: SimpleSingleDialogueTest
 
             assert 3 == len(dialogue.received_msg)
-            assert ("dialogue_agent_0", 0, 0, 0, None) == dialogue.received_msg[0]
-            assert ("dialogue_agent_0", 0, 0, 0, []) == dialogue.received_msg[1]
-            assert ("dialogue_agent_0", 0, 0, 0) == dialogue.received_msg[2]
+            assert (0, 0, None) == dialogue.received_msg[0]
+            assert (0, 0, []) == dialogue.received_msg[1]
+            assert (0, 0) == dialogue.received_msg[2]

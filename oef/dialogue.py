@@ -41,7 +41,7 @@ DialogueKey = Tuple[str, int]
 DialogueAgent = None
 
 
-class SingleDialogue(DialogueInterface, ABC):
+class SingleDialogue(ABC):
     """
     This class is used to hold information about a dialogue with another agent.
 
@@ -72,6 +72,87 @@ class SingleDialogue(DialogueInterface, ABC):
     def key(self) -> DialogueKey:
         """The identifier for this dialogue."""
         return self.destination, self.id
+
+    @abstractmethod
+    def on_message(self, content: bytes) -> None:
+        """
+        Handler for simple messages. Check the :func:`~oef.core.DialogueInterface.on_message` method.
+        """
+
+    @abstractmethod
+    def on_cfp(self, msg_id: int,
+               target: int,
+               query: CFP_TYPES) -> None:
+        """
+        Handler for CFP messages. Check the :func:`~oef.core.DialogueInterface.on_cfp` method.
+        """
+
+    @abstractmethod
+    def on_propose(self, msg_id: int,
+                   target: int,
+                   proposal: PROPOSE_TYPES) -> None:
+        """
+        Handler for Propose messages. Check the :func:`~oef.core.DialogueInterface.on_propose` method.
+        """
+
+    @abstractmethod
+    def on_accept(self, msg_id: int,
+                  target: int) -> None:
+        """
+        Handler for Accept messages. Check the :func:`~oef.core.DialogueInterface.on_accept` method.
+        """
+
+    @abstractmethod
+    def on_decline(self, msg_id: int,
+                   target: int) -> None:
+        """
+        Handler for Decline messages. Check the :func:`~oef.core.DialogueInterface.on_decline` method.
+        """
+
+    @abstractmethod
+    def on_dialogue_error(self, answer_id: int,
+                          dialogue_id: int,
+                          origin: str) -> None:
+        """
+        Handler for error messages concerning dialogues between agents.
+        Check the :func:`~oef.core.ConnectionInterface.on_dialogue_error` method.
+        """
+
+    def send_message(self, msg_id: int, msg: bytes) -> None:
+        """
+        Send a simple message. Check the  :func:`~oef.core.OEFCoreInterface.send_message` method.
+        """
+        self.agent.send_message(msg_id, self.id, self.destination, msg)
+
+    def send_cfp(self, query: CFP_TYPES,
+                 msg_id: Optional[int] = 1,
+                 target: Optional[int] = 0) -> None:
+        """
+        Send a Call-For-Proposals. Check the  :func:`~oef.core.OEFCoreInterface.send_cfp` method.
+        """
+        self.agent.send_cfp(self.id, self.destination, query, msg_id, target)
+
+    def send_propose(self, proposals: PROPOSE_TYPES,
+                     msg_id: int,
+                     target: Optional[int] = None) -> None:
+        """
+        Send a Propose. Check the  :func:`~oef.core.OEFCoreInterface.send_propose` method.
+        """
+        self.agent.send_propose(self.id, self.destination, proposals, msg_id, target)
+
+    def send_accept(self, msg_id: int,
+                    target: Optional[int] = None) -> None:
+        """
+        Send an Accept. Check the  :func:`~oef.core.OEFCoreInterface.send_accept` method.
+        """
+        self.agent.send_accept(self.id, self.destination, msg_id, target)
+
+    def send_decline(self, msg_id: int,
+                     target: Optional[int] = None) -> None:
+        """
+        Send a Decline. Check the  :func:`~oef.core.OEFCoreInterface.send_decline` method.
+        """
+        self.agent.send_decline(self.id, self.destination, msg_id, target)
 
 
 class DialogueAgent(Agent, ABC):
@@ -147,7 +228,7 @@ class DialogueAgent(Agent, ABC):
                    content: bytes):
         try:
             dialogue = self._get_dialogue((origin, dialogue_id))
-            dialogue.on_message(origin, dialogue_id, content)
+            dialogue.on_message(content)
         except KeyError:
             self.on_new_message(origin, dialogue_id, content)
 
@@ -158,7 +239,7 @@ class DialogueAgent(Agent, ABC):
                query: CFP_TYPES):
         try:
             dialogue = self._get_dialogue((origin, dialogue_id))
-            dialogue.on_cfp(origin, dialogue_id, msg_id, target, query)
+            dialogue.on_cfp(msg_id, target, query)
         except KeyError:
             self.on_new_cfp(origin, dialogue_id, msg_id, target, query)
 
@@ -168,21 +249,21 @@ class DialogueAgent(Agent, ABC):
                    target: int,
                    proposal: PROPOSE_TYPES):
         dialogue = self._get_dialogue((origin, dialogue_id))
-        dialogue.on_propose(origin, dialogue_id, msg_id, target, proposal)
+        dialogue.on_propose(msg_id, target, proposal)
 
     def on_accept(self, origin: str,
                   dialogue_id: int,
                   msg_id: int,
                   target: int, ):
         dialogue = self._get_dialogue((origin, dialogue_id))
-        dialogue.on_accept(origin, dialogue_id, msg_id, target)
+        dialogue.on_accept(msg_id, target)
 
     def on_decline(self, origin: str,
                    dialogue_id: int,
                    msg_id: int,
                    target: int, ):
         dialogue = self._get_dialogue((origin, dialogue_id))
-        dialogue.on_decline(origin, dialogue_id, msg_id, target)
+        dialogue.on_decline(msg_id, target)
 
     def _get_dialogue(self, key: DialogueKey) -> SingleDialogue:
         if key not in self.dialogues:

@@ -67,33 +67,34 @@ class WeatherClientDialogue(SingleDialogue):
         self.data_received = 0
         self.agent.send_cfp(self.id, destination, None)
 
-    def on_error(self):
-        pass
-
-    def on_propose(self, origin: str, dialogue_id: int, msg_id: int, target: int, proposals: PROPOSE_TYPES):
-        print("Received propose from agent {0}".format(origin))
+    def on_propose(self, msg_id: int, target: int, proposals: PROPOSE_TYPES):
+        print("Received propose from agent {0}".format(self.destination))
         assert type(proposals) == list and len(proposals) == 1
         proposal = proposals[0]
         print("Proposal: {}".format(proposal.values))
         self.notify(self.destination, proposal.values["price"])
 
-    def on_message(self, origin: str,
-                   dialogue_id: int,
-                   content: bytes):
+    def on_error(self):
+        pass
+
+    def on_cfp(self, msg_id: int, target: int, query: CFP_TYPES) -> None:
+        pass
+
+    def on_message(self, content: bytes):
         """Extract and print data from incoming (simple) messages."""
         key, value = content.decode().split(":")
-        print("Received measurement from {}: {}={}".format(origin, key, float(value)))
+        print("Received measurement from {}: {}={}".format(self.destination, key, float(value)))
         self.data_received += 1
         if self.data_received == 3:
             self.agent.stop()
 
-    def on_cfp(self, origin: str, dialogue_id: int, msg_id: int, target: int, query: CFP_TYPES) -> None:
+    def on_decline(self, msg_id: int, target: int) -> None:
         pass
 
-    def on_accept(self, origin: str, dialogue_id: int, msg_id: int, target: int) -> None:
+    def on_accept(self, msg_id: int, target: int) -> None:
         pass
 
-    def on_decline(self, origin: str, dialogue_id: int, msg_id: int, target: int) -> None:
+    def on_dialogue_error(self, answer_id: int, dialogue_id: int, origin: str) -> None:
         pass
 
     def send_answer(self, winner: str):
@@ -114,7 +115,7 @@ class WeatherGroupDialogues(GroupDialogues):
                      for a in agents]
         self.add_agents(dialogues)
     
-    def better(self, price1:int, price2: int) -> bool:
+    def better(self, price1: int, price2: int) -> bool:
         return price1 < price2
 
     def finished(self):

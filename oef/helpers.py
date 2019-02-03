@@ -27,19 +27,7 @@ This module contains helper functions.
 
 """
 
-
-import math
-from math import sin, cos, sqrt, asin
-
-
-def to_radians(n: float) -> float:
-    """
-    From an angle in degrees to an angle in radians
-
-    :param n: the angle in degrees.
-    :return: the angle in radians.
-    """
-    return math.pi/180*n
+from math import sin, cos, sqrt, asin, radians
 
 
 def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -53,16 +41,18 @@ def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     :return: the Haversine distance.
     """
 
-    lon1, lat1 = to_radians(lon1), to_radians(lat1)
-    lon2, lat2 = to_radians(lon2), to_radians(lat2)
+    lat1, lon1, lat2, lon2, = map(radians, [lat1, lon1, lat2, lon2])
 
     # average earth radius
     R = 6372.8
 
-    dlon = lon2 - lon1
     dlat = lat2 - lat1
+    dlon = lon2 - lon1
 
-    computation = asin(sqrt(sin(dlat / 2) * sin(dlat / 2) + cos(lat1) * cos(lat2) * sin(dlon / 2) * sin(dlon / 2)))
-    d = R * computation
+    computation = asin(
+        sqrt(sin(dlat * 0.5) * sin(dlat * 0.5) +
+             sin(dlon * 0.5) * sin(dlon * 0.5) *
+             cos(lat1) * cos(lat2)))
+    d = 2 * R * computation
 
     return d

@@ -16,10 +16,14 @@
 #   limitations under the License.
 #
 # ------------------------------------------------------------------------------
-from typing import List, Optional, Tuple
+import random
+from typing import List, Optional, Tuple, Callable
 
+from oef.agents import Agent
+from oef.core import OEFProxy
 from oef.dialogue import GroupDialogues, DialogueAgent, SingleDialogue
 from oef.messages import CFP_TYPES, OEFErrorOperation, PROPOSE_TYPES
+from oef.schema import Description
 
 
 class SimpleSingleDialogueTest(SingleDialogue):
@@ -31,45 +35,75 @@ class SimpleSingleDialogueTest(SingleDialogue):
 
     def __init__(self, agent: DialogueAgent,
                  destination: str,
-                 id_: Optional[int] = None):
+                 id_: Optional[int] = None,
+                 notify: Callable = None):
         super().__init__(agent, destination, id_)
+        self.notify = notify
         self.received_msg = []
+
+    def on_message(self, content: bytes) -> None:
+        self._process_message((content,))
 
     def _process_message(self, arguments: Tuple):
         """Store the message into the state of the agent."""
         self.received_msg.append(arguments)
 
-    def on_message(self, origin: str, dialogue_id: int, content: bytes) -> None:
-        self._process_message((origin, dialogue_id, content))
+    def on_cfp(self, msg_id: int, target: int, query: CFP_TYPES) -> None:
+        self._process_message((msg_id, target, query))
 
-    def on_propose(self, origin: str, dialogue_id: int, msg_id: int, target: int, proposals: PROPOSE_TYPES):
-        self._process_message((origin, dialogue_id, msg_id, target, proposals))
+    def on_propose(self, msg_id: int, target: int, proposals: PROPOSE_TYPES):
+        self._process_message((msg_id, target, proposals))
 
-    def on_cfp(self, origin: str, dialogue_id: int, msg_id: int, target: int, query: CFP_TYPES) -> None:
-        self._process_message((origin, dialogue_id, msg_id, target, query))
+    def on_decline(self, msg_id: int, target: int) -> None:
+        self._process_message((msg_id, target))
 
-    def on_accept(self, origin: str, dialogue_id: int, msg_id: int, target: int) -> None:
-        self._process_message((origin, dialogue_id, msg_id, target))
+    def on_accept(self, msg_id: int, target: int) -> None:
+        self._process_message((msg_id, target))
 
-    def on_decline(self, origin: str, dialogue_id: int, msg_id: int, target: int) -> None:
-        self._process_message((origin, dialogue_id, msg_id, target))
+    def on_dialogue_error(self, answer_id: int, dialogue_id: int, origin: str) -> None:
+        pass
 
 
-class GroupDialoguesTest(GroupDialogues):
+class ClientSingleDialogueTest(SimpleSingleDialogueTest):
+
+    def __init__(self, agent: DialogueAgent,
+                 destination: str,
+                 id_: Optional[int] = None,
+                 notify: Callable = None):
+        super().__init__(agent, destination, id_)
+        self.notify = notify
+        self.received_msg = []
+        self.agent.send_cfp(self.id, destination, None)
+
+    def on_propose(self, msg_id: int, target: int, proposals: PROPOSE_TYPES):
+        assert type(proposals) == list and len(proposals) == 1
+        proposal = proposals[0]
+        self.notify(self.destination, proposal.values["price"])
+
+
+class GroupDialogueTest(GroupDialogues):
 
     def __init__(self, agent: DialogueAgent, agents: List[str]):
         super().__init__(agent)
-        dialogues = [SimpleSingleDialogueTest(agent, a) for a in agents]
+
+        dialogues = [ClientSingleDialogueTest(agent, a,
+                                              notify=lambda from_, price: self.update(from_, price))
+                     for a in agents]
         self.add_agents(dialogues)
 
     def better(self, price1: int, price2: int) -> bool:
         return price1 < price2
 
-    def finished(self):
-        pass
+    def finished(self) -> None:
+        for _, d in self.dialogues.items():
+            if d.destination == self.best_agent:
+                self.agent.send_accept(d.id, d.destination, 2, 1)
+            else:
+                self.agent.send_decline(d.id, d.destination, 2, 1)
+        self.agent.stop()
 
 
-class ServerAgentDialogueTest(DialogueAgent):
+class AgentSingleDialogueTest(DialogueAgent):
 
     def on_new_cfp(self, from_: str, dialogue_id: int, msg_id: int, target: int, query: CFP_TYPES) -> None:
         self.register_dialogue(SimpleSingleDialogueTest(self, from_, dialogue_id))
@@ -81,4 +115,52 @@ class ServerAgentDialogueTest(DialogueAgent):
 
     def on_connection_error(self, operation: OEFErrorOperation) -> None:
         pass
+
+
+class ClientAgentGroupDialogueTest(DialogueAgent):
+
+    def __init__(self, oef_proxy: OEFProxy):
+        super().__init__(oef_proxy)
+        self.group = None
+
+    def on_search_result(self, search_id: int, agents: List[str]):
+        """For every agent returned in the service search, send a CFP to obtain resources from them."""
+        print("Agent found: {0}".format(agents))
+        self.group = GroupDialogueTest(self, agents)
+
+    def on_new_cfp(self, from_: str, dialogue_id: int, msg_id: int, target: int, query: CFP_TYPES) -> None:
+        pass
+
+    def on_new_message(self, from_: str, dialogue_id: int, content: bytes) -> None:
+        pass
+
+    def on_connection_error(self, operation: OEFErrorOperation) -> None:
+        pass
+
+
+class ServerAgentTest(Agent):
+
+    def __init__(self, oef_proxy: OEFProxy, price: int = random.randint(10, 100)):
+        super().__init__(oef_proxy)
+        self.price = price
+
+    def on_cfp(self, origin: str,
+               dialogue_id: int,
+               msg_id: int,
+               target: int,
+               query: CFP_TYPES):
+        proposal = Description({"price": self.price})
+        self.send_propose(dialogue_id, origin, [proposal], msg_id + 1, target + 1)
+
+    def on_accept(self, origin: str,
+                  dialogue_id: int,
+                  msg_id: int,
+                  target: int):
+        self.stop()
+
+    def on_decline(self, origin: str,
+                   dialogue_id: int,
+                   msg_id: int,
+                   target: int, ):
+        self.stop()
 

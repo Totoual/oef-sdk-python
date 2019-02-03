@@ -30,11 +30,7 @@ In order to install `oef`, run:
 
 ## Run the tests
 
-To run the tests, first do: 
-
-    pip install -r requirements.txt
-    
-Then, you need to clone [oef-core](https://github.com/fetchai/oef-core) repository and build the project:
+To run the tests, you need to clone [oef-core](https://github.com/fetchai/oef-core) repository and build the project:
 
     python scripts/setup_test.py
     

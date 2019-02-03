@@ -53,10 +53,12 @@ class TestSimpleMessage:
             agent_0.send_message(0, 0, agent_0.public_key, msg)
             agent_0.send_message(0, 0, agent_1.public_key, msg)
             agent_0.send_message(0, 0, agent_2.public_key, msg)
+            asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
 
             agent_1.send_message(0, 0, agent_0.public_key, msg)
             agent_1.send_message(0, 0, agent_1.public_key, msg)
             agent_1.send_message(0, 0, agent_2.public_key, msg)
+            asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
 
             agent_2.send_message(0, 0, agent_0.public_key, msg)
             agent_2.send_message(0, 0, agent_1.public_key, msg)

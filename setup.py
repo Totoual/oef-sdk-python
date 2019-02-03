@@ -133,6 +133,6 @@ setup(
     ],
     install_requires=["protobuf"],
     tests_require=["tox"],
-    python_requires='>3.5',
+    python_requires='>=3.5',
     license=about['__license__'],
 )

@@ -76,7 +76,10 @@ class SingleDialogue(ABC):
     @abstractmethod
     def on_message(self, content: bytes) -> None:
         """
-        Handler for simple messages. Check the :func:`~oef.core.DialogueInterface.on_message` method.
+        Handler for simple messages. Analogous to the :func:`~oef.core.DialogueInterface.on_message` method.
+
+        :param content: the content of the message (in bytes).
+        :return: ``None``
         """
 
     @abstractmethod
@@ -84,7 +87,11 @@ class SingleDialogue(ABC):
                target: int,
                query: CFP_TYPES) -> None:
         """
-        Handler for CFP messages. Check the :func:`~oef.core.DialogueInterface.on_cfp` method.
+        Handler for CFP messages. Analogous to the:func:`~oef.core.DialogueInterface.on_cfp` method.
+
+        :param msg_id: the message identifier for the dialogue.
+        :param target: the identifier of the message to whom this message is answering.
+        :param query: the query associated with the Call For Proposals.
         """
 
     @abstractmethod
@@ -92,21 +99,34 @@ class SingleDialogue(ABC):
                    target: int,
                    proposal: PROPOSE_TYPES) -> None:
         """
-        Handler for Propose messages. Check the :func:`~oef.core.DialogueInterface.on_propose` method.
+        Handler for Propose messages. Analogous to the:func:`~oef.core.DialogueInterface.on_propose` method.
+
+        :param msg_id: the message identifier for the dialogue.
+        :param target: the identifier of the message to whom this message is answering.
+        :param proposal: the proposal associated with the message.
+        :return: ``None``
         """
 
     @abstractmethod
     def on_accept(self, msg_id: int,
                   target: int) -> None:
         """
-        Handler for Accept messages. Check the :func:`~oef.core.DialogueInterface.on_accept` method.
+        Handler for Accept messages. Analogous to the:func:`~oef.core.DialogueInterface.on_accept` method.
+
+        :param msg_id: the message identifier for the dialogue.
+        :param target: the identifier of the message to whom this message is answering.
+        :return: ``None``
         """
 
     @abstractmethod
     def on_decline(self, msg_id: int,
                    target: int) -> None:
         """
-        Handler for Decline messages. Check the :func:`~oef.core.DialogueInterface.on_decline` method.
+        Handler for Decline messages. Analogous to the:func:`~oef.core.DialogueInterface.on_decline` method.
+
+        :param msg_id: the message identifier for the dialogue.
+        :param target: the identifier of the message to whom this message is answering.
+        :return: ``None``
         """
 
     @abstractmethod
@@ -115,12 +135,21 @@ class SingleDialogue(ABC):
                           origin: str) -> None:
         """
         Handler for error messages concerning dialogues between agents.
-        Check the :func:`~oef.core.ConnectionInterface.on_dialogue_error` method.
+        Analogous to the:func:`~oef.core.ConnectionInterface.on_dialogue_error` method.
+
+        :param answer_id: the id of the message that generated the error.
+        :param dialogue_id: the identifier of the dialogue in which the message is sent.
+        :param origin: the identifier of the agent that generated the error.
+        :return: ``None``
         """
 
     def send_message(self, msg_id: int, msg: bytes) -> None:
         """
-        Send a simple message. Check the  :func:`~oef.core.OEFCoreInterface.send_message` method.
+        Send a simple message. Analogous to the :func:`~oef.core.OEFCoreInterface.send_message` method.
+
+        :param msg_id: the identifier of the message.
+        :param msg: the message (in bytes).
+        :return: ``None``
         """
         self.agent.send_message(msg_id, self.id, self.destination, msg)
 
@@ -128,7 +157,12 @@ class SingleDialogue(ABC):
                  msg_id: Optional[int] = 1,
                  target: Optional[int] = 0) -> None:
         """
-        Send a Call-For-Proposals. Check the  :func:`~oef.core.OEFCoreInterface.send_cfp` method.
+        Send a Call-For-Proposals. Analogous to the :func:`~oef.core.OEFCoreInterface.send_cfp` method.
+
+        :param query: the query associated with the Call For Proposals.
+        :param msg_id: the message identifier for the dialogue.
+        :param target: the identifier of the message to whom this message is answering.
+        :return: ``None``
         """
         self.agent.send_cfp(self.id, self.destination, query, msg_id, target)
 
@@ -136,21 +170,34 @@ class SingleDialogue(ABC):
                      msg_id: int,
                      target: Optional[int] = None) -> None:
         """
-        Send a Propose. Check the  :func:`~oef.core.OEFCoreInterface.send_propose` method.
+        Send a Propose. Analogous to the :func:`~oef.core.OEFCoreInterface.send_propose` method.
+
+        :param proposals: either a list of :class:`~oef.schema.Description` or ``bytes``.
+        :param msg_id: the message identifier for the dialogue.
+        :param target: the identifier of the message to whom this message is answering.
+        :return: ``None``
         """
         self.agent.send_propose(self.id, self.destination, proposals, msg_id, target)
 
     def send_accept(self, msg_id: int,
                     target: Optional[int] = None) -> None:
         """
-        Send an Accept. Check the  :func:`~oef.core.OEFCoreInterface.send_accept` method.
+        Send an Accept. Analogous to the :func:`~oef.core.OEFCoreInterface.send_accept` method.
+
+        :param msg_id: the message identifier for the dialogue.
+        :param target: the identifier of the message to whom this message is answering.
+        :return: ``None``
         """
         self.agent.send_accept(self.id, self.destination, msg_id, target)
 
     def send_decline(self, msg_id: int,
                      target: Optional[int] = None) -> None:
         """
-        Send a Decline. Check the  :func:`~oef.core.OEFCoreInterface.send_decline` method.
+        Send a Decline. Analogous to the :func:`~oef.core.OEFCoreInterface.send_decline` method.
+
+        :param msg_id: the message identifier for the dialogue.
+        :param target: the identifier of the message to whom this message is answering.
+        :return: ``None``
         """
         self.agent.send_decline(self.id, self.destination, msg_id, target)
 
@@ -161,6 +208,11 @@ class DialogueAgent(Agent, ABC):
     """
 
     def __init__(self, oef_proxy: OEFProxy):
+        """
+        Initialize a Dialogue Agent.
+
+        :param oef_proxy: the proxy to the OEF Node.
+        """
         super().__init__(oef_proxy)
         self.dialogues = {}  # type: Dict[DialogueKey, SingleDialogue]
 
@@ -193,7 +245,7 @@ class DialogueAgent(Agent, ABC):
     @abstractmethod
     def on_new_cfp(self, from_: str, dialogue_id: int, msg_id: int, target: int, query: CFP_TYPES) -> None:
         """
-        Handle a new CFP message.
+        Handle a new :class:`~oef.messages.CFP` message.
 
         :param from_: the id of the agent who sent the CFP.
         :param dialogue_id: the dialogue identifier that the CFP refers to
@@ -276,8 +328,7 @@ class GroupDialogues:
     Class to handle a set of dialogues and take decisions taking into accounts all the dialogues.
     """
 
-    def __init__(self,
-                 agent: DialogueAgent):
+    def __init__(self, agent: DialogueAgent):
         """
         Instantiate a group of dialogues.
 

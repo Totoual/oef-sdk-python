@@ -27,7 +27,7 @@ import random
 from oef.proxy import OEFNetworkProxy
 from oef.query import Query, Eq, Constraint
 from oef.schema import Description, DataModel, AttributeSchema
-from test.conftest import NetworkOEFNode
+from test.conftest import NetworkOEFNode, _ASYNCIO_DELAY
 from test.test_dialogue.dialogue_agents import ClientAgentGroupDialogueTest, ServerAgentTest
 
 
@@ -39,7 +39,7 @@ class TestGroupDialogues:
             client = ClientAgentGroupDialogueTest(client_proxy)
             client.connect()
 
-            N = 20
+            N = 10
             server_proxies = [OEFNetworkProxy("server_{:02d}".format(i),
                                                oef_addr="127.0.0.1", port=3333) for i in range(N)]
             server_data_model = DataModel("server", [AttributeSchema("foo", bool, True)])
@@ -53,6 +53,8 @@ class TestGroupDialogues:
             best_server.connect()
             best_server.register_service(0, Description({"foo": True}, server_data_model))
             servers.append(best_server)
+
+            asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
 
             query = Query([Constraint("foo", Eq(True))], server_data_model)
 

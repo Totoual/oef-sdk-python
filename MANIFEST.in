@@ -5,3 +5,4 @@ recursive-include test *.py
 recursive-include oef-core-protocol *
 recursive-include docker-images/fetch-ledger-develop-image *
 recursive-include scripts *.py
+recursive-include docs *

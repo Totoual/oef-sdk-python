@@ -49,10 +49,10 @@ def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     dlat = lat2 - lat1
     dlon = lon2 - lon1
 
-    computation = asin(
-        sqrt(sin(dlat * 0.5) * sin(dlat * 0.5) +
-             sin(dlon * 0.5) * sin(dlon * 0.5) *
-             cos(lat1) * cos(lat2)))
+    sin_lat_squared = sin(dlat * 0.5) * sin(dlat * 0.5)
+    sin_lon_squared = sin(dlon * 0.5) * sin(dlon * 0.5)
+    computation = asin(sqrt(sin_lat_squared + sin_lon_squared * cos(lat1) * cos(lat2)))
+
     d = 2 * R * computation
 
     return d

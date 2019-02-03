@@ -73,11 +73,23 @@ class Location(ProtobufSerializable):
 
     @classmethod
     def from_pb(cls, obj: query_pb2.Query.Location):
+        """
+        From the ``Location`` Protobuf object to the associated instance of :class:`~oef.query.Location`.
+
+        :param obj: the Protobuf object that represents the ``Location`` constraint.
+        :return: an instance of :class:`~oef.query.Location` equivalent to the Protobuf object.
+        """
+
         latitude = obj.lat
         longitude = obj.lon
         return cls(latitude, longitude)
 
     def to_pb(self) -> query_pb2.Query.Location:
+        """
+        From an instance of :class:`~oef.schema.Location` to its associated Protobuf object.
+
+        :return: the Location Protobuf object that contains the :class:`~oef.schema.Location` constraint.
+        """
         location_pb = query_pb2.Query.Location()
         location_pb.lat = self.latitude
         location_pb.lon = self.longitude
@@ -217,7 +229,7 @@ class DataModel(ProtobufSerializable):
         :param description: a short description for the data model.
         """
         self.name = name
-        self.attribute_schemas = copy.deepcopy(attribute_schemas)
+        self.attribute_schemas = sorted(copy.deepcopy(attribute_schemas), key=lambda x: x.name)
         self.description = description
         self.attributes_by_name = {a.name: a for a in self.attribute_schemas}
         self._check_validity()

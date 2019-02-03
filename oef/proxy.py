@@ -49,7 +49,9 @@ DEFAULT_OEF_NODE_PORT = 3333
 
 
 class OEFConnectionError(ConnectionError):
-    pass
+    """
+    This exception is used whenever an error occurs during the connection to the OEF Node.
+    """
 
 
 class OEFNetworkProxy(OEFProxy):
@@ -82,6 +84,11 @@ class OEFNetworkProxy(OEFProxy):
         self._server_writer = None
 
     def is_connected(self) -> bool:
+        """
+        Check if the proxy is currently connected to the OEF Node.
+
+        :return: ``True`` if the proxy is connected, ``False`` otherwise.
+        """
         return self._connection is not None
 
     async def _connect_to_server(self, event_loop) -> Awaitable[Tuple[asyncio.StreamReader, asyncio.StreamWriter]]:
@@ -110,9 +117,8 @@ class OEFNetworkProxy(OEFProxy):
 
     async def _receive(self):
         """
-        Send a Protobuf message.
+        Receive a Protobuf message.
 
-        :param protobuf_msg: the message to be sent
         :return: ``None``
         :raises OEFConnectionError: if the connection has not been established yet.
         """
@@ -353,8 +359,15 @@ class OEFLocalProxy(OEFProxy):
             self._lock.release()
 
         def search_agents(self, public_key: str, search_id: int, query: Query) -> None:
-            """Since the agent directory and the instance checking are not implemented,
-            just send a dummy search result message, returning all the connected agents."""
+            """
+            Search the agents in the local Agent Directory, and send back the result.
+            The provided query will be checked with every instance of the Agent Directory.
+
+            :param public_key: the source of the search request.
+            :param search_id: the search identifier associated with the search request.
+            :param query: the query that constitutes the search.
+            :return: ``None``
+            """
 
             result = []
             for agent_public_key, description in self.agents.items():
@@ -364,8 +377,15 @@ class OEFLocalProxy(OEFProxy):
             self._send_search_result(public_key, search_id, sorted(set(result)))
 
         def search_services(self, public_key: str, search_id: int, query: Query) -> None:
-            """Since the service directory and the instance checking are not implemented,
-            just send a dummy search result message, returning all the connected agents."""
+            """
+            Search the agents in the local Service Directory, and send back the result.
+            The provided query will be checked with every instance of the Agent Directory.
+
+            :param public_key: the source of the search request.
+            :param search_id: the search identifier associated with the search request.
+            :param query: the query that constitutes the search.
+            :return: ``None``
+            """
 
             result = []
             for agent_public_key, descriptions in self.services.items():
@@ -414,6 +434,13 @@ class OEFLocalProxy(OEFProxy):
             self._queues[public_key].put_nowait(msg.SerializeToString())
 
     def __init__(self, public_key: str, local_node: LocalNode):
+        """
+        Initialize a OEF proxy for a local OEF Node (that is, :class:`~oef.proxy.OEFLocalProxy.LocalNode`
+
+        :param public_key: the public key used in the protocols.
+        :param local_node: the Local OEF Node object. This reference must be the same across the agents of interest.
+        """
+
         super().__init__(public_key)
         self.local_node = local_node
         self._connection = None

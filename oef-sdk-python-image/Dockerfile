@@ -14,4 +14,5 @@ RUN apt-get install -y \
      protobuf-compiler  python-protobuf
 
 RUN apt-get install -y python3-pip
+RUN apt-get install -y tox
 RUN pip3 install pipenv

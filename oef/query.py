@@ -57,7 +57,7 @@ class ConstraintExpr(ProtobufSerializable, ABC):
 
     def _check_validity(self) -> None:
         """Check whether a Constraint Expression satisfies some basic requirements.
-        E.g. and And expression must have at least 2 subexpressions.
+        E.g. an :class:`~oef.query.And` expression must have at least 2 subexpressions.
 
         :return ``None``
         :raises ValueError: if the object does not satisfy some requirements."""
@@ -94,7 +94,8 @@ class ConstraintExpr(ProtobufSerializable, ABC):
 class And(ConstraintExpr):
     """
     A constraint type that allows you to specify a conjunction of constraints.
-    That is, the ``And`` constraint is satisfied whenever all the constraints that constitute the and are satisfied.
+    That is, the :class:`~oef.query.And` constraint is satisfied whenever
+    all the constraints that constitute the and are satisfied.
 
     Examples:
 
@@ -110,7 +111,7 @@ class And(ConstraintExpr):
 
     def __init__(self, constraints: List[ConstraintExpr]) -> None:
         """
-        Initialize an ``And`` constraint.
+        Initialize an :class:`~oef.query.And` constraint.
 
         :param constraints: the list of constraints to be interpreted in conjunction.
         """
@@ -120,9 +121,9 @@ class And(ConstraintExpr):
 
     def to_pb(self):
         """
-        From an instance of ``And`` to its associated Protobuf object.
+        From an instance of :class:`~oef.query.And` to its associated Protobuf object.
 
-        :return: the ConstraintExpr Protobuf object that contains the ``And`` constraint.
+        :return: the ConstraintExpr Protobuf object that contains the :class:`~oef.query.And` constraint.
         """
         and_pb = query_pb2.Query.ConstraintExpr.And()
         constraint_expr_pbs = [ConstraintExpr._to_pb(constraint) for constraint in self.constraints]
@@ -132,10 +133,10 @@ class And(ConstraintExpr):
     @classmethod
     def from_pb(cls, constraint_pb: query_pb2.Query.ConstraintExpr.And):
         """
-        From the And Protobuf object to the associated instance of ``And``.
+        From the ``And`` Protobuf object to the associated instance of :class:`~oef.query.And`.
 
         :param constraint_pb: the Protobuf object that represents the ``And`` constraint.
-        :return: an instance of ``And`` equivalent to the Protobuf object.
+        :return: an instance of :class:`~oef.query.And` equivalent to the Protobuf object.
         """
 
         expr = [ConstraintExpr._from_pb(c) for c in constraint_pb.expr]
@@ -143,7 +144,7 @@ class And(ConstraintExpr):
 
     def check(self, description: Description) -> bool:
         """
-        Check if a value satisfies the ``And`` constraint expression.
+        Check if a value satisfies the :class:`~oef.query.And` constraint expression.
 
         :param description: the description to check.
         :return: ``True`` if the description satisfy the constraint expression, ``False`` otherwise.
@@ -189,7 +190,7 @@ class Or(ConstraintExpr):
 
     def __init__(self, constraints: List[ConstraintExpr]) -> None:
         """
-        Initialize an ``Or`` constraint.
+        Initialize an :class:`~oef.query.Or` constraint.
 
         :param constraints: the list of constraints to be interpreted in disjunction.
         """
@@ -199,9 +200,9 @@ class Or(ConstraintExpr):
 
     def to_pb(self):
         """
-        From an instance of ``Or`` to its associated Protobuf object.
+        From an instance of :class:`~oef.query.Or` to its associated Protobuf object.
 
-        :return: the ConstraintType Protobuf object that contains the ``Or`` constraint.
+        :return: the Protobuf object that contains the :class:`~oef.query.Or` constraint.
         """
 
         or_pb = query_pb2.Query.ConstraintExpr.Or()
@@ -212,17 +213,17 @@ class Or(ConstraintExpr):
     @classmethod
     def from_pb(cls, constraint_pb: query_pb2.Query.ConstraintExpr.Or):
         """
-        From the ``Or`` Protobuf object to the associated instance of Or.
+        From the ``Or`` Protobuf object to the associated instance of :class:`~oef.query.Or`.
 
         :param constraint_pb: the Protobuf object that represents the ``Or`` constraint.
-        :return: an instance of ``Or`` equivalent to the Protobuf object.
+        :return: an instance of :class:`~oef.query.Or` equivalent to the Protobuf object.
         """
         expr = [ConstraintExpr._from_pb(c) for c in constraint_pb.expr]
         return cls(expr)
 
     def check(self, description: Description) -> bool:
         """
-        Check if a value satisfies the ``And`` constraint expression.
+        Check if a value satisfies the :class:`~oef.query.Or` constraint expression.
 
         :param description: the description to check.
         :return: ``True`` if the description satisfy the constraint expression, ``False`` otherwise.
@@ -230,8 +231,7 @@ class Or(ConstraintExpr):
         return any(expr.check(description) for expr in self.constraints)
 
     def is_valid(self, data_model: DataModel) -> bool:
-        for c in self.constraints:
-            return all(c.is_valid(data_model) for c in self.constraints)
+        return all(c.is_valid(data_model) for c in self.constraints)
 
     def _check_validity(self):
         if len(self.constraints) < 2:
@@ -267,7 +267,7 @@ class Not(ConstraintExpr):
 
     def check(self, description: Description) -> bool:
         """
-        Check if a value satisfies the ``Not`` constraint expression.
+        Check if a value satisfies the :class:`~oef.query.Not` constraint expression.
 
         :param description: the description to check.
         :return: ``True`` if the description satisfy the constraint expression, ``False`` otherwise.
@@ -275,6 +275,11 @@ class Not(ConstraintExpr):
         return not self.constraint.check(description)
 
     def to_pb(self):
+        """
+        From an instance of :class:`~oef.query.Not` to its associated Protobuf object.
+
+        :return: the Protobuf object that contains the :class:`~oef.query.Not` constraint.
+        """
         not_pb = query_pb2.Query.ConstraintExpr.Not()
         constraint_expr_pb = ConstraintExpr._to_pb(self.constraint)
         not_pb.expr.CopyFrom(constraint_expr_pb)
@@ -282,6 +287,12 @@ class Not(ConstraintExpr):
 
     @classmethod
     def from_pb(cls, constraint_pb: query_pb2.Query.ConstraintExpr.Not):
+        """
+        From the ``Not`` Protobuf object to the associated instance of :class:`~oef.query.Not`.
+
+        :param constraint_pb: the Protobuf object that represents the ``Not`` constraint.
+        :return: an instance of :class:`~oef.query.Not` equivalent to the Protobuf object.
+        """
         expression = ConstraintExpr._from_pb(constraint_pb.expr)
         return cls(expression)
 
@@ -346,7 +357,7 @@ class Relation(ConstraintType, ABC):
 
     @property
     @abstractmethod
-    def operator(self) -> query_pb2.Query.Relation:
+    def _operator(self) -> query_pb2.Query.Relation:
         """The operator of the relation."""
 
     @classmethod
@@ -385,10 +396,10 @@ class Relation(ConstraintType, ABC):
         """
         From an instance of Relation to its associated Protobuf object.
 
-        :return: the ConstraintType Protobuf object that contains the relation.
+        :return: the Protobuf object that contains the relation.
         """
         relation = query_pb2.Query.Relation()
-        relation.op = self.operator()
+        relation.op = self._operator()
         query_value = query_pb2.Query.Value()
         if isinstance(self.value, bool):
             query_value.b = self.value
@@ -422,7 +433,8 @@ class OrderingRelation(Relation, ABC):
 
 class Eq(Relation):
     """
-    The equality relation.
+    The equality relation. That is, if the value of an attribute is equal to the value specified then
+    the :class:`~oef.query.Constraint` with this constraint type is satisfied.
 
     Examples:
         >>> # all the books whose author is Stephen King
@@ -434,7 +446,7 @@ class Eq(Relation):
 
     """
 
-    def operator(self):
+    def _operator(self):
         return query_pb2.Query.Relation.EQ
 
     def check(self, value: ATTRIBUTE_TYPES) -> bool:
@@ -449,7 +461,8 @@ class Eq(Relation):
 
 class NotEq(Relation):
     """
-    The non-equality relation.
+    The non-equality relation. That is, if the value of an attribute is not equal to the value specified then
+    the :class:`~oef.query.Constraint` with this constraint type is satisfied.
 
     Examples:
         >>> # all the books that are not of the genre Horror
@@ -461,7 +474,7 @@ class NotEq(Relation):
 
     """
 
-    def operator(self):
+    def _operator(self):
         return query_pb2.Query.Relation.NOTEQ
 
     def check(self, value: ATTRIBUTE_TYPES) -> bool:
@@ -475,7 +488,9 @@ class NotEq(Relation):
 
 
 class Lt(OrderingRelation):
-    """Less-than relation.
+    """
+    The Less-than relation. That is, if the value of an attribute is less than the value specified then
+    the :class:`~oef.query.Constraint` with this constraint type is satisfied.
 
     Examples:
         >>> # all the books published before 1990
@@ -487,7 +502,7 @@ class Lt(OrderingRelation):
 
     """
 
-    def operator(self):
+    def _operator(self):
         return query_pb2.Query.Relation.LT
 
     def check(self, value: ATTRIBUTE_TYPES) -> bool:
@@ -502,7 +517,8 @@ class Lt(OrderingRelation):
 
 class LtEq(OrderingRelation):
     """
-    Less-than-equal relation.
+    Less-than-equal relation. That is, if the value of an attribute is less than or equal to the value specified then
+    the :class:`~oef.query.Constraint` with this constraint type is satisfied.
 
     Examples:
         >>> # all the books published before 1990, 1990 included
@@ -514,7 +530,7 @@ class LtEq(OrderingRelation):
 
     """
 
-    def operator(self):
+    def _operator(self):
         return query_pb2.Query.Relation.LTEQ
 
     def check(self, value: ATTRIBUTE_TYPES) -> bool:
@@ -529,7 +545,8 @@ class LtEq(OrderingRelation):
 
 class Gt(OrderingRelation):
     """
-    Greater-than relation.
+    Greater-than relation. That is, if the value of an attribute is greater than the value specified then
+    the :class:`~oef.query.Constraint` with this constraint type is satisfied.
 
     Examples:
         >>> # all the books with rating greater than 4.0
@@ -540,7 +557,7 @@ class Gt(OrderingRelation):
         False
     """
 
-    def operator(self):
+    def _operator(self):
         return query_pb2.Query.Relation.GT
 
     def check(self, value: ATTRIBUTE_TYPES) -> bool:
@@ -555,7 +572,8 @@ class Gt(OrderingRelation):
 
 class GtEq(OrderingRelation):
     """
-    Greater-than-equal relation.
+    Greater-than-equal relation. That is, if the value of an attribute is greater than or equal to the value specified
+    then the :class:`~oef.query.Constraint` with this constraint type is satisfied.
 
     Examples:
         >>> # all the books published after 2000, included
@@ -566,7 +584,7 @@ class GtEq(OrderingRelation):
         False
     """
 
-    def operator(self):
+    def _operator(self):
         return query_pb2.Query.Relation.GTEQ
 
     def check(self, value: ATTRIBUTE_TYPES) -> bool:
@@ -608,7 +626,7 @@ class Range(ConstraintType):
         """
         From an instance of Range to its associated Protobuf object.
 
-        :return: the ConstraintType Protobuf object that contains the range.
+        :return: the Protobuf object that contains the range.
         """
         range_ = query_pb2.Query.Range()
         if type(self.values[0]) == str:
@@ -681,7 +699,7 @@ class Set(ConstraintType, ABC):
 
     def __init__(self, values: SET_TYPES) -> None:
         """
-        Initialize a Set constraint.
+        Initialize a :class:`~oef.query.Set` constraint.
 
         :param values: a list of values for the set relation.
         """
@@ -689,17 +707,17 @@ class Set(ConstraintType, ABC):
 
     @property
     @abstractmethod
-    def operator(self) -> query_pb2.Query.Set:
+    def _operator(self) -> query_pb2.Query.Set:
         """The operator over the set."""
 
     def to_pb(self):
         """
-        From an instance of one of the subclasses of Set to its associated Protobuf object.
+        From an instance of one of the subclasses of :class:`~oef.query.Set` to its associated Protobuf object.
 
-        :return: the ConstraintType Protobuf object that contains the set constraint.
+        :return: the Protobuf object that contains the set constraint.
         """
         set_ = query_pb2.Query.Set()
-        set_.op = self.operator()
+        set_.op = self._operator()
 
         value_type = type(self.values[0]) if len(self.values) > 0 else str
 
@@ -729,11 +747,10 @@ class Set(ConstraintType, ABC):
     @classmethod
     def from_pb(cls, set_pb: query_pb2.Query.Set):
         """
-        From the Set Protobuf object to the associated
-        instance of a subclass of Set.
+        From the Set Protobuf object to the associated instance of a subclass of :class:`~oef.query.Set`.
 
         :param set_pb: the Protobuf object that represents the set constraint.
-        :return: the object of one of the subclasses of ``Set``.
+        :return: the object of one of the subclasses of :class:`~oef.query.Set`.
         """
         op_from_pb = {
             query_pb2.Query.Set.IN: In,
@@ -770,7 +787,7 @@ class In(Set):
 
     Examples:
 
-        >>> # all the books whose genre is one of `Horror`, `Science fiction`, `Non-fiction`
+        >>> # all the books whose genre is one of the following: `Horror`, `Science fiction`, `Non-fiction`
         >>> c = Constraint("genre", In(["horror", "science fiction", "non-fiction"]))
         >>> c.check(Description({"genre": "horror"}))
         True
@@ -782,7 +799,7 @@ class In(Set):
     def __init__(self, values: SET_TYPES):
         super().__init__(values)
 
-    def operator(self):
+    def _operator(self):
         return query_pb2.Query.Set.IN
 
     def check(self, value: ATTRIBUTE_TYPES) -> bool:
@@ -815,7 +832,7 @@ class NotIn(Set):
     def __init__(self, values: SET_TYPES):
         super().__init__(values)
 
-    def operator(self):
+    def _operator(self):
         return query_pb2.Query.Set.NOTIN
 
     def check(self, value: ATTRIBUTE_TYPES) -> bool:
@@ -836,6 +853,7 @@ class Distance(ConstraintType):
     The distance is interpreted as a radius from a center.
 
     Examples:
+
         # define a location of interest, e.g. the Tour Eiffel
         >>> tour_eiffel = Location(48.8581064, 2.29447)
 
@@ -868,6 +886,11 @@ class Distance(ConstraintType):
         return self.center.distance(value) <= self.distance
 
     def to_pb(self) -> query_pb2.Query.Distance:
+        """
+        From an instance :class:`~oef.query.Distance` to its associated Protobuf object.
+
+        :return: the Protobuf object that contains the :class:`~oef.query.Distance` constraint.
+        """
         distance_pb = query_pb2.Query.Distance()
         distance_pb.distance = self.distance
         distance_pb.center.CopyFrom(self.center.to_pb())
@@ -875,6 +898,12 @@ class Distance(ConstraintType):
 
     @classmethod
     def from_pb(cls, distance_pb: query_pb2.Query.Distance):
+        """
+        From the ``Distance`` Protobuf object to the associated instance of :class:`~oef.query.Distance`.
+
+        :param distance_pb: the Protobuf object that represents the ``~oef.query.Distance`` constraint.
+        :return: an instance of ``~oef.query.Distance``.
+        """
         center = Location.from_pb(distance_pb.center)
         distance = distance_pb.distance
         return cls(center, distance)
@@ -1062,10 +1091,10 @@ class Query(ProtobufSerializable):
     @classmethod
     def from_pb(cls, query: query_pb2.Query.Model):
         """
-        From the ``Query`` Protobuf object to the associated instance of ``Query``.
+        From the ``Query`` Protobuf object to the associated instance of :class:`~oef.query.Query`.
 
-        :param query: the Protobuf object that represents the ``Query`` object.
-        :return: an instance of ``Query`` equivalent to the Protobuf object provided in input.
+        :param query: the Protobuf object that represents the :class:`~oef.query.Query` object.
+        :return: an instance of :class:`~oef.query.Query` equivalent to the Protobuf object provided in input.
         """
         constraints = [ConstraintExpr._from_pb(c) for c in query.constraints]
         return cls(constraints, DataModel.from_pb(query.model) if query.HasField("model") else None)
@@ -1092,10 +1121,10 @@ class Query(ProtobufSerializable):
         return all(c.is_valid(data_model) for c in self.constraints)
 
     def _check_validity(self):
-        """Check whether the ``Query`` object is valid.
+        """Check whether the :class:`~oef.query.Query` object is valid.
 
         :return ``None``
-        :raises ValueError: if the query does not satisfy some requirements."""
+        :raises ValueError: if the query does not satisfy some sanity requirements."""
 
         if len(self.constraints) < 1:
             raise ValueError("Invalid input value for type '{}': empty list of constraints. The number of "

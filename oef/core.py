@@ -347,7 +347,11 @@ class OEFProxy(OEFCoreInterface, ABC):
 
     @abstractmethod
     def is_connected(self) -> bool:
-        """Return true if the proxy has already established a connection with the OEF, false otherwise."""
+        """
+        Check if the proxy is currently connected to the OEF Node.
+
+        :return: ``True`` if the proxy is connected, ``False`` otherwise.
+        """
 
     async def loop(self, agent: AgentInterface) -> None:  # noqa: C901
         """

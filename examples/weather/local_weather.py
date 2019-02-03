@@ -43,9 +43,8 @@ class WeatherClient(LocalAgent):
         print("Agent found: {0}".format(agents))
         for agent in agents:
             print("Sending to agent {0}".format(agent))
-            # we send a query with no constraints, meaning "give me all the resources you can propose."
-            query = Query([])
-            self.send_cfp(0, agent, query)
+            # we send a CFP with no constraints, meaning "give me all the resources you can propose."
+            self.send_cfp(0, agent, None)
 
     def on_propose(self, origin: str, dialogue_id: int, msg_id: int, target: int, proposals: PROPOSE_TYPES):
         """When we receive a Propose message, answer with an Accept."""
@@ -54,6 +53,7 @@ class WeatherClient(LocalAgent):
             print("Proposal {}: {}".format(i, p.values))
         print("Accepting Propose.")
         self.send_accept(dialogue_id, origin, msg_id + 1, msg_id)
+        self.wait_msg= 3
 
     def on_message(self, origin: str,
                    dialogue_id: int,
@@ -61,6 +61,9 @@ class WeatherClient(LocalAgent):
         """Extract and print data from incoming (simple) messages."""
         key, value = content.decode().split(":")
         print("Received measurement from {}: {}={}".format(origin, key, float(value)))
+        self.wait_msg -= 1
+        if self.wait_msg == 0:
+            self.stop()
 
 
 class WeatherStation(LocalAgent):
@@ -97,9 +100,10 @@ class WeatherStation(LocalAgent):
               .format(origin, dialogue_id, msg_id, target))
 
         # send the measurements to the client. for the sake of simplicity, they are hard-coded.
-        self.send_message(dialogue_id, origin, b"temperature:15.0")
-        self.send_message(dialogue_id, origin, b"humidity:0.7")
-        self.send_message(dialogue_id, origin, b"air_pressure:1019.0")
+        self.send_message(0, dialogue_id, origin, b"temperature:15.0")
+        self.send_message(0, dialogue_id, origin, b"humidity:0.7")
+        self.send_message(0, dialogue_id, origin, b"air_pressure:1019.0")
+        self.stop()
 
 
 if __name__ == "__main__":
@@ -111,21 +115,22 @@ if __name__ == "__main__":
     client.connect()
     server.connect()
 
-    server.register_service(server.weather_service_description)
+    server.register_service(0, server.weather_service_description)
 
-    query = Query([Constraint(TEMPERATURE_ATTR, Eq(True)),
-                   Constraint(AIR_PRESSURE_ATTR, Eq(True)),
-                   Constraint(HUMIDITY_ATTR, Eq(True))],
+    query = Query([Constraint(TEMPERATURE_ATTR.name, Eq(True)),
+                   Constraint(AIR_PRESSURE_ATTR.name, Eq(True)),
+                   Constraint(HUMIDITY_ATTR.name, Eq(True))],
                   WEATHER_DATA_MODEL)
 
     client.on_search_result(0, ["weather_station"])
 
     try:
         loop = asyncio.get_event_loop()
+        asyncio.ensure_future(local_node.run())
         loop.run_until_complete(asyncio.gather(
             client.async_run(),
-            server.async_run(),
-            local_node.run()))
+            server.async_run()))
+        local_node.stop()
     finally:
         local_node.stop()
         client.stop()

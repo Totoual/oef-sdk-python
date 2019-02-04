@@ -28,7 +28,6 @@ The agents interact via an OEF Node on the network.
 import asyncio
 from argparse import ArgumentParser
 from typing import List
-# connect the agents to the OEF
 from oef.agents import Agent
 from oef.proxy import OEFNetworkProxy
 from oef.query import Query, Constraint, Eq
@@ -59,6 +58,7 @@ class GreetingsAgent(Agent):
                 self.send_message(0, 0, a, b"hello")
         else:
             print("[{}]: No agent found.".format(self.public_key))
+            self.stop()
 
 
 if __name__ == '__main__':
@@ -86,7 +86,7 @@ if __name__ == '__main__':
     # we are looking for services that answers to "hello" messages
     query = Query([Constraint("say_hello", Eq(True))], greetings_model)
 
-    print("[{}]: Search for 'greetings' services.".format(client_agent.public_key))
+    print("[{}]: Search for 'greetings' services. search_id={}".format(client_agent.public_key, 0))
     client_agent.search_services(0, query)
 
     # run the agents
@@ -98,3 +98,6 @@ if __name__ == '__main__':
     finally:
         client_agent.stop()
         server_agent.stop()
+
+        client_agent.disconnect()
+        server_agent.disconnect()

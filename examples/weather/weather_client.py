@@ -93,6 +93,7 @@ class WeatherClient(OEFAgent):
         """Extract and print data from incoming (simple) messages."""
         data = json.loads(content.decode("utf-8"))
         print("[{0}]: Received measurement from {1}: {2}".format(self.public_key, origin, pprint.pformat(data)))
+        self.stop()
 
 
 if __name__ == "__main__":
@@ -112,4 +113,8 @@ if __name__ == "__main__":
 
     agent.search_services(0, query)
 
-    agent.run()
+    try:
+        agent.run()
+    finally:
+        agent.stop()
+        agent.disconnect()

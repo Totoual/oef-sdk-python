@@ -64,19 +64,21 @@ class EchoClientAgent(OEFAgent):
     """
 
     def on_message(self, origin: str, dialogue_id: int, content: bytes):
-        print("Received message: origin={}, dialogue_id={}, content={}".format(origin, dialogue_id, content))
-        print("Stopping...")
+        print("[{}]: Received message: origin={}, dialogue_id={}, content={}"
+              .format(self.public_key, origin, dialogue_id, content))
+        print("[{}]: Stopping...".format(self.public_key))
         self.stop()
 
     def on_search_result(self, search_id: int, agents: List[str]):
         if len(agents) > 0:
-            print("Agents found: ", agents)
+            print("[{}]: search_id={}. Agents found: {}".format(self.public_key, search_id, agents))
             msg = b"hello"
             for agent in agents:
-                print("Sending {} to {}".format(msg, agent))
+                print("[{}]: Sending {} to {}".format(self.public_key, msg, agent))
                 self.send_message(0, 0, agent, msg)
         else:
-            print("No agent found.")
+            print("[{}]: No agent found. Stopping...".format(self.public_key))
+            self.stop()
 
 
 if __name__ == '__main__':
@@ -87,13 +89,18 @@ if __name__ == '__main__':
     # connect it to the OEF Node
     client_agent.connect()
 
-    # query OEF for DataService providers
+    # create a query for the echo data model
     echo_feature = AttributeSchema("does_echo", bool, True, "Whether the service agent can do echo.")
     echo_model = DataModel("echo", [echo_feature], "echo service.")
     echo_query = Query([Constraint("does_echo", Eq(True))], echo_model)
 
-    print("Make search to the OEF")
+    print("[{}]: Make search to the OEF".format(client_agent.public_key))
     client_agent.search_services(0, echo_query)
 
     # wait for events
-    client_agent.run()
+    try:
+        client_agent.run()
+    finally:
+        print("[{}]: Disconnecting...".format(client_agent.public_key))
+        client_agent.stop()
+        client_agent.disconnect()

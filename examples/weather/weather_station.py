@@ -47,7 +47,7 @@ import pprint
 
 from weather_schema import WEATHER_DATA_MODEL
 from oef.agents import OEFAgent
-from oef.proxy import CFP_TYPES
+from oef.messages import CFP_TYPES
 from oef.schema import Description
 
 
@@ -73,7 +73,9 @@ class WeatherStation(OEFAgent):
         print("[{0}]: Received CFP from {1}".format(self.public_key, origin))
 
         # prepare the proposal with a given price.
-        proposal = Description({"price": 50})
+        price = 50
+        proposal = Description({"price": price})
+        print("[{}]: Sending propose at price: {}".format(self.public_key, price))
         self.send_propose(dialogue_id, origin, [proposal], msg_id + 1, target + 1)
 
     def on_accept(self, origin: str,
@@ -87,7 +89,7 @@ class WeatherStation(OEFAgent):
         # send the measurements to the client. for the sake of simplicity, they are hard-coded.
         data = {"temperature": 15.0, "humidity": 0.7, "air_pressure": 1019.0}
         encoded_data = json.dumps(data).encode("utf-8")
-        print("[{0}]: sending data to {1}: {2}".format(self.public_key, origin, pprint.pformat(data)))
+        print("[{0}]: Sending data to {1}: {2}".format(self.public_key, origin, pprint.pformat(data)))
         self.send_message(0, dialogue_id, origin, encoded_data)
 
 
@@ -97,4 +99,8 @@ if __name__ == "__main__":
     agent.register_service(0, agent.weather_service_description)
 
     print("[{}]: Waiting for clients...".format(agent.public_key))
-    agent.run()
+    try:
+        agent.run()
+    finally:
+        agent.stop()
+        agent.disconnect()

@@ -61,8 +61,9 @@ class EchoServiceAgent(OEFAgent):
     """
 
     def on_message(self, origin: str, dialogue_id: int, content: bytes):
-        print("Received message: origin={}, dialogue_id={}, content={}".format(origin, dialogue_id, content))
-        print("Sending {} back to {}".format(content, origin))
+        print("[{}]: Received message: origin={}, dialogue_id={}, content={}"
+              .format(self.public_key, origin, dialogue_id, content))
+        print("[{}]: Sending {} back to {}".format(self.public_key, content, origin))
         self.send_message(1, dialogue_id, origin, content)
 
 
@@ -73,12 +74,18 @@ if __name__ == '__main__':
     server_agent.connect()
 
     # register a service on the OEF
-    echo_feature = AttributeSchema("does_echo", bool, True, "Whether the service agent can do echo.")
+    echo_feature = AttributeSchema("does_echo", bool, True, "Whether the service agent can do echo or not.")
     echo_model = DataModel("echo", [echo_feature], "echo service.")
     echo_description = Description({"does_echo": True}, echo_model)
 
-    server_agent.register_service(0, echo_description)
+    msg_id = 0
+    server_agent.register_service(msg_id, echo_description)
 
     # run the agent
-    print("Waiting for messages...")
-    server_agent.run()
+    print("[{}]: Waiting for messages...".format(server_agent.public_key))
+    try:
+        server_agent.run()
+    finally:
+        print("[{}]: Disconnecting...".format(server_agent.public_key))
+        server_agent.stop()
+        server_agent.disconnect()

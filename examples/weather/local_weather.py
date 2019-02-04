@@ -24,6 +24,8 @@
 The local counterpart implementation of the weather example.
 """
 import asyncio
+import json
+import pprint
 from typing import List
 
 from examples.weather.weather_schema import WEATHER_DATA_MODEL, TEMPERATURE_ATTR, AIR_PRESSURE_ATTR, HUMIDITY_ATTR
@@ -40,30 +42,33 @@ class WeatherClient(LocalAgent):
 
     def on_search_result(self, search_id: int, agents: List[str]):
         """For every agent returned in the service search, send a CFP to obtain resources from them."""
-        print("Agent found: {0}".format(agents))
+        if len(agents) == 0:
+            print("[{}]: No agent found. Stopping...".format(self.public_key))
+            self.stop()
+            return
+
+        print("[{0}]: Agent found: {1}".format(self.public_key, agents))
         for agent in agents:
-            print("Sending to agent {0}".format(agent))
-            # we send a CFP with no constraints, meaning "give me all the resources you can propose."
-            self.send_cfp(0, agent, None)
+            print("[{0}]: Sending to agent {1}".format(self.public_key, agent))
+            # we send a 'None' query, meaning "give me all the resources you can propose."
+            query = None
+            self.send_cfp(0, agent, query)
 
     def on_propose(self, origin: str, dialogue_id: int, msg_id: int, target: int, proposals: PROPOSE_TYPES):
         """When we receive a Propose message, answer with an Accept."""
-        print("Received propose from agent {0}".format(origin))
+        print("[{0}]: Received propose from agent {1}".format(self.public_key, origin))
         for i, p in enumerate(proposals):
-            print("Proposal {}: {}".format(i, p.values))
-        print("Accepting Propose.")
+            print("[{0}]: Proposal {1}: {2}".format(self.public_key, i, p.values))
+        print("[{0}]: Accepting Propose.".format(self.public_key))
         self.send_accept(dialogue_id, origin, msg_id + 1, msg_id)
-        self.wait_msg= 3
 
     def on_message(self, origin: str,
                    dialogue_id: int,
                    content: bytes):
         """Extract and print data from incoming (simple) messages."""
-        key, value = content.decode().split(":")
-        print("Received measurement from {}: {}={}".format(origin, key, float(value)))
-        self.wait_msg -= 1
-        if self.wait_msg == 0:
-            self.stop()
+        data = json.loads(content.decode("utf-8"))
+        print("[{0}]: Received measurement from {1}: {2}".format(self.public_key, origin, pprint.pformat(data)))
+        self.stop()
 
 
 class WeatherStation(LocalAgent):
@@ -85,7 +90,7 @@ class WeatherStation(LocalAgent):
                target: int,
                query: CFP_TYPES):
         """Send a simple Propose to the sender of the CFP."""
-        print("Received CFP from {0}".format(origin))
+        print("[{0}]: Received CFP from {1}".format(self.public_key, origin))
 
         # prepare the proposal with a given price.
         proposal = Description({"price": 50})
@@ -96,13 +101,14 @@ class WeatherStation(LocalAgent):
                   msg_id: int,
                   target: int):
         """Once we received an Accept, send the requested data."""
-        print("Received accept from {0}."
-              .format(origin, dialogue_id, msg_id, target))
+        print("[{0}]: Received accept from {1}."
+              .format(self.public_key, origin))
 
         # send the measurements to the client. for the sake of simplicity, they are hard-coded.
-        self.send_message(0, dialogue_id, origin, b"temperature:15.0")
-        self.send_message(0, dialogue_id, origin, b"humidity:0.7")
-        self.send_message(0, dialogue_id, origin, b"air_pressure:1019.0")
+        data = {"temperature": 15.0, "humidity": 0.7, "air_pressure": 1019.0}
+        encoded_data = json.dumps(data).encode("utf-8")
+        print("[{0}]: sending data to {1}: {2}".format(self.public_key, origin, pprint.pformat(data)))
+        self.send_message(0, dialogue_id, origin, encoded_data)
         self.stop()
 
 

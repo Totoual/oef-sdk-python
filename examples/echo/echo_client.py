@@ -48,8 +48,9 @@ Other methods (e.g. ``on_cfp``, ``on_error`` etc.) are omitted, since not needed
 from typing import List
 
 from oef.agents import OEFAgent
-from oef.schema import DataModel
-from oef.query import Query
+from oef.schema import DataModel, AttributeSchema
+from oef.query import Query, Constraint, Eq
+
 
 # Uncomment the following lines if you want more output
 # import logging
@@ -73,7 +74,7 @@ class EchoClientAgent(OEFAgent):
             msg = b"hello"
             for agent in agents:
                 print("Sending {} to {}".format(msg, agent))
-                self.send_message(0, agent, msg)
+                self.send_message(0, 0, agent, msg)
         else:
             print("No agent found.")
 
@@ -87,8 +88,9 @@ if __name__ == '__main__':
     client_agent.connect()
 
     # query OEF for DataService providers
-    echo_model = DataModel("echo", [], "Echo data service.")
-    echo_query = Query([], echo_model)
+    echo_feature = AttributeSchema("does_echo", bool, True, "Whether the service agent can do echo.")
+    echo_model = DataModel("echo", [echo_feature], "echo service.")
+    echo_query = Query([Constraint("does_echo", Eq(True))], echo_model)
 
     print("Make search to the OEF")
     client_agent.search_services(0, echo_query)

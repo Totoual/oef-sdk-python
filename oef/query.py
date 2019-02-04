@@ -98,8 +98,8 @@ class And(ConstraintExpr):
     all the constraints that constitute the and are satisfied.
 
     Examples:
+        All the books whose title is between 'I' and 'J' (alphanumeric order) but not equal to 'It'
 
-        >>> # all the books whose title is between 'I' and 'J' (alphanumeric order) but not equal to 'It'
         >>> c = And([Constraint("title", Range(("I", "J"))), Constraint("title", NotEq("It"))])
         >>> c.check(Description({"title": "I, Robot"}))
         True
@@ -175,8 +175,8 @@ class Or(ConstraintExpr):
     that constitute the or is satisfied.
 
     Examples:
+        All the books that have been published either before the year 1960 or after the year 1970
 
-        >>> # all the books that have been published either before the year 1960 or after the year 1970
         >>> c = Or([Constraint("year", Lt(1960)), Constraint("year", Gt(1970))])
         >>> c.check(Description({"year": 1950}))
         True
@@ -254,7 +254,8 @@ class Not(ConstraintExpr):
     that constitutes the Not expression is not satisfied.
 
     Examples:
-        >>> # all the books whose genre is science fiction, but the year is not between 1990 and 2000
+        All the books whose genre is science fiction, but the year is not between 1990 and 2000
+
         >>> c = And([Constraint("genre", Eq("science-fiction")), Not(Constraint("year", Range((1990, 2000))))])
         >>> c.check(Description({"genre": "science-fiction", "year": 1995}))
         False
@@ -437,7 +438,8 @@ class Eq(Relation):
     the :class:`~oef.query.Constraint` with this constraint type is satisfied.
 
     Examples:
-        >>> # all the books whose author is Stephen King
+        All the books whose author is Stephen King
+
         >>> c = Constraint("author",  Eq("Stephen King"))
         >>> c.check(Description({"author": "Stephen King"}))
         True
@@ -465,7 +467,8 @@ class NotEq(Relation):
     the :class:`~oef.query.Constraint` with this constraint type is satisfied.
 
     Examples:
-        >>> # all the books that are not of the genre Horror
+        All the books that are not of the genre Horror
+
         >>> c = Constraint("genre", NotEq("horror"))
         >>> c.check(Description({"genre": "non-fiction"}))
         True
@@ -493,7 +496,8 @@ class Lt(OrderingRelation):
     the :class:`~oef.query.Constraint` with this constraint type is satisfied.
 
     Examples:
-        >>> # all the books published before 1990
+        All the books published before 1990
+
         >>> c = Constraint("year", Lt(1990))
         >>> c.check(Description({"year": 1985}))
         True
@@ -521,7 +525,8 @@ class LtEq(OrderingRelation):
     the :class:`~oef.query.Constraint` with this constraint type is satisfied.
 
     Examples:
-        >>> # all the books published before 1990, 1990 included
+        All the books published before 1990, 1990 included
+
         >>> c = Constraint("year", LtEq(1990))
         >>> c.check(Description({"year": 1990}))
         True
@@ -549,7 +554,8 @@ class Gt(OrderingRelation):
     the :class:`~oef.query.Constraint` with this constraint type is satisfied.
 
     Examples:
-        >>> # all the books with rating greater than 4.0
+        All the books with rating greater than 4.0
+
         >>> c = Constraint("average_rating", Gt(4.0))
         >>> c.check(Description({"average_rating": 4.5}))
         True
@@ -576,7 +582,8 @@ class GtEq(OrderingRelation):
     then the :class:`~oef.query.Constraint` with this constraint type is satisfied.
 
     Examples:
-        >>> # all the books published after 2000, included
+        All the books published after 2000, included
+
         >>> c = Constraint("year", GtEq(2000))
         >>> c.check(Description({"year": 2000}))
         True
@@ -602,7 +609,8 @@ class Range(ConstraintType):
     A constraint type that allows you to restrict the values of the attribute in a given range.
 
     Examples:
-        >>> # all the books published after 2000, included
+        All the books published after 2000, included
+
         >>> c = Constraint("year", Range((2000, 2005)))
         >>> c.check(Description({"year": 2000}))
         True
@@ -786,8 +794,8 @@ class In(Set):
     must be in the set of values provided.
 
     Examples:
+        All the books whose genre is one of the following: `Horror`, `Science fiction`, `Non-fiction`
 
-        >>> # all the books whose genre is one of the following: `Horror`, `Science fiction`, `Non-fiction`
         >>> c = Constraint("genre", In(["horror", "science fiction", "non-fiction"]))
         >>> c.check(Description({"genre": "horror"}))
         True
@@ -819,8 +827,8 @@ class NotIn(Set):
     must be not in the set of values provided.
 
     Examples:
+        All the books that have not been published neither in 1990, nor in 1995, nor in 2000
 
-        >>> # all the books that have not been published neither in 1990, nor in 1995, nor in 2000
         >>> c = Constraint("year", NotIn([1990, 1995, 2000]))
         >>> c.check(Description({"year": 1991}))
         True
@@ -853,19 +861,18 @@ class Distance(ConstraintType):
     The distance is interpreted as a radius from a center.
 
     Examples:
-
-        # define a location of interest, e.g. the Tour Eiffel
+        Define a location of interest, e.g. the Tour Eiffel
         >>> tour_eiffel = Location(48.8581064, 2.29447)
 
-        # find all the locations close to the Tour Eiffel within 1 km
+        Find all the locations close to the Tour Eiffel within 1 km
         >>> close_to_tour_eiffel = Distance(tour_eiffel, 1.0)
 
-        # Le Jules Verne, a famous restaurant close to the Tour Eiffel, satisfies the constraint.
+        Le Jules Verne, a famous restaurant close to the Tour Eiffel, satisfies the constraint.
         >>> le_jules_verne_restaurant = Location(48.8579675, 2.2951849)
         >>> close_to_tour_eiffel.check(le_jules_verne_restaurant)
         True
 
-        # The Colosseum does not satisfy the constraint (farther than 1 km from the Tour Eiffel).
+        The Colosseum does not satisfy the constraint (farther than 1 km from the Tour Eiffel).
         >>> colosseum = Location(41.8902102, 12.4922309)
         >>> close_to_tour_eiffel.check(colosseum)
         False
@@ -987,20 +994,24 @@ class Constraint(ConstraintExpr):
             >>> book_2 = Description({"author": "George Orwell", "year": 1948})
 
             The ``"author"`` attribute instantiation satisfies the constraint, so the result is ``True``.
+
             >>> c1.check(book_1)
             True
 
             Here, the ``"author"`` does not satisfy the constraints. Hence, the result is ``False``.
+
             >>> c1.check(book_2)
             False
 
             In this case, there is a missing field specified by the query, that is ``"year"``
             So the result is ``False``, even in the case it is not required by the schema:
+
             >>> c2.check(Description({"author": "Stephen King"}))
             False
 
             If the type of some attribute of the description is not correct, the result is ``False``.
             In this case, the field ``"year"`` has a string instead of an integer:
+
             >>> c2.check(Description({"author": "Stephen King", "year": "1991"}))
             False
             >>> Constraint("position", Distance(Location(0.0, 0.0), 1.0)).check(Description({"position": "1.0,1.0"}))
@@ -1041,8 +1052,8 @@ class Query(ProtobufSerializable):
     set of key value pairs that must be contained in the description of the service/ agent.
 
     Examples:
-
         Return all the books written by Stephen King published after 1990, and available as an e-book:
+
         >>> attr_author   = AttributeSchema("author" ,         str,   True,  "The author of the book.")
         >>> attr_year     = AttributeSchema("year",            int,   True,  "The year of publication of the book.")
         >>> attr_ebook    = AttributeSchema("ebook_available", bool,  False, "If the book can be sold as an e-book.")
@@ -1053,6 +1064,7 @@ class Query(ProtobufSerializable):
         ... ])
 
         With a query, you can check that a `~oef.schema.Description` object satisfies the constraints.
+
         >>> q.check(Description({"author": "Stephen King", "year": 1991, "ebook_available": True}))
         True
         >>> q.check(Description({"author": "George Orwell", "year": 1948, "ebook_available": False}))

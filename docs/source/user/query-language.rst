@@ -21,7 +21,7 @@ In the next sections, we describe how to build queries with the SDK.
 Constraints
 -----------
 
-A `constraint` is associated with an `attribute` and imposes restrictions on the domain of that attribute.
+A `constraint` is associated with an `attribute name` and imposes restrictions on the domain of that attribute.
 That is, it imposes some limitations on the values the attribute can assume.
 
 We have different types of constraints:
@@ -39,10 +39,9 @@ We have different types of constraints:
 
   * the average rating must be between 3.5 and 4.5
 
-* any conjunction/disjunction of the previous constraints:
+* `distance` constraints:
 
-  * books that belong to `Horror` **and** has been published after 2000
-  * books whose author is **either** `J. K. Rowling` **or** `J. R. R. Tolkien`
+  * the average rating must be between 3.5 and 4.5
 
 The class that implements the constraint concept is :class:`~oef.query.Constraint`
 In the following, we show how to define them in the Python SDK.
@@ -68,23 +67,22 @@ The types of relation constraints are:
     from oef.query import Constraint, Eq, NotEq, Lt, LtEq, Gt, GtEq
 
     # all the books whose author is Stephen King
-    Constraint(attr_author,  Eq("Stephen King"))
+    Constraint("author", Eq("Stephen King"))
 
     # all the books that are not of the genre Horror
-    Constraint(attr_genre,   NotEq("Horror"))
+    Constraint("genre", NotEq("Horror"))
 
     # all the books published before 1990
-    Constraint(attr_year,    Lt(1990))
+    Constraint("year", Lt(1990))
 
     # the same of before, but including 1990
-    Constraint(attr_year,    LtEq(1990))
+    Constraint("year", LtEq(1990))
 
     # all the books with rating greater than 4.0
-    Constraint(attr_avg_rat, Gt(4.0))
+    Constraint("average_rating", Gt(4.0))
 
     # all the books published after 2000, included
-    Constraint(attr_year,    GtEq(2000))
-
+    Constraint("year", GtEq(2000))
 
 
 Set
@@ -106,10 +104,10 @@ There are two kind of ``Set`` constraints:
     from oef.query import Constraint, In, NotIn
 
     # all the books whose genre is one of `Horror`, `Science fiction`, `Non-fiction`
-    Constraint(attr_genre,   In(["horror", "science fiction", "non-fiction"])
+    Constraint("genre", In(["horror", "science fiction", "non-fiction"])
 
     # all the books that have not been published neither in 1990, nor in 1995, nor in 2000
-    Constraint(attr_year,   NotIn([1990, 1995, 2000]))
+    Constraint("year", NotIn([1990, 1995, 2000]))
 
 
 Range
@@ -126,18 +124,80 @@ range.
     from oef.query import Constraint, Range
 
     # all the books whose title is between 'A' and 'B' (alphanumeric order)
-    Constraint(attr_title,   Range("A", "B"))
+    Constraint("title",   Range("A", "B"))
 
     # all the books that have been published between 1960 and 1970
-    Constraint(attr_genre,   Range(1960, 1970))
+    Constraint("genre",   Range(1960, 1970))
+
+
+Distance
+~~~~~~~~~
+
+The :class:`~oef.query.Distance` is a constraint type that allows you to put a limit on a :class:`~oef.schema.Location`
+attribute type. More specifically, you can set a maximum distance from a given location (the `center`),
+such that will be considered only the instances whose location attribute value is within a distance from the center.
+
+**Examples**:
+
+.. code-block:: python
+
+    from oef.query import Constraint, Range
+
+    # define a location of interest, e.g. the Tour Eiffel
+    tour_eiffel = Location(48.8581064, 2.29447)
+
+    # find all the locations close to the Tour Eiffel within 1 km
+    close_to_tour_eiffel = Constraint("position", Distance(tour_eiffel, 1.0))
+
+    # Le Jules Verne, a famous restaurant close to the Tour Eiffel, satisfies the constraint.
+    le_jules_verne_restaurant = Location(48.8579675, 2.2951849)
+    close_to_tour_eiffel.check(le_jules_verne_restaurant)  # gives `True`
+
+    # The Colosseum does not satisfy the constraint (farther than 1 km from the Tour Eiffel).
+    colosseum = Location(41.8902102, 12.4922309)
+    close_to_tour_eiffel.check(colosseum)  # gives `False`
+
+
+Constraint Expressions
+----------------------
+
+The constraints above mentioned can be combined with the common logical operators (i.e. and, or and not), yielding
+more complex expression.
+
+In particular we can specify any conjunction/disjunction/negations of the previous constraints or composite constraint
+ expressions, e.g.:
+
+* books that belong to `Horror` **and** has been published after 2000, but **not** published by `Stephen King`.
+* books whose author is **either** `J. K. Rowling` **or** `J. R. R. Tolkien`
+
+
+The classes that implement these operators are :class:`~oef.query.Not`, :class:`~oef.query.And`
+and :class:`~oef.query.Or`.
+
+Not
+~~~
+
+The :class:`~oef.query.Not` is a constraint expression that allows you to specify a negation of a constraint expression.
+The :class:`~oef.query.Not` constraint is satisfied whenever its subexpression is ``not`` satisfied.
+
+**Example**:
+
+.. code-block:: python
+
+    from oef.query import Constraint, Not,
+
+    # all the books whose year of publication is not between 1990 and 2000
+    Not(Constraint("year", Range(1990, 2000))
+
 
 And
 ~~~
 
 The :class:`~oef.query.And` is a constraint type that allows you to specify a conjunction of constraints
-over an attribute. That is, the ``And`` constraint is satisfied whenever all the constraints that constitute
-the `and` are satisfied.
+over an attribute. That is, the :class:`~oef.query.And` constraint is satisfied whenever all the subexpressions
+that constitute the `and` are satisfied.
 
+Notice: the number of subexpressions must be **at least** 2.
 
 **Example**:
 
@@ -146,7 +206,7 @@ the `and` are satisfied.
     from oef.query import Constraint, And, NotEq, Range
 
     # all the books whose title is between 'I' and 'J' (alphanumeric order) but not equal to 'It'
-    Constraint(attr_title,   And([Range("I", "J"), NotEq("It")])
+    And([Constraint("title", Range("I", "J")), Constraint("title", NotEq("It"))])
 
 Or
 ~~
@@ -154,6 +214,7 @@ Or
 The :class:`~oef.query.Or` is a constraint type that allows you to specify a disjunction of constraints. That is, the
 ``Or`` constraint is satisfied whenever at least one of the constraints that constitute the ``or`` is satisfied.
 
+Notice: the number of subexpressions must be **at least** 2.
 
 **Example**:
 
@@ -162,14 +223,14 @@ The :class:`~oef.query.Or` is a constraint type that allows you to specify a dis
     from oef.query import Constraint, Or, Lt, Gt
 
     # all the books that have been published either before the year 1960 or after the year 1970
-    Constraint(attr_year,   Or([Lt(1960), Gt(1970)]))
+    Or([Constraint("year", Lt(1960)), Constraint("year", Gt(1970))])
 
 
 Queries
 -------
 
-A `query` is simply a `list of constraints`, interpreted as a conjunction (that is, a matching description with
-the query must satisfy `every` constraint.)
+A `query` is simply a `list of constraint expressions`, interpreted as a conjunction
+(that is, a matching description with the query must satisfy `every` constraint expression.)
 
 **Examples**:
 
@@ -179,10 +240,15 @@ the query must satisfy `every` constraint.)
 
     # return all the books written by Stephen King published after 1990, and available as an e-book:
     Query([
-        Constraint(attr_author, Eq("Stephen King")),
-        Constraint(attr_year, Gt(1990)),
-        Constraint(attr_ebook, Eq(True))
+        Constraint("author", Eq("Stephen King")),
+        Constraint("year", Gt(1990)),
+        Constraint("ebook", Eq(True))
     ], book_model)
 
 Where ``book_model`` is the ``DataModel`` object defined in :ref:`defining-data-model`. However, the data model is
 an optional parameter, but to avoid ambiguity is recommended to include it.
+
+The ``check`` method
+~~~~~~~~~~~~~~~~~~~~
+
+ciao

@@ -235,7 +235,7 @@ class DialogueAgent(Agent, ABC):
 
         :param dialogue: the dialogue to unregister.
         :return: ``None``
-        :raises ValueError
+        :raises ValueError: if the key of the dialogue to be unregistered cannot be found.
         """
         dialogue_key = dialogue.key
         if dialogue_key not in self.dialogues:

@@ -21,7 +21,7 @@
 """
 
 oef.helpers
-~~~~~~~~~~
+~~~~~~~~~~~
 
 This module contains helper functions.
 

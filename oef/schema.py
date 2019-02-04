@@ -118,7 +118,6 @@ class AttributeSchema(ProtobufSerializable):
     This defines the schema that a single entry in a schema must take.
 
     Examples:
-
         >>> attr_title    = AttributeSchema("title" ,          str,   True,  "The title of the book.")
         >>> attr_author   = AttributeSchema("author" ,         str,   True,  "The author of the book.")
         >>> attr_genre    = AttributeSchema("genre",           str,   True,  "The genre of the book.")
@@ -205,7 +204,6 @@ class DataModel(ProtobufSerializable):
     This class represents a data model (a.k.a. schema) of the OEFCore.
 
     Examples:
-
         >>> book_model = DataModel("book", [
         ...  AttributeSchema("title" ,          str,   True,  "The title of the book."),
         ...  AttributeSchema("author" ,         str,   True,  "The author of the book."),
@@ -299,7 +297,6 @@ class Description(ProtobufSerializable):
     checked to make sure they do not violate the attribute schema.
 
     Examples:
-
         >>> It = Description({
         ...     "title" :           "It",
         ...     "author":           "Stephen King",

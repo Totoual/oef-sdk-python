@@ -31,8 +31,8 @@ from typing import List
 # connect the agents to the OEF
 from oef.agents import Agent
 from oef.proxy import OEFNetworkProxy
-from oef.query import Query
-from oef.schema import DataModel, Description
+from oef.query import Query, Constraint, Eq
+from oef.schema import DataModel, Description, AttributeSchema
 
 parser = ArgumentParser("greetings-agents", "A simple example with OEF Agents that greet each other.")
 parser.add_argument("--addr", default="127.0.0.1", help="IP address of the OEF Node.")
@@ -47,13 +47,16 @@ class GreetingsAgent(Agent):
               .format(self.public_key, origin, dialogue_id, content))
         if content == b"hello":
             print("[{}]: Sending greetings message to {}".format(self.public_key, origin))
-            self.send_message(dialogue_id, origin, b"greetings")
+            self.send_message(1, dialogue_id, origin, b"greetings")
+            self.stop()
+        if content == b"greetings":
+            self.stop()
 
     def on_search_result(self, search_id: int, agents: List[str]):
         if len(agents) > 0:
             print("[{}]: Agents found: {}".format(self.public_key, agents))
             for a in agents:
-                self.send_message(0, a, b"hello")
+                self.send_message(0, 0, a, b"hello")
         else:
             print("[{}]: No agent found.".format(self.public_key))
 
@@ -74,12 +77,14 @@ if __name__ == '__main__':
     server_agent.connect()
 
     # register the greetings service agent on the OEF
-    greetings_model = DataModel("greetings", [], "Greetings service.")
-    greetings_description = Description({}, greetings_model)
-    server_agent.register_service(greetings_description)
+    say_hello = AttributeSchema("say_hello", bool, True, "The agent answers to 'hello' messages.")
+    greetings_model = DataModel("greetings", [say_hello], "Greetings service.")
+    greetings_description = Description({"say_hello": True}, greetings_model)
+    server_agent.register_service(0, greetings_description)
 
     # the client executes the search for greetings services
-    query = Query([], greetings_model)
+    # we are looking for services that answers to "hello" messages
+    query = Query([Constraint("say_hello", Eq(True))], greetings_model)
 
     print("[{}]: Search for 'greetings' services.".format(client_agent.public_key))
     client_agent.search_services(0, query)

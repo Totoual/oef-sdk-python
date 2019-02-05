@@ -38,3 +38,6 @@ RUN apt-get install -y \
      libprotobuf-dev libprotoc-dev \
      protobuf-compiler  python-protobuf
 
+RUN mkdir /build
+COPY . /build
+WORKDIR /build

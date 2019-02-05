@@ -50,7 +50,7 @@ def test_agent_on_cfp_handler_warning():
             agent = OEFAgent("test_agent_on_cfp_warning", "127.0.0.1", 3333)
             agent.connect()
 
-            agent.send_cfp(0, agent.public_key, None)
+            agent.send_cfp(1, 0, agent.public_key, 0, None)
 
             asyncio.ensure_future(agent.async_run())
             asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
@@ -67,7 +67,7 @@ def test_agent_on_propose_handler_warning():
             agent = OEFAgent("test_agent_on_propose_warning", "127.0.0.1", 3333)
             agent.connect()
 
-            agent.send_propose(0, agent.public_key, b"propose", 0, 0)
+            agent.send_propose(2, 0, agent.public_key, 1, b"propose")
 
             asyncio.ensure_future(agent.async_run())
             asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
@@ -84,7 +84,7 @@ def test_agent_on_accept_handler_warning():
             agent = OEFAgent("test_agent_on_accept_warning", "127.0.0.1", 3333)
             agent.connect()
 
-            agent.send_accept(0, agent.public_key, 0, 0)
+            agent.send_accept(3, 0, agent.public_key, 2)
 
             asyncio.ensure_future(agent.async_run())
             asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
@@ -101,7 +101,7 @@ def test_agent_on_decline_handler_warning():
             agent = OEFAgent("test_agent_on_decline_warning", "127.0.0.1", 3333)
             agent.connect()
 
-            agent.send_decline(0, agent.public_key, 0, 0)
+            agent.send_decline(4, 0, agent.public_key, 2)
 
             asyncio.ensure_future(agent.async_run())
             asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))

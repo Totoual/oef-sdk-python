@@ -74,18 +74,17 @@ class SingleDialogue(ABC):
         return self.destination, self.id
 
     @abstractmethod
-    def on_message(self, content: bytes) -> None:
+    def on_message(self, msg_id: int, content: bytes) -> None:
         """
         Handler for simple messages. Analogous to the :func:`~oef.core.DialogueInterface.on_message` method.
 
+        :param msg_id: the message identifier for the dialogue.
         :param content: the content of the message (in bytes).
         :return: ``None``
         """
 
     @abstractmethod
-    def on_cfp(self, msg_id: int,
-               target: int,
-               query: CFP_TYPES) -> None:
+    def on_cfp(self, msg_id: int, target: int, query: CFP_TYPES) -> None:
         """
         Handler for CFP messages. Analogous to the:func:`~oef.core.DialogueInterface.on_cfp` method.
 
@@ -95,9 +94,7 @@ class SingleDialogue(ABC):
         """
 
     @abstractmethod
-    def on_propose(self, msg_id: int,
-                   target: int,
-                   proposal: PROPOSE_TYPES) -> None:
+    def on_propose(self, msg_id: int, target: int, proposal: PROPOSE_TYPES) -> None:
         """
         Handler for Propose messages. Analogous to the:func:`~oef.core.DialogueInterface.on_propose` method.
 
@@ -108,8 +105,7 @@ class SingleDialogue(ABC):
         """
 
     @abstractmethod
-    def on_accept(self, msg_id: int,
-                  target: int) -> None:
+    def on_accept(self, msg_id: int, target: int) -> None:
         """
         Handler for Accept messages. Analogous to the:func:`~oef.core.DialogueInterface.on_accept` method.
 
@@ -119,8 +115,7 @@ class SingleDialogue(ABC):
         """
 
     @abstractmethod
-    def on_decline(self, msg_id: int,
-                   target: int) -> None:
+    def on_decline(self, msg_id: int, target: int) -> None:
         """
         Handler for Decline messages. Analogous to the:func:`~oef.core.DialogueInterface.on_decline` method.
 
@@ -130,9 +125,7 @@ class SingleDialogue(ABC):
         """
 
     @abstractmethod
-    def on_dialogue_error(self, answer_id: int,
-                          dialogue_id: int,
-                          origin: str) -> None:
+    def on_dialogue_error(self, answer_id: int, dialogue_id: int, origin: str) -> None:
         """
         Handler for error messages concerning dialogues between agents.
         Analogous to the:func:`~oef.core.ConnectionInterface.on_dialogue_error` method.
@@ -153,34 +146,29 @@ class SingleDialogue(ABC):
         """
         self.agent.send_message(msg_id, self.id, self.destination, msg)
 
-    def send_cfp(self, query: CFP_TYPES,
-                 msg_id: Optional[int] = 1,
-                 target: Optional[int] = 0) -> None:
+    def send_cfp(self, msg_id: int, target: int, query: CFP_TYPES) -> None:
         """
         Send a Call-For-Proposals. Analogous to the :func:`~oef.core.OEFCoreInterface.send_cfp` method.
 
-        :param query: the query associated with the Call For Proposals.
         :param msg_id: the message identifier for the dialogue.
         :param target: the identifier of the message to whom this message is answering.
+        :param query: the query associated with the Call For Proposals.
         :return: ``None``
         """
-        self.agent.send_cfp(self.id, self.destination, query, msg_id, target)
+        self.agent.send_cfp(msg_id, self.id, self.destination, target, query)
 
-    def send_propose(self, proposals: PROPOSE_TYPES,
-                     msg_id: int,
-                     target: Optional[int] = None) -> None:
+    def send_propose(self, msg_id: int, target: int, proposals: PROPOSE_TYPES) -> None:
         """
         Send a Propose. Analogous to the :func:`~oef.core.OEFCoreInterface.send_propose` method.
 
-        :param proposals: either a list of :class:`~oef.schema.Description` or ``bytes``.
         :param msg_id: the message identifier for the dialogue.
         :param target: the identifier of the message to whom this message is answering.
+        :param proposals: either a list of :class:`~oef.schema.Description` or ``bytes``.
         :return: ``None``
         """
-        self.agent.send_propose(self.id, self.destination, proposals, msg_id, target)
+        self.agent.send_propose(msg_id, self.id, self.destination, target, proposals)
 
-    def send_accept(self, msg_id: int,
-                    target: Optional[int] = None) -> None:
+    def send_accept(self, msg_id: int, target: int) -> None:
         """
         Send an Accept. Analogous to the :func:`~oef.core.OEFCoreInterface.send_accept` method.
 
@@ -188,10 +176,9 @@ class SingleDialogue(ABC):
         :param target: the identifier of the message to whom this message is answering.
         :return: ``None``
         """
-        self.agent.send_accept(self.id, self.destination, msg_id, target)
+        self.agent.send_accept(msg_id, self.id, self.destination, target)
 
-    def send_decline(self, msg_id: int,
-                     target: Optional[int] = None) -> None:
+    def send_decline(self, msg_id: int, target: int) -> None:
         """
         Send a Decline. Analogous to the :func:`~oef.core.OEFCoreInterface.send_decline` method.
 
@@ -199,7 +186,7 @@ class SingleDialogue(ABC):
         :param target: the identifier of the message to whom this message is answering.
         :return: ``None``
         """
-        self.agent.send_decline(self.id, self.destination, msg_id, target)
+        self.agent.send_decline(msg_id, self.id, self.destination, target)
 
 
 class DialogueAgent(Agent, ABC):
@@ -243,25 +230,26 @@ class DialogueAgent(Agent, ABC):
         self.dialogues.pop(dialogue_key)
 
     @abstractmethod
-    def on_new_cfp(self, from_: str, dialogue_id: int, msg_id: int, target: int, query: CFP_TYPES) -> None:
+    def on_new_cfp(self, msg_id: int, dialogue_id: int, from_: str, target: int, query: CFP_TYPES) -> None:
         """
         Handle a new :class:`~oef.messages.CFP` message.
 
-        :param from_: the id of the agent who sent the CFP.
-        :param dialogue_id: the dialogue identifier that the CFP refers to
         :param msg_id: the message identifier
+        :param dialogue_id: the dialogue identifier that the CFP refers to
+        :param from_: the id of the agent who sent the CFP.
         :param target: the identifier of the target message
         :param query: the query associated with the CFP.
         :return: ``None``
         """
 
     @abstractmethod
-    def on_new_message(self, from_: str, dialogue_id: int, content: bytes) -> None:
+    def on_new_message(self, msg_id: int, dialogue_id: int, from_: str, content: bytes) -> None:
         """
         Handle a new :class:`~oef.messages.Message` message.
 
-        :param from_: the agent id of the source.
+        :param msg_id: the message identifier
         :param dialogue_id: the dialogue id.
+        :param from_: the agent id of the source.
         :param content: the content of the message.
         :return: ``None``
         """
@@ -275,45 +263,29 @@ class DialogueAgent(Agent, ABC):
         :return: ``None``
         """
 
-    def on_message(self, origin: str,
-                   dialogue_id: int,
-                   content: bytes):
+    def on_message(self, msg_id: int, dialogue_id: int, origin: str, content: bytes):
         try:
             dialogue = self._get_dialogue((origin, dialogue_id))
-            dialogue.on_message(content)
+            dialogue.on_message(msg_id, content)
         except KeyError:
-            self.on_new_message(origin, dialogue_id, content)
+            self.on_new_message(msg_id, dialogue_id, origin, content)
 
-    def on_cfp(self, origin: str,
-               dialogue_id: int,
-               msg_id: int,
-               target: int,
-               query: CFP_TYPES):
+    def on_cfp(self, msg_id: int, dialogue_id: int, origin: str, target: int, query: CFP_TYPES):
         try:
             dialogue = self._get_dialogue((origin, dialogue_id))
             dialogue.on_cfp(msg_id, target, query)
         except KeyError:
-            self.on_new_cfp(origin, dialogue_id, msg_id, target, query)
+            self.on_new_cfp(msg_id, dialogue_id, origin, target, query)
 
-    def on_propose(self, origin: str,
-                   dialogue_id: int,
-                   msg_id: int,
-                   target: int,
-                   proposal: PROPOSE_TYPES):
+    def on_propose(self, msg_id: int, dialogue_id: int, origin: str, target: int, proposal: PROPOSE_TYPES):
         dialogue = self._get_dialogue((origin, dialogue_id))
         dialogue.on_propose(msg_id, target, proposal)
 
-    def on_accept(self, origin: str,
-                  dialogue_id: int,
-                  msg_id: int,
-                  target: int, ):
+    def on_accept(self, msg_id: int, dialogue_id: int, origin: str, target: int):
         dialogue = self._get_dialogue((origin, dialogue_id))
         dialogue.on_accept(msg_id, target)
 
-    def on_decline(self, origin: str,
-                   dialogue_id: int,
-                   msg_id: int,
-                   target: int, ):
+    def on_decline(self, msg_id: int, dialogue_id: int, origin: str, target: int):
         dialogue = self._get_dialogue((origin, dialogue_id))
         dialogue.on_decline(msg_id, target)
 

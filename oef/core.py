@@ -29,7 +29,7 @@ The core module that contains the main abstraction of the SDK.
 import asyncio
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List
 
 from oef import agent_pb2 as agent_pb2
 from oef.messages import CFP_TYPES, PROPOSE_TYPES, OEFErrorOperation
@@ -133,55 +133,52 @@ class OEFCoreInterface(ABC):
         """
 
     @abstractmethod
-    def send_cfp(self, dialogue_id: int, destination: str, query: CFP_TYPES, msg_id: Optional[int] = 1,
-                 target: Optional[int] = 0) -> None:
+    def send_cfp(self, msg_id: int, dialogue_id: int, destination: str, target: int, query: CFP_TYPES) -> None:
         """
         Send a Call-For-Proposals.
 
+        :param msg_id: the message identifier for the dialogue.
         :param dialogue_id: the identifier of the dialogue in which the message is sent.
         :param destination: the agent identifier to whom the message is sent.
-        :param query: the query associated with the Call For Proposals.
-        :param msg_id: the message identifier for the dialogue.
         :param target: the identifier of the message to whom this message is answering.
+        :param query: the query associated with the Call For Proposals.
         :return: ``None``
         """
 
     @abstractmethod
-    def send_propose(self, dialogue_id: int, destination: str, proposals: PROPOSE_TYPES, msg_id: int,
-                     target: Optional[int] = None) -> None:
+    def send_propose(self, msg_id: int, dialogue_id: int, destination: str, target: int,
+                     proposals: PROPOSE_TYPES) -> None:
         """
         Send a Propose.
 
+        :param msg_id: the message identifier for the dialogue.
         :param dialogue_id: the identifier of the dialogue in which the message is sent.
         :param destination: the agent identifier to whom the message is sent.
-        :param proposals: either a list of :class:`~oef.schema.Description` or ``bytes``.
-        :param msg_id: the message identifier for the dialogue.
         :param target: the identifier of the message to whom this message is answering.
+        :param proposals: either a list of :class:`~oef.schema.Description` or ``bytes``.
         :return: ``None``
         """
 
     @abstractmethod
-    def send_accept(self, dialogue_id: int, destination: str, msg_id: int,
-                    target: Optional[int] = None) -> None:
+    def send_accept(self, msg_id: int, dialogue_id: int, destination: str, target: int) -> None:
         """
         Send an Accept.
 
+        :param msg_id: the message identifier for the dialogue.
         :param dialogue_id: the identifier of the dialogue in which the message is sent.
         :param destination: the agent identifier to whom the message is sent.
-        :param msg_id: the message identifier for the dialogue.
         :param target: the identifier of the message to whom this message is answering.
         :return: ``None``
         """
 
     @abstractmethod
-    def send_decline(self, dialogue_id: int, destination: str, msg_id: int,
-                     target: Optional[int] = None) -> None:
+    def send_decline(self, msg_id: int, dialogue_id: int, destination: str, target: int) -> None:
         """
         Send a Decline.
 
+        :param msg_id: the message identifier for the dialogue.
         :param dialogue_id: the identifier of the dialogue in which the message is sent.
         :param destination: the agent identifier to whom the message is sent.
-        :param msg_id: the message identifier for the dialogue.
         :param target: the identifier of the message to whom this message is answering.
         :return: ``None``
         """
@@ -199,12 +196,14 @@ class DialogueInterface(ABC):
     """
 
     @abstractmethod
-    def on_message(self, origin: str,
+    def on_message(self, msg_id: int,
                    dialogue_id: int,
+                   origin: str,
                    content: bytes) -> None:
         """
         Handler for simple messages.
 
+        :param msg_id: the message identifier for the dialogue.
         :param origin: the identifier of the agent who sent the message.
         :param dialogue_id: the identifier of the dialogue in which the message is sent.
         :param content: the content of the message (in bytes).
@@ -212,65 +211,65 @@ class DialogueInterface(ABC):
         """
 
     @abstractmethod
-    def on_cfp(self, origin: str,
+    def on_cfp(self, msg_id: int,
                dialogue_id: int,
-               msg_id: int,
+               origin: str,
                target: int,
                query: CFP_TYPES) -> None:
         """
         Handler for CFP messages.
 
-        :param origin: the identifier of the agent who sent the message.
-        :param dialogue_id: the identifier of the dialogue in which the message is sent.
         :param msg_id: the message identifier for the dialogue.
+        :param dialogue_id: the identifier of the dialogue in which the message is sent.
+        :param origin: the identifier of the agent who sent the message.
         :param target: the identifier of the message to whom this message is answering.
         :param query: the query associated with the Call For Proposals.
         :return: ``None``
         """
 
     @abstractmethod
-    def on_propose(self, origin: str,
+    def on_propose(self, msg_id: int,
                    dialogue_id: int,
-                   msg_id: int,
+                   origin: str,
                    target: int,
                    proposal: PROPOSE_TYPES) -> None:
         """
         Handler for Propose messages.
 
-        :param origin: the identifier of the agent who sent the message.
-        :param dialogue_id: the identifier of the dialogue in which the message is sent.
         :param msg_id: the message identifier for the dialogue.
+        :param dialogue_id: the identifier of the dialogue in which the message is sent.
+        :param origin: the identifier of the agent who sent the message.
         :param target: the identifier of the message to whom this message is answering.
         :param proposal: the proposal associated with the message.
         :return: ``None``
         """
 
     @abstractmethod
-    def on_accept(self, origin: str,
+    def on_accept(self, msg_id: int,
                   dialogue_id: int,
-                  msg_id: int,
+                  origin: str,
                   target: int) -> None:
         """
         Handler for Accept messages.
 
-        :param origin: the identifier of the agent who sent the message.
-        :param dialogue_id: the identifier of the dialogue in which the message is sent.
         :param msg_id: the message identifier for the dialogue.
+        :param dialogue_id: the identifier of the dialogue in which the message is sent.
+        :param origin: the identifier of the agent who sent the message.
         :param target: the identifier of the message to whom this message is answering.
         :return: ``None``
         """
 
     @abstractmethod
-    def on_decline(self, origin: str,
+    def on_decline(self, msg_id: int,
                    dialogue_id: int,
-                   msg_id: int,
+                   origin: str,
                    target: int) -> None:
         """
         Handler for Decline messages.
 
-        :param origin: the identifier of the agent who sent the message.
-        :param dialogue_id: the identifier of the dialogue in which the message is sent.
         :param msg_id: the message identifier for the dialogue.
+        :param dialogue_id: the identifier of the dialogue in which the message is sent.
+        :param origin: the identifier of the agent who sent the message.
         :param target: the identifier of the message to whom this message is answering.
         :return: ``None``
         """
@@ -380,7 +379,7 @@ class OEFProxy(OEFCoreInterface, ABC):
                 content_case = msg.content.WhichOneof("payload")
                 logger.debug("msg content {0}".format(content_case))
                 if content_case == "content":
-                    agent.on_message(msg.content.origin, msg.content.dialogue_id, msg.content.content)
+                    agent.on_message(msg.answer_id, msg.content.dialogue_id, msg.content.origin, msg.content.content)
                 elif content_case == "fipa":
                     fipa = msg.content.fipa
                     fipa_case = fipa.WhichOneof("msg")
@@ -394,18 +393,18 @@ class OEFProxy(OEFCoreInterface, ABC):
                             query = Query.from_pb(fipa.cfp.query)
                         else:
                             raise Exception("Query type not valid.")
-                        agent.on_cfp(msg.content.origin, msg.content.dialogue_id, msg.answer_id, fipa.target, query)
+                        agent.on_cfp(msg.answer_id, msg.content.dialogue_id, msg.content.origin, fipa.target, query)
                     elif fipa_case == "propose":
                         propose_case = fipa.propose.WhichOneof("payload")
                         if propose_case == "content":
                             proposals = fipa.propose.content
                         else:
                             proposals = [Description.from_pb(propose) for propose in fipa.propose.proposals.objects]
-                        agent.on_propose(msg.content.origin, msg.content.dialogue_id, msg.answer_id, fipa.target,
+                        agent.on_propose(msg.answer_id, msg.content.dialogue_id, msg.content.origin, fipa.target,
                                          proposals)
                     elif fipa_case == "accept":
-                        agent.on_accept(msg.content.origin, msg.content.dialogue_id, msg.answer_id, fipa.target)
+                        agent.on_accept(msg.answer_id, msg.content.dialogue_id, msg.content.origin, fipa.target)
                     elif fipa_case == "decline":
-                        agent.on_decline(msg.content.origin, msg.content.dialogue_id, msg.answer_id, fipa.target)
+                        agent.on_decline(msg.answer_id, msg.content.dialogue_id, msg.content.origin, fipa.target)
                     else:
                         logger.warning("Not implemented yet: fipa {0}".format(fipa_case))

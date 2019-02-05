@@ -30,7 +30,7 @@ This module contains the base class for implementing agents.
 import asyncio
 import logging
 from abc import ABC
-from typing import Optional, List
+from typing import List
 
 from oef.core import OEFProxy, AgentInterface
 from oef.messages import OEFErrorOperation
@@ -176,122 +176,73 @@ class Agent(AgentInterface, ABC):
         """Search services. See :func:`~oef.core.OEFCoreInterface.search_services`."""
         self._oef_proxy.search_services(search_id, query)
 
-    def send_message(self, msg_id: int,
-                     dialogue_id: int,
-                     destination: str,
-                     msg: bytes) -> None:
+    def send_message(self, msg_id: int, dialogue_id: int, destination: str, msg: bytes) -> None:
         """Send a simple message. See :func:`~oef.core.OEFCoreInterface.send_message`."""
-        logger.debug("Agent {}: dialogue_id={}, destination={}, msg={}"
-                     .format(self.public_key,
-                             dialogue_id,
-                             destination,
-                             msg))
+        logger.debug("Agent {}: msg_id={}, dialogue_id={}, destination={}, msg={}"
+                     .format(self.public_key, msg_id, dialogue_id, destination, msg))
         self._oef_proxy.send_message(msg_id, dialogue_id, destination, msg)
 
-    def send_cfp(self, dialogue_id: int,
-                 destination: str,
-                 query: CFP_TYPES,
-                 msg_id: Optional[int] = 1,
-                 target: Optional[int] = 0) -> None:
+    def send_cfp(self, msg_id: int, dialogue_id: int, destination: str, target: int, query: CFP_TYPES) -> None:
         """Send a CFP. See :func:`~oef.core.OEFCoreInterface.send_cfp`."""
-        logger.debug("Agent {}: dialogue_id={}, destination={}, query={}, msg_id={}, target={}"
-                     .format(self.public_key,
-                             dialogue_id,
-                             destination,
-                             query,
-                             msg_id,
-                             target))
-        self._oef_proxy.send_cfp(dialogue_id, destination, query, msg_id, target)
+        logger.debug("Agent {}: msg_id={}, dialogue_id={}, destination={}, target={}, query={}"
+                     .format(self.public_key, dialogue_id, destination, query, msg_id, target))
+        self._oef_proxy.send_cfp(msg_id, dialogue_id, destination, target, query)
 
-    def send_propose(self, dialogue_id: int,
-                     destination: str,
-                     proposals: PROPOSE_TYPES,
-                     msg_id: int,
-                     target: Optional[int] = 0) -> None:
+    def send_propose(self, msg_id: int, dialogue_id: int, destination: str, target: int,
+                     proposals: PROPOSE_TYPES) -> None:
         """Send a Propose. See :func:`~oef.core.OEFCoreInterface.send_propose`."""
-        logger.debug("Agent {}: dialogue_id={}, destination={}, proposals={}, msg_id={}, target={}"
-                     .format(self.public_key,
-                             dialogue_id,
-                             destination,
-                             proposals,
-                             msg_id,
-                             target))
-        self._oef_proxy.send_propose(dialogue_id, destination, proposals, msg_id, target)
+        logger.debug("Agent {}: msg_id={}, dialogue_id={}, destination={}, target={}, proposals={}"
+                     .format(self.public_key, msg_id, dialogue_id, destination, target, proposals))
+        self._oef_proxy.send_propose(msg_id, dialogue_id, destination, target, proposals)
 
-    def send_accept(self, dialogue_id: int,
-                    destination: str,
-                    msg_id: int,
-                    target: Optional[int] = 0) -> None:
+    def send_accept(self, msg_id: int, dialogue_id: int, destination: str, target: int) -> None:
         """Send an Accept. See :func:`~oef.core.OEFCoreInterface.send_accept`."""
         logger.debug("Agent {}: dialogue_id={}, destination={}, msg_id={}, target={}"
-                     .format(self.public_key,
-                             dialogue_id,
-                             destination,
-                             msg_id,
-                             target))
-        self._oef_proxy.send_accept(dialogue_id, destination, msg_id, target)
+                     .format(self.public_key, msg_id, dialogue_id, destination, target))
+        self._oef_proxy.send_accept(msg_id, dialogue_id, destination, target)
 
-    def send_decline(self, dialogue_id: int,
-                     destination: str,
-                     msg_id: int,
-                     target: Optional[int] = 0) -> None:
+    def send_decline(self, msg_id: int, dialogue_id: int, destination: str, target: int) -> None:
         """Send a Decline. See :func:`~oef.core.OEFCoreInterface.send_decline`."""
         logger.debug("Agent {}: dialogue_id={}, destination={}, msg_id={}, target={}"
-                     .format(self.public_key,
-                             dialogue_id,
-                             destination,
-                             msg_id,
-                             target))
-        self._oef_proxy.send_decline(dialogue_id, destination, msg_id, target)
+                     .format(self.public_key, msg_id, dialogue_id, destination, target))
+        self._oef_proxy.send_decline(msg_id, dialogue_id, destination, target)
 
-    def on_message(self, origin: str,
-                   dialogue_id: int,
-                   content: bytes):
-        logger.debug("on_message: {}, {}, {}".format(origin, dialogue_id, content))
+    def on_message(self, msg_id: int, dialogue_id: int, origin: str, content: bytes):
+        logger.debug("on_message: msg_id={}, dialogue_id={}, origin={}, content={}"
+                     .format(msg_id, dialogue_id, origin, content))
         _warning_not_implemented_method(self.on_message.__name__)
 
-    def on_cfp(self, origin: str,
-               dialogue_id: int,
-               msg_id: int,
-               target: int,
-               query: CFP_TYPES):
-        logger.debug("on_cfp: {}, {}, {}, {}, {}".format(origin, dialogue_id, msg_id, target, query))
+    def on_cfp(self, msg_id: int, dialogue_id: int, origin: str, target: int, query: CFP_TYPES):
+        logger.debug("on_cfp: msg_id={}, dialogue_id={}, origin={}, target={}, query={}"
+                     .format(msg_id, dialogue_id, origin, target, query))
         _warning_not_implemented_method(self.on_cfp.__name__)
 
-    def on_accept(self, origin: str,
-                  dialogue_id: int,
-                  msg_id: int,
-                  target: int, ):
-        logger.debug("on_accept: {}, {}, {}, {}".format(origin, dialogue_id, msg_id, target))
-        _warning_not_implemented_method(self.on_accept.__name__)
-
-    def on_decline(self, origin: str,
-                   dialogue_id: int,
-                   msg_id: int,
-                   target: int, ):
-        logger.debug("on_decline: {}, {}, {}, {}".format(origin, dialogue_id, msg_id, target))
-        _warning_not_implemented_method(self.on_decline.__name__)
-
-    def on_propose(self, origin: str,
-                   dialogue_id: int,
-                   msg_id: int,
-                   target: int,
-                   proposal: PROPOSE_TYPES):
-        logger.debug("on_propose: {}, {}, {}, {}, {}".format(origin, dialogue_id, msg_id, target, proposal))
+    def on_propose(self, msg_id: int, dialogue_id: int, origin: str, target: int, proposal: PROPOSE_TYPES):
+        logger.debug("on_propose: msg_id={}, dialogue_id={}, origin={}, target={}, proposal={}"
+                     .format(msg_id, dialogue_id, origin, target, proposal))
         _warning_not_implemented_method(self.on_propose.__name__)
 
+    def on_accept(self, msg_id: int, dialogue_id: int, origin: str, target: int):
+        logger.debug("on_accept: msg_id={}, dialogue_id={}, origin={}, target={}"
+                     .format(msg_id, dialogue_id, origin, target))
+        _warning_not_implemented_method(self.on_accept.__name__)
+
+    def on_decline(self, msg_id: int, dialogue_id: int, origin: str, target: int):
+        logger.debug("on_accept: msg_id={}, dialogue_id={}, origin={}, target={}"
+                     .format(msg_id, dialogue_id, origin, target))
+        _warning_not_implemented_method(self.on_decline.__name__)
+
     def on_oef_error(self, answer_id: int, operation: OEFErrorOperation):
-        logger.debug("on_oef_error: {}, {}".format(answer_id, operation))
+        logger.debug("on_oef_error: answer_id={}, operation={}".format(answer_id, operation))
         _warning_not_implemented_method(self.on_oef_error.__name__)
 
-    def on_dialogue_error(self, answer_id: int,
-                          dialogue_id: int,
-                          origin: str):
-        logger.debug("on_dialogue_error: {}, {}, {}".format(answer_id, dialogue_id, origin))
+    def on_dialogue_error(self, answer_id: int, dialogue_id: int, origin: str):
+        logger.debug("on_dialogue_error: answer_id={}, dialogue_id={}, origin={}"
+                     .format(answer_id, dialogue_id, origin))
         _warning_not_implemented_method(self.on_dialogue_error.__name__)
 
     def on_search_result(self, search_id: int, agents: List[str]):
-        logger.debug("on_search_result: {}, {}".format(search_id, agents))
+        logger.debug("on_search_result: search_id={}, agents={}".format(search_id, agents))
         _warning_not_implemented_method(self.on_search_result.__name__)
 
 

@@ -191,32 +191,20 @@ class OEFNetworkProxy(OEFProxy):
         msg = Message(msg_id, dialogue_id, destination, msg)
         self._send(msg.to_envelope())
 
-    def send_cfp(self, dialogue_id: int,
-                 destination: str,
-                 query: CFP_TYPES,
-                 msg_id: Optional[int] = 1,
-                 target: Optional[int] = 0) -> None:
-        msg = CFP(dialogue_id, destination, query, msg_id, target)
+    def send_cfp(self, msg_id: int, dialogue_id: int, destination: str, target: int, query: CFP_TYPES):
+        msg = CFP(msg_id, dialogue_id, destination, target, query)
         self._send(msg.to_envelope())
 
-    def send_propose(self, dialogue_id: int,
-                     destination: str,
-                     proposals: PROPOSE_TYPES,
-                     msg_id: int,
-                     target: Optional[int] = None) -> None:
-        msg = Propose(dialogue_id, destination, proposals, msg_id, target)
+    def send_propose(self, msg_id: int, dialogue_id: int, destination: str, target: int, proposals: PROPOSE_TYPES):
+        msg = Propose(msg_id, dialogue_id, destination, target, proposals)
         self._send(msg.to_envelope())
 
-    def send_accept(self, dialogue_id: int, destination: str, msg_id: int,
-                    target: Optional[int] = None) -> None:
-        msg = Accept(dialogue_id, destination, msg_id, target)
+    def send_accept(self, msg_id: int, dialogue_id: int, destination: str, target: int):
+        msg = Accept(msg_id, dialogue_id, destination, target)
         self._send(msg.to_envelope())
 
-    def send_decline(self, dialogue_id: int,
-                     destination: str,
-                     msg_id: int,
-                     target: Optional[int] = None) -> None:
-        msg = Decline(dialogue_id, destination, msg_id, target)
+    def send_decline(self, msg_id: int, dialogue_id: int, destination: str, target: int):
+        msg = Decline(msg_id, dialogue_id, destination, target)
         self._send(msg.to_envelope())
 
     async def stop(self) -> None:
@@ -350,6 +338,7 @@ class OEFLocalProxy(OEFProxy):
             Unregister a service agent.
 
             :param public_key: the public key of the service agent to be unregistered.
+            :param service_description: the description of the service agent to be unregistered.
             :return: ``None``
             """
             self.loop.run_until_complete(self._lock.acquire())
@@ -426,7 +415,7 @@ class OEFLocalProxy(OEFProxy):
             :param public_key: the public key of the agent to whom to send the search result.
             :param search_id: the id of the search request.
             :param agents: the list of public key of the agents/services to be returned.
-            :return:
+            :return: ``None``
             """
             msg = agent_pb2.Server.AgentMessage()
             msg.answer_id = search_id
@@ -469,22 +458,21 @@ class OEFLocalProxy(OEFProxy):
         msg = Message(msg_id, dialogue_id, destination, msg)
         self._send(msg)
 
-    def send_cfp(self, dialogue_id: int, destination: str, query: CFP_TYPES, msg_id: Optional[int] = 1,
-                 target: Optional[int] = 0) -> None:
-        msg = CFP(dialogue_id, destination, query, msg_id, target)
+    def send_cfp(self, msg_id: int, dialogue_id: int, destination: str, target: int, query: CFP_TYPES) -> None:
+        msg = CFP(msg_id, dialogue_id, destination, target, query)
         self._send(msg)
 
-    def send_propose(self, dialogue_id: int, destination: str, proposals: PROPOSE_TYPES, msg_id: int,
-                     target: Optional[int] = None) -> None:
-        msg = Propose(dialogue_id, destination, proposals, msg_id, target)
+    def send_propose(self, msg_id: int, dialogue_id: int, destination: str, target: int,
+                     proposals: PROPOSE_TYPES) -> None:
+        msg = Propose(msg_id, dialogue_id, destination, target, proposals)
         self._send(msg)
 
-    def send_accept(self, dialogue_id: int, destination: str, msg_id: int, target: Optional[int] = None) -> None:
-        msg = Accept(dialogue_id, destination, msg_id, target)
+    def send_accept(self, msg_id: int, dialogue_id: int, destination: str, target: int) -> None:
+        msg = Accept(msg_id, dialogue_id, destination, target)
         self._send(msg)
 
-    def send_decline(self, dialogue_id: int, destination: str, msg_id: int, target: Optional[int] = None) -> None:
-        msg = Decline(dialogue_id, destination, msg_id, target)
+    def send_decline(self, msg_id: int, dialogue_id: int, destination: str, target: int) -> None:
+        msg = Decline(msg_id, dialogue_id, destination, target)
         self._send(msg)
 
     async def connect(self) -> bool:

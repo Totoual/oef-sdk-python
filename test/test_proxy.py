@@ -55,14 +55,14 @@ class TestSimpleMessage:
             agent_0.send_message(0, 0, agent_2.public_key, msg)
             asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
 
-            agent_1.send_message(0, 0, agent_0.public_key, msg)
-            agent_1.send_message(0, 0, agent_1.public_key, msg)
-            agent_1.send_message(0, 0, agent_2.public_key, msg)
+            agent_1.send_message(0, 1, agent_0.public_key, msg)
+            agent_1.send_message(0, 1, agent_1.public_key, msg)
+            agent_1.send_message(0, 1, agent_2.public_key, msg)
             asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
 
-            agent_2.send_message(0, 0, agent_0.public_key, msg)
-            agent_2.send_message(0, 0, agent_1.public_key, msg)
-            agent_2.send_message(0, 0, agent_2.public_key, msg)
+            agent_2.send_message(0, 2, agent_0.public_key, msg)
+            agent_2.send_message(0, 2, agent_1.public_key, msg)
+            agent_2.send_message(0, 2, agent_2.public_key, msg)
 
             asyncio.ensure_future(asyncio.gather(
                     agent_0.async_run(),
@@ -74,15 +74,17 @@ class TestSimpleMessage:
         assert 3 == len(agent_1.received_msg)
         assert 3 == len(agent_2.received_msg)
 
-        assert (agent_0.public_key, 0, msg) == agent_0.received_msg[0]
-        assert (agent_1.public_key, 0, msg) == agent_0.received_msg[1]
-        assert (agent_2.public_key, 0, msg) == agent_0.received_msg[2]
-        assert (agent_0.public_key, 0, msg) == agent_1.received_msg[0]
-        assert (agent_1.public_key, 0, msg) == agent_1.received_msg[1]
-        assert (agent_2.public_key, 0, msg) == agent_1.received_msg[2]
-        assert (agent_0.public_key, 0, msg) == agent_2.received_msg[0]
-        assert (agent_1.public_key, 0, msg) == agent_2.received_msg[1]
-        assert (agent_2.public_key, 0, msg) == agent_2.received_msg[2]
+        assert (0, 0, agent_0.public_key, msg) == agent_0.received_msg[0]
+        assert (0, 1, agent_1.public_key, msg) == agent_0.received_msg[1]
+        assert (0, 2, agent_2.public_key, msg) == agent_0.received_msg[2]
+
+        assert (0, 0, agent_0.public_key, msg) == agent_1.received_msg[0]
+        assert (0, 1, agent_1.public_key, msg) == agent_1.received_msg[1]
+        assert (0, 2, agent_2.public_key, msg) == agent_1.received_msg[2]
+
+        assert (0, 0, agent_0.public_key, msg) == agent_2.received_msg[0]
+        assert (0, 1, agent_1.public_key, msg) == agent_2.received_msg[1]
+        assert (0, 2, agent_2.public_key, msg) == agent_2.received_msg[2]
 
 
 class TestCFP:
@@ -98,18 +100,18 @@ class TestCFP:
             for a in agents:
                 a.connect()
 
-            agent_0, agent_1 = agents
+            agent_0, agent_1 = agents  # type: AgentTest, AgentTest
 
-            agent_0.send_cfp(0, agent_1.public_key, None, 1, 0)
-            agent_0.send_cfp(0, agent_1.public_key, b"hello", 1, 0)
-            agent_0.send_cfp(0, agent_1.public_key, Query([Constraint("foo", Eq(0))]), 1, 0)
+            agent_0.send_cfp(0, 0, agent_1.public_key, 0, None)
+            agent_0.send_cfp(0, 1, agent_1.public_key, 0, b"hello")
+            agent_0.send_cfp(0, 2, agent_1.public_key, 0, Query([Constraint("foo", Eq(0))]))
 
             asyncio.ensure_future(agent_1.async_run())
             asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
 
-        expected_message_01 = (agent_0.public_key, 0, 1, 0, None)
-        expected_message_02 = (agent_0.public_key, 0, 1, 0, b"hello")
-        expected_message_03 = (agent_0.public_key, 0, 1, 0, Query([Constraint("foo", Eq(0))]))
+        expected_message_01 = (0, 0, agent_0.public_key, 0, None)
+        expected_message_02 = (0, 1, agent_0.public_key, 0, b"hello")
+        expected_message_03 = (0, 2, agent_0.public_key, 0, Query([Constraint("foo", Eq(0))]))
 
         assert 3 == len(agent_1.received_msg)
         assert expected_message_01 == agent_1.received_msg[0]
@@ -132,18 +134,18 @@ class TestPropose:
 
             agent_0, agent_1 = agents
 
-            agent_0.send_propose(0, agent_1.public_key, b"hello", 1, 0)
-            agent_0.send_propose(0, agent_1.public_key, [], 1, 0)
-            agent_0.send_propose(0, agent_1.public_key, [Description({})], 1, 0)
-            agent_0.send_propose(0, agent_1.public_key, [Description({}), Description({})], 1, 0)
+            agent_0.send_propose(0, 0, agent_1.public_key, 0, b"hello")
+            agent_0.send_propose(0, 0, agent_1.public_key, 0, [])
+            agent_0.send_propose(0, 0, agent_1.public_key, 0, [Description({})])
+            agent_0.send_propose(0, 0, agent_1.public_key, 0, [Description({}), Description({})])
 
             asyncio.ensure_future(agent_1.async_run())
             asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
 
-        expected_message_01 = (agent_0.public_key, 0, 1, 0, b"hello")
-        expected_message_02 = (agent_0.public_key, 0, 1, 0, [])
-        expected_message_03 = (agent_0.public_key, 0, 1, 0, [Description({})])
-        expected_message_04 = (agent_0.public_key, 0, 1, 0, [Description({}), Description({})])
+        expected_message_01 = (0, 0, agent_0.public_key, 0, b"hello")
+        expected_message_02 = (0, 0, agent_0.public_key, 0, [])
+        expected_message_03 = (0, 0, agent_0.public_key, 0, [Description({})])
+        expected_message_04 = (0, 0, agent_0.public_key, 0, [Description({}), Description({})])
 
         assert 4 == len(agent_1.received_msg)
         assert expected_message_01 == agent_1.received_msg[0]
@@ -167,13 +169,13 @@ class TestAccept:
 
             agent_0, agent_1 = agents
 
-            agent_0.send_accept(0, agent_1.public_key, 1, 0)
+            agent_0.send_accept(0, 0, agent_1.public_key, 0)
 
             asyncio.ensure_future(agent_1.async_run())
             asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
 
         assert 1 == len(agent_1.received_msg)
-        assert (agent_0.public_key, 0, 1, 0) == agent_1.received_msg[0]
+        assert (0, 0, agent_0.public_key, 0) == agent_1.received_msg[0]
 
 
 class TestDecline:
@@ -191,12 +193,12 @@ class TestDecline:
 
             agent_0, agent_1 = agents
 
-            agent_0.send_decline(0, agent_1.public_key, 1, 0)
+            agent_0.send_decline(0, 0, agent_1.public_key, 0)
             asyncio.ensure_future(agent_1.async_run())
             asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
 
         assert 1 == len(agent_1.received_msg)
-        assert (agent_0.public_key, 0, 1, 0) == agent_1.received_msg[0]
+        assert (0, 0, agent_0.public_key, 0) == agent_1.received_msg[0]
 
 
 class TestSearchServices:
@@ -224,13 +226,8 @@ class TestSearchServices:
             agent_2.register_service(0, desc_2)
 
             agent_0.search_services(0, Query([Constraint("foo", Eq(0))], dummy_datamodel))
-            agent_0.search_services(0, Query([
-                Constraint("foo", Gt(10)),
-                Constraint("bar", Gt("B")),
-            ], dummy_datamodel))
-            agent_0.search_services(0, Query([
-                Constraint("bar", Gt("A")),
-            ], dummy_datamodel))
+            agent_0.search_services(0, Query([Constraint("foo", Gt(10)), Constraint("bar", Gt("B"))], dummy_datamodel))
+            agent_0.search_services(0, Query([Constraint("bar", Gt("A"))], dummy_datamodel))
 
             asyncio.ensure_future(agent_0.async_run())
             asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
@@ -499,23 +496,25 @@ class TestMisc:
             proxy = OEFNetworkProxy("test_send_more_than_64_kilobytes", "127.0.0.1", 3333)
             agent = AgentTest(proxy)
 
-            expected_content = b"a"*2**16
+            expected_msg_id = 0
             expected_dialogue_id = 0
+            expected_content = b"a"*2**16
             expected_origin = agent.public_key
 
             agent.connect()
-            agent.send_message(0, 0, agent.public_key, expected_content)
+            agent.send_message(expected_msg_id, expected_dialogue_id, agent.public_key, expected_content)
             asyncio.ensure_future(agent.async_run())
             asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
 
             agent.stop()
 
-        actual_origin, actual_dialogue_id, actual_content = agent.received_msg[0]
+        actual_msg_id, actual_dialogue_id, actual_origin, actual_content = agent.received_msg[0]
 
         # assert that we received only one message
         assert 1 == len(agent.received_msg)
 
         # assert that the message contains what we've sent.
+        assert expected_msg_id == actual_msg_id
         assert expected_dialogue_id == actual_dialogue_id
         assert expected_origin == actual_origin
         assert expected_content == actual_content

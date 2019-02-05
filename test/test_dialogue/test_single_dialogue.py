@@ -81,7 +81,7 @@ class TestSimpleMessage:
             dialogue_agent_0 = AgentSingleDialogueTest(OEFNetworkProxy("dialogue_agent_0", "127.0.0.1"))
             dialogue_agent_0.connect()
 
-            dialogue_agent_0.send_message(0, 0, "dialogue_agent_0", b"message")
+            dialogue_agent_0.send_message(0, 1, "dialogue_agent_0", b"message")
 
             asyncio.ensure_future(dialogue_agent_0.async_run())
             asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
@@ -90,7 +90,7 @@ class TestSimpleMessage:
             dialogue = next(iter(dialogue_agent_0.dialogues.values()))  # type: SimpleSingleDialogueTest
 
             assert 1 == len(dialogue.received_msg)
-            assert (b"message", ) == dialogue.received_msg[0]
+            assert (0, b"message") == dialogue.received_msg[0]
 
 
 class TestCFP:
@@ -102,7 +102,7 @@ class TestCFP:
             dialogue_agent_0 = AgentSingleDialogueTest(OEFNetworkProxy("dialogue_agent_0", "127.0.0.1"))
             dialogue_agent_0.connect()
 
-            dialogue_agent_0.send_cfp(0, "dialogue_agent_0", None, 0, 0)
+            dialogue_agent_0.send_cfp(1, 2, "dialogue_agent_0", 0, None)
 
             asyncio.ensure_future(dialogue_agent_0.async_run())
             asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
@@ -111,7 +111,7 @@ class TestCFP:
             dialogue = next(iter(dialogue_agent_0.dialogues.values()))  # type: SimpleSingleDialogueTest
 
             assert 1 == len(dialogue.received_msg)
-            assert (0, 0, None) == dialogue.received_msg[0]
+            assert (1, 0, None) == dialogue.received_msg[0]
 
 
 class TestPropose:
@@ -123,7 +123,7 @@ class TestPropose:
                 dialogue_agent_0 = AgentSingleDialogueTest(OEFNetworkProxy("dialogue_agent_0", "127.0.0.1"))
                 dialogue_agent_0.connect()
 
-                dialogue_agent_0.send_propose(0, "dialogue_agent_0", [], 0, 0)
+                dialogue_agent_0.send_propose(0, 0, "dialogue_agent_0", 0, [])
 
                 asyncio.get_event_loop().run_until_complete(asyncio.wait_for(
                     dialogue_agent_0.async_run(), _ASYNCIO_DELAY))
@@ -134,8 +134,8 @@ class TestPropose:
             dialogue_agent_0 = AgentSingleDialogueTest(OEFNetworkProxy("dialogue_agent_0", "127.0.0.1"))
             dialogue_agent_0.connect()
 
-            dialogue_agent_0.send_cfp(0, "dialogue_agent_0", None, 0, 0)
-            dialogue_agent_0.send_propose(0, "dialogue_agent_0", [], 0, 0)
+            dialogue_agent_0.send_cfp(1, 0, "dialogue_agent_0", 0, None)
+            dialogue_agent_0.send_propose(2, 0, "dialogue_agent_0", 1, [])
 
             asyncio.ensure_future(dialogue_agent_0.async_run())
             asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
@@ -144,8 +144,8 @@ class TestPropose:
             dialogue = next(iter(dialogue_agent_0.dialogues.values()))  # type: SimpleSingleDialogueTest
 
             assert 2 == len(dialogue.received_msg)
-            assert (0, 0, None) == dialogue.received_msg[0]
-            assert (0, 0, []) == dialogue.received_msg[1]
+            assert (1, 0, None) == dialogue.received_msg[0]
+            assert (2, 1, []) == dialogue.received_msg[1]
 
 
 class TestAccept:
@@ -157,7 +157,7 @@ class TestAccept:
                 dialogue_agent_0 = AgentSingleDialogueTest(OEFNetworkProxy("dialogue_agent_0", "127.0.0.1"))
                 dialogue_agent_0.connect()
 
-                dialogue_agent_0.send_accept(0, "dialogue_agent_0", 0, 0)
+                dialogue_agent_0.send_accept(0, 0, "dialogue_agent_0", 0)
 
                 asyncio.get_event_loop().run_until_complete(asyncio.wait_for(
                     dialogue_agent_0.async_run(), _ASYNCIO_DELAY))
@@ -168,9 +168,9 @@ class TestAccept:
             dialogue_agent_0 = AgentSingleDialogueTest(OEFNetworkProxy("dialogue_agent_0", "127.0.0.1"))
             dialogue_agent_0.connect()
 
-            dialogue_agent_0.send_cfp(0, "dialogue_agent_0", None, 0, 0)
-            dialogue_agent_0.send_propose(0, "dialogue_agent_0", [], 0, 0)
-            dialogue_agent_0.send_accept(0, "dialogue_agent_0", 0, 0)
+            dialogue_agent_0.send_cfp(1, 0, "dialogue_agent_0", 0, None)
+            dialogue_agent_0.send_propose(2, 0, "dialogue_agent_0", 1, [])
+            dialogue_agent_0.send_accept(3, 0, "dialogue_agent_0", 2)
 
             asyncio.ensure_future(dialogue_agent_0.async_run())
             asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
@@ -179,9 +179,9 @@ class TestAccept:
             dialogue = next(iter(dialogue_agent_0.dialogues.values()))  # type: SimpleSingleDialogueTest
 
             assert 3 == len(dialogue.received_msg)
-            assert (0, 0, None) == dialogue.received_msg[0]
-            assert (0, 0, []) == dialogue.received_msg[1]
-            assert (0, 0) == dialogue.received_msg[2]
+            assert (1, 0, None) == dialogue.received_msg[0]
+            assert (2, 1, []) == dialogue.received_msg[1]
+            assert (3, 2) == dialogue.received_msg[2]
 
 
 class TestDecline:
@@ -193,7 +193,7 @@ class TestDecline:
                 dialogue_agent_0 = AgentSingleDialogueTest(OEFNetworkProxy("dialogue_agent_0", "127.0.0.1"))
                 dialogue_agent_0.connect()
 
-                dialogue_agent_0.send_decline(0, "dialogue_agent_0", 0, 0)
+                dialogue_agent_0.send_decline(0, 0, "dialogue_agent_0", 0)
 
                 asyncio.get_event_loop().run_until_complete(asyncio.wait_for(
                     dialogue_agent_0.async_run(), _ASYNCIO_DELAY))
@@ -204,9 +204,9 @@ class TestDecline:
             dialogue_agent_0 = AgentSingleDialogueTest(OEFNetworkProxy("dialogue_agent_0", "127.0.0.1"))
             dialogue_agent_0.connect()
 
-            dialogue_agent_0.send_cfp(0, "dialogue_agent_0", None, 0, 0)
-            dialogue_agent_0.send_propose(0, "dialogue_agent_0", [], 0, 0)
-            dialogue_agent_0.send_decline(0, "dialogue_agent_0", 0, 0)
+            dialogue_agent_0.send_cfp(1, 0, "dialogue_agent_0", 0, None)
+            dialogue_agent_0.send_propose(2, 0, "dialogue_agent_0", 1, [])
+            dialogue_agent_0.send_decline(3, 0, "dialogue_agent_0", 2)
 
             asyncio.ensure_future(dialogue_agent_0.async_run())
             asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
@@ -215,6 +215,6 @@ class TestDecline:
             dialogue = next(iter(dialogue_agent_0.dialogues.values()))  # type: SimpleSingleDialogueTest
 
             assert 3 == len(dialogue.received_msg)
-            assert (0, 0, None) == dialogue.received_msg[0]
-            assert (0, 0, []) == dialogue.received_msg[1]
-            assert (0, 0) == dialogue.received_msg[2]
+            assert (1, 0, None) == dialogue.received_msg[0]
+            assert (2, 1, []) == dialogue.received_msg[1]
+            assert (3, 2) == dialogue.received_msg[2]

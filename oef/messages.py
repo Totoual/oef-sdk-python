@@ -302,11 +302,11 @@ class CFP(AgentMessage):
     This message is used to send a `Call For Proposals`.
     It contains:
 
+    * a message id, that is an unique identifier for a message, given the dialogue.
     * a dialogue id, that identifies the dialogue in which the message is sent.
     * a destination, that is the public key of the recipient of the message.
-    * a query, that describes the resources the sender is interested in.
-    * a message id, that is an unique identifier for a message, given dialogue.
     * a target id, that is, the identifier of the message to whom this message is targeting, in a given dialogue.
+    * a query, that describes the resources the sender is interested in.
 
     If everything works correctly, eventually, the recipient will receive the content of the message
     and the recipient's :func:`~oef.core.OEFCoreInterface.on_cfp` is executed.
@@ -314,25 +314,25 @@ class CFP(AgentMessage):
     It is used in the method :func:`~oef.core.OEFCoreInterface.send_cfp`.
     """
 
-    def __init__(self, dialogue_id: int,
+    def __init__(self, msg_id: int,
+                 dialogue_id: int,
                  destination: str,
-                 query: CFP_TYPES,
-                 msg_id: Optional[int] = 1,
-                 target: Optional[int] = 0):
+                 target: int,
+                 query: CFP_TYPES):
         """
         Initialize a `Call For Proposal` message.
 
+        :param msg_id: the unique identifier of the message in the dialogue denoted by ``dialogue_id``.
         :param dialogue_id: the identifier of the dialogue.
         :param destination: the public key of the recipient agent.
-        :param query: the query, an instance of `~oef.schema.Query`, ``bytes``, or ``None``.
-        :param msg_id: the unique identifier of the message in the dialogue denoted by ``dialogue_id``.
         :param target: the identifier of the message to whom this message is targeting.
+        :param query: the query, an instance of `~oef.schema.Query`, ``bytes``, or ``None``.
         """
         super().__init__(msg_id)
         self.dialogue_id = dialogue_id
         self.destination = destination
         self.query = query
-        self.target = target if target is not None else (msg_id - 1)
+        self.target = target
 
     def to_envelope(self) -> agent_pb2.Agent.Message:
         fipa_msg = fipa_pb2.Fipa.Message()
@@ -362,11 +362,11 @@ class Propose(AgentMessage):
     This message is used to send a `Propose`.
     It contains:
 
+    * the message id, that is an unique identifier for a message, given dialogue.
     * a dialogue id, that identifies the dialogue in which the message is sent.
     * a destination, that is the public key of the recipient of the message.
-    * a list of proposals describing the resources that the seller proposes.
-    * the message id, that is an unique identifier for a message, given dialogue.
     * target, that is, the identifier of the message to whom this message is targeting.
+    * a list of proposals describing the resources that the seller proposes.
 
     If everything works correctly, eventually, the recipient will receive the content of the message
     and the recipient's :func:`~oef.core.OEFCoreInterface.on_propose` is executed.
@@ -374,30 +374,30 @@ class Propose(AgentMessage):
     It is used in the method :func:`~oef.core.OEFCoreInterface.send_propose`.
     """
 
-    def __init__(self, dialogue_id: int,
+    def __init__(self, msg_id: int,
+                 dialogue_id: int,
                  destination: str,
-                 proposals: PROPOSE_TYPES,
-                 msg_id: int,
-                 target: Optional[int] = None):
+                 target: int,
+                 proposals: PROPOSE_TYPES):
         """
         Initialize a `Propose` message.
 
+        :param msg_id: the unique identifier of the message in the dialogue denoted by ``dialogue_id``.
         :param dialogue_id: the identifier of the dialogue.
         :param destination: the public key of the recipient agent.
-        :param proposals: a list of proposals. A proposal can be a `~oef.schema.Description` or ``bytes``.
-        :param msg_id: the unique identifier of the message in the dialogue denoted by ``dialogue_id``.
         :param target: the identifier of the message to whom this message is targeting.
+        :param proposals: a list of proposals. A proposal can be a `~oef.schema.Description` or ``bytes``.
         """
 
         super().__init__(msg_id)
         self.dialogue_id = dialogue_id
         self.destination = destination
+        self.target = target
         self.proposals = proposals
-        self.target = target if target is not None else (msg_id - 1)
 
     def to_envelope(self) -> agent_pb2.Agent.Message:
         fipa_msg = fipa_pb2.Fipa.Message()
-        fipa_msg.target = self.target if self.target is not None else (self.msg_id - 1)
+        fipa_msg.target = self.target
         propose = fipa_pb2.Fipa.Propose()
         if isinstance(self.proposals, bytes):
             propose.content = self.proposals
@@ -422,9 +422,9 @@ class Accept(AgentMessage):
     This message is used to send an `Accept`.
     It contains:
 
+    * the message id, that is an unique identifier for a message, given dialogue.
     * a dialogue id, that identifies the dialogue in which the message is sent.
     * a destination, that is the public key of the recipient of the message.
-    * the message id, that is an unique identifier for a message, given dialogue.
     * target, that is, the identifier of the message to whom this message is targeting.
 
     If everything works correctly, eventually, the recipient will receive the content of the message
@@ -433,10 +433,10 @@ class Accept(AgentMessage):
     It is used in the method :func:`~oef.core.OEFCoreInterface.send_accept`.
     """
 
-    def __init__(self, dialogue_id: int,
+    def __init__(self, msg_id: int,
+                 dialogue_id: int,
                  destination: str,
-                 msg_id: int,
-                 target: Optional[int] = None):
+                 target: int):
         """
         Initialize an `Accept` message.
 
@@ -448,11 +448,11 @@ class Accept(AgentMessage):
         super().__init__(msg_id)
         self.dialogue_id = dialogue_id
         self.destination = destination
-        self.target = target if target is not None else (msg_id - 1)
+        self.target = target
 
     def to_envelope(self) -> agent_pb2.Agent.Message:
         fipa_msg = fipa_pb2.Fipa.Message()
-        fipa_msg.target = self.target if self.target is not None else (self.msg_id - 1)
+        fipa_msg.target = self.target
         accept = fipa_pb2.Fipa.Accept()
         fipa_msg.accept.CopyFrom(accept)
         agent_msg = agent_pb2.Agent.Message()
@@ -471,9 +471,9 @@ class Decline(AgentMessage):
     This message is used to send an `Decline`.
     It contains:
 
+    * the message id, that is an unique identifier for a message, given dialogue.
     * a dialogue id, that identifies the dialogue in which the message is sent.
     * a destination, that is the public key of the recipient of the message.
-    * the message id, that is an unique identifier for a message, given dialogue.
     * target, that is, the identifier of the message to whom this message is targeting.
 
     If everything works correctly, eventually, the recipient will receive the content of the message
@@ -482,10 +482,10 @@ class Decline(AgentMessage):
     It is used in the method :func:`~oef.core.OEFCoreInterface.send_decline`.
     """
 
-    def __init__(self, dialogue_id: int,
+    def __init__(self, msg_id: int,
+                 dialogue_id: int,
                  destination: str,
-                 msg_id: int,
-                 target: Optional[int] = None):
+                 target: int):
         """
         Initialize a `Decline` message.
 
@@ -498,11 +498,11 @@ class Decline(AgentMessage):
         super().__init__(msg_id)
         self.dialogue_id = dialogue_id
         self.destination = destination
-        self.target = target if target is not None else (msg_id - 1)
+        self.target = target
 
     def to_envelope(self):
         fipa_msg = fipa_pb2.Fipa.Message()
-        fipa_msg.target = self.target if self.target is not None else (self.msg_id - 1)
+        fipa_msg.target = self.target
         decline = fipa_pb2.Fipa.Decline()
         fipa_msg.decline.CopyFrom(decline)
         agent_msg = agent_pb2.Agent.Message()

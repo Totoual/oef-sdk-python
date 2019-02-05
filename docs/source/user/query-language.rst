@@ -41,7 +41,7 @@ We have different types of constraints:
 
 * `distance` constraints:
 
-  * the average rating must be between 3.5 and 4.5
+  * the nearest bookshop must be within a distance from a given location.
 
 The class that implements the constraint concept is :class:`~oef.query.Constraint`
 In the following, we show how to define them in the Python SDK.
@@ -104,7 +104,7 @@ There are two kind of ``Set`` constraints:
     from oef.query import Constraint, In, NotIn
 
     # all the books whose genre is one of `Horror`, `Science fiction`, `Non-fiction`
-    Constraint("genre", In(["horror", "science fiction", "non-fiction"])
+    Constraint("genre", In(["horror", "science fiction", "non-fiction"]))
 
     # all the books that have not been published neither in 1990, nor in 1995, nor in 2000
     Constraint("year", NotIn([1990, 1995, 2000]))
@@ -124,10 +124,10 @@ range.
     from oef.query import Constraint, Range
 
     # all the books whose title is between 'A' and 'B' (alphanumeric order)
-    Constraint("title",   Range("A", "B"))
+    Constraint("title",   Range(("A", "B")))
 
     # all the books that have been published between 1960 and 1970
-    Constraint("genre",   Range(1960, 1970))
+    Constraint("genre",   Range((1960, 1970))
 
 
 Distance
@@ -141,7 +141,8 @@ such that will be considered only the instances whose location attribute value i
 
 .. code-block:: python
 
-    from oef.query import Constraint, Range
+    from oef.query import Constraint, Distance
+    from oef.schema import Location, Description
 
     # define a location of interest, e.g. the Tour Eiffel
     tour_eiffel = Location(48.8581064, 2.29447)
@@ -151,11 +152,11 @@ such that will be considered only the instances whose location attribute value i
 
     # Le Jules Verne, a famous restaurant close to the Tour Eiffel, satisfies the constraint.
     le_jules_verne_restaurant = Location(48.8579675, 2.2951849)
-    close_to_tour_eiffel.check(le_jules_verne_restaurant)  # gives `True`
+    close_to_tour_eiffel.check(Description({"position": le_jules_verne_restaurant}))  # gives `True`
 
     # The Colosseum does not satisfy the constraint (farther than 1 km from the Tour Eiffel).
     colosseum = Location(41.8902102, 12.4922309)
-    close_to_tour_eiffel.check(colosseum)  # gives `False`
+    close_to_tour_eiffel.check(Description({"position": colosseum}))  # gives `False`
 
 
 Constraint Expressions
@@ -165,7 +166,7 @@ The constraints above mentioned can be combined with the common logical operator
 more complex expression.
 
 In particular we can specify any conjunction/disjunction/negations of the previous constraints or composite constraint
- expressions, e.g.:
+expressions, e.g.:
 
 * books that belong to `Horror` **and** has been published after 2000, but **not** published by `Stephen King`.
 * books whose author is **either** `J. K. Rowling` **or** `J. R. R. Tolkien`
@@ -178,16 +179,16 @@ Not
 ~~~
 
 The :class:`~oef.query.Not` is a constraint expression that allows you to specify a negation of a constraint expression.
-The :class:`~oef.query.Not` constraint is satisfied whenever its subexpression is ``not`` satisfied.
+The :class:`~oef.query.Not` constraint is satisfied whenever its subexpression is `not` satisfied.
 
 **Example**:
 
 .. code-block:: python
 
-    from oef.query import Constraint, Not,
+    from oef.query import Constraint, Not, Range
 
     # all the books whose year of publication is not between 1990 and 2000
-    Not(Constraint("year", Range(1990, 2000))
+    Not(Constraint("year", Range((1990, 2000)))
 
 
 And
@@ -206,7 +207,7 @@ Notice: the number of subexpressions must be **at least** 2.
     from oef.query import Constraint, And, NotEq, Range
 
     # all the books whose title is between 'I' and 'J' (alphanumeric order) but not equal to 'It'
-    And([Constraint("title", Range("I", "J")), Constraint("title", NotEq("It"))])
+    And([Constraint("title", Range(("I", "J"))), Constraint("title", NotEq("It"))])
 
 Or
 ~~
@@ -242,7 +243,7 @@ A `query` is simply a `list of constraint expressions`, interpreted as a conjunc
     Query([
         Constraint("author", Eq("Stephen King")),
         Constraint("year", Gt(1990)),
-        Constraint("ebook", Eq(True))
+        Constraint("ebook_available", Eq(True))
     ], book_model)
 
 Where ``book_model`` is the ``DataModel`` object defined in :ref:`defining-data-model`. However, the data model is
@@ -251,4 +252,55 @@ an optional parameter, but to avoid ambiguity is recommended to include it.
 The ``check`` method
 ~~~~~~~~~~~~~~~~~~~~
 
-ciao
+The :class:`~oef.query.Query` class supports a way to check whether a :class:`~oef.schema.Description` matches with the
+query. This method is called :func:`~oef.query.Query.check`.
+
+Examples:
+
+.. code-block:: python
+
+    from oef.query import Query, Constraint, Eq, Gt, Eq
+    from oef.schema import Description
+
+    q = Query([
+        Constraint("author", Eq("Stephen King")),
+        Constraint("year", Gt(1990)),
+        Constraint("ebook_available", Eq(True))
+        ])
+
+    # With a query, you can check that a `~oef.schema.Description` object satisfies the constraints.
+
+    q.check(Description({"author": "Stephen King", "year": 1991, "ebook_available": True}))  # True
+    q.check(Description({"author": "George Orwell", "year": 1948, "ebook_available": False})) # False
+
+
+Validity
+~~~~~~~~
+
+A :class:`~oef.query.Query` object must satisfy some conditions in order to be instantiated.
+
+- The list of constraints expressions can't be empty; must have at least one constraint expression.
+- If the data model is specified:
+
+    - For every constraint expression that constitute the query, check if they are `valid wrt the data model`.
+
+
+A :class:`~oef.query.ConstraintExpr` `c` (that is, one of :class:`~oef.query.And`, :class:`~oef.query.Or`,
+:class:`~oef.query.Not`, :class:`~oef.query.Constraint`) is `valid wrt a` :class:`~oef.query.DataModel` if:
+
+- If `c` is an instance of :class:`~oef.query.And`, :class:`~oef.query.Or` or :class:`~oef.query.Not`, then
+  every subexpression of `c` must be valid (wrt to the data model);
+- If `c` is an instance of :class:`~oef.query.Constraint`, then:
+
+    - if the constraint type is one of :class:`~oef.query.Lt`, :class:`~oef.query.LtEq`, :class:`~oef.query.Gt`,
+      :class:`~oef.query.Gt`, the value in the constructor must be one of ``str``, ``int`` or ``float``.
+    - if the constraint type is a :class:`~oef.query.Range`, then the types in the range must be one of ``int``, ``str``,
+      ``float`` or :class:`~oef.schema.Location`.
+    - if the constraint type is a :class:`~oef.query.Distance`, then the only valid type is :class:`~oef.schema.Location`.
+    - for :class:`~oef.query.Set`, :class:`~oef.query.Eq` and :class:`~oef.query.NotEq`, the value can be one of the
+      allowed types for :class:`~oef.schema.AttributeSchema`, that is ``str``, ``int``, ``float``, ``bool``,
+      :class:`~oef.schema.Location`.
+
+
+
+

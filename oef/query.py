@@ -431,6 +431,9 @@ class OrderingRelation(Relation, ABC):
     def __init__(self, value: ORDERED_TYPES):
         super().__init__(value)
 
+    def _get_type(self) -> Type[ORDERED_TYPES]:
+        return type(self.value)
+
 
 class Eq(Relation):
     """
@@ -509,7 +512,7 @@ class Lt(OrderingRelation):
     def _operator(self):
         return query_pb2.Query.Relation.LT
 
-    def check(self, value: ATTRIBUTE_TYPES) -> bool:
+    def check(self, value: ORDERED_TYPES) -> bool:
         """
         Check if a value is less than the value of the constraint.
 
@@ -538,7 +541,7 @@ class LtEq(OrderingRelation):
     def _operator(self):
         return query_pb2.Query.Relation.LTEQ
 
-    def check(self, value: ATTRIBUTE_TYPES) -> bool:
+    def check(self, value: ORDERED_TYPES) -> bool:
         """
         Check if a value is less than or equal to the value of the constraint.
 
@@ -566,7 +569,7 @@ class Gt(OrderingRelation):
     def _operator(self):
         return query_pb2.Query.Relation.GT
 
-    def check(self, value: ATTRIBUTE_TYPES) -> bool:
+    def check(self, value: ORDERED_TYPES) -> bool:
         """
         Check if a value is greater than the value of the constraint.
 
@@ -594,7 +597,7 @@ class GtEq(OrderingRelation):
     def _operator(self):
         return query_pb2.Query.Relation.GTEQ
 
-    def check(self, value: ATTRIBUTE_TYPES) -> bool:
+    def check(self, value: ORDERED_TYPES) -> bool:
         """
         Check if a value greater than or equal to the value of the constraint.
 
@@ -626,7 +629,8 @@ class Range(ConstraintType):
         """
         Initialize a range constraint type.
 
-        :param values: a pair of ``int``, a pair of ``str``, or a pair of ``float`.
+        :param values: a pair of ``int``, a pair of ``str``, a pair of ``float` or
+                     | a pair of :class:`~oef.schema.Location`.
         """
         self.values = values
 
@@ -688,7 +692,7 @@ class Range(ConstraintType):
         left, right = self.values
         return left <= value <= right
 
-    def _get_type(self) -> Type[ATTRIBUTE_TYPES]:
+    def _get_type(self) -> Type[Union[int, str, float, Location]]:
         return type(self.values[0])
 
     def __eq__(self, other):
@@ -1127,7 +1131,7 @@ class Query(ProtobufSerializable):
 
         :return: ``True`` if the query is compliant with the data model, ``False`` otherwise.
         """
-        if self.model is None:
+        if data_model is None:
             return True
 
         return all(c.is_valid(data_model) for c in self.constraints)

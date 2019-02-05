@@ -3,7 +3,7 @@
 The Query Language
 ==================
 
-We recommend reading:ref:`defining-data-model` before reading this section.
+We recommend reading :ref:`defining-data-model` before reading this section.
 
 Along with the Data Model language, the SDK offers the possibility to specify `queries` defined over data models.
 
@@ -297,10 +297,10 @@ A :class:`~oef.query.ConstraintExpr` `c` (that is, one of :class:`~oef.query.And
     - if the constraint type is a :class:`~oef.query.Range`, then the types in the range must be one of ``int``, ``str``,
       ``float`` or :class:`~oef.schema.Location`.
     - if the constraint type is a :class:`~oef.query.Distance`, then the only valid type is :class:`~oef.schema.Location`.
-    - for :class:`~oef.query.Set`, :class:`~oef.query.Eq` and :class:`~oef.query.NotEq`, the value can be one of the
+    - if the constraint type is a :class:`~oef.query.Set`, then the types supported are
+      ``str``, ``int``, ``float``, ``bool``, :class:`~oef.schema.Location`. Notice though that a set of ``bool`` is trivial,
+      so you may find yourself more comfortable by using other alternatives.
+    - for the other constraint types, i.e. :class:`~oef.query.Eq` and :class:`~oef.query.NotEq`, the value can be one of the
       allowed types for :class:`~oef.schema.AttributeSchema`, that is ``str``, ``int``, ``float``, ``bool``,
       :class:`~oef.schema.Location`.
-
-
-
 

@@ -430,7 +430,7 @@ It can be one of:
     query = Query([])
 
     # send the CFP
-    agent.send_cfp(dialogue_id, destination, query, msg_id, target)
+    agent.send_cfp(dialogue_id, msg_id, destination, target, query)
 
 
 On the other side, the `Seller` should implement the :func:`~oef.agents.Agent.on_cfp` to specify the
@@ -445,9 +445,9 @@ The parameter ``origin`` will be the public key of the sender (in this case ``"b
 
     class Seller(OEFAgent):
 
-        def on_cfp(self, origin: str,
+        def on_cfp(self, msg_id: int,
                    dialogue_id: int,
-                   msg_id: int,
+                   origin: str,
                    target: int,
                    query: CFP_TYPES) -> None:
             ...
@@ -478,9 +478,9 @@ the `Seller`.
 
     class Seller(OEFAgent):
 
-        def on_cfp(self, origin: str,
+        def on_cfp(self, msg_id: int,
                    dialogue_id: int,
-                   msg_id: int,
+                   origin: str,
                    target: int,
                    query: CFP_TYPES) -> None:
 
@@ -512,11 +512,11 @@ The parameter ``origin`` will be the public key of the sender (in this case ``"s
 
     class Buyer(OEFAgent):
 
-        def on_propose(self, origin: str,
+        def on_propose(self, msg_id: int,
                        dialogue_id: int,
-                       msg_id: int,
+                       origin: str,
                        target: int,
-                       proposal: PROPOSE_TYPES) -> None:
+                       proposals: PROPOSE_TYPES) -> None:
             ...
 
 Here follows the sequence diagram that depicts the message exchange:
@@ -540,11 +540,11 @@ the `Buyer`.
 
     class Buyer(OEFAgent):
 
-        def on_propose(self, origin: str,
+        def on_propose(self, msg_id: int,
                        dialogue_id: int,
-                       msg_id: int,
+                       origin: str,
                        target: int,
-                       proposal: PROPOSE_TYPES) -> None:
+                       proposals: PROPOSE_TYPES) -> None:
 
             # do some stuff with the proposal
             ...
@@ -571,9 +571,9 @@ The parameter ``origin`` will be the public key of the sender (in this case ``"b
 
     class Seller(OEFAgent):
 
-        def on_accept(self, origin: str,
+        def on_accept(self, msg_id: int,
                       dialogue_id: int,
-                      msg_id: int,
+                      origin: str,
                       target: int) -> None:
             ...
 
@@ -606,9 +606,9 @@ the `Buyer`.
 
     class Buyer(OEFAgent):
 
-        def on_propose(self, origin: str,
+        def on_propose(self, msg_id: int,
                        dialogue_id: int,
-                       msg_id: int,
+                       origin: str,
                        target: int,
                        proposal: PROPOSE_TYPES) -> None:
 
@@ -637,9 +637,9 @@ The parameter ``origin`` will be the public key of the sender (in this case ``"b
 
     class Seller(OEFAgent):
 
-        def on_decline(self, origin: str,
+        def on_decline(self, msg_id: int,
                        dialogue_id: int,
-                       msg_id: int,
+                       origin: str,
                        target: int) -> None:
             ...
 

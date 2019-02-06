@@ -41,3 +41,5 @@ if __name__ == '__main__':
 
     agent.unregister_agent(message_id + 1)
     print("Agent {} unregistered".format(agent.public_key))
+
+    agent.disconnect()

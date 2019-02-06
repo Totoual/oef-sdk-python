@@ -87,12 +87,12 @@ The ``GreetingsAgent`` does the following:
     from typing import List
     from oef.agents import OEFAgent
 
-    class GreetingsAgent(OEFAgent):
+    class GreetingsAgent(Agent):
         """A class that implements the greeting agent."""
 
-        def on_message(self, origin: str, dialogue_id: int, content: bytes):
-            print("[{}]: Received message: origin={}, dialogue_id={}, content={}"
-                  .format(self.public_key, origin, dialogue_id, content))
+        def on_message(self, msg_id: int, dialogue_id: int, origin: str, content: bytes):
+            print("[{}]: Received message: msg_id={}, dialogue_id={}, origin={}, content={}"
+                  .format(self.public_key, msg_id, dialogue_id, origin, content))
             if content == b"hello":
                 print("[{}]: Sending greetings message to {}".format(self.public_key, origin))
                 self.send_message(1, dialogue_id, origin, b"greetings")
@@ -174,9 +174,9 @@ The output should be:
 
     [greetings_client]: Search for 'greetings' services. search_id=0
     [greetings_client]: Agents found: ['greetings_server']
-    [greetings_server]: Received message: origin=greetings_client, dialogue_id=0, content=b'hello'
+    [greetings_server]: Received message: msg_id=0, dialogue_id=0, origin=greetings_client, content=b'hello'
     [greetings_server]: Sending greetings message to greetings_client
-    [greetings_client]: Received message: origin=greetings_server, dialogue_id=0, content=b'greetings'
+    [greetings_client]: Received message: msg_id=1, dialogue_id=0, origin=greetings_server, content=b'greetings'
 
 
 You can find the full script at

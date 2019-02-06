@@ -217,9 +217,9 @@ class Agent(AgentInterface, ABC):
                      .format(msg_id, dialogue_id, origin, target, query))
         _warning_not_implemented_method(self.on_cfp.__name__)
 
-    def on_propose(self, msg_id: int, dialogue_id: int, origin: str, target: int, proposal: PROPOSE_TYPES):
-        logger.debug("on_propose: msg_id={}, dialogue_id={}, origin={}, target={}, proposal={}"
-                     .format(msg_id, dialogue_id, origin, target, proposal))
+    def on_propose(self, msg_id: int, dialogue_id: int, origin: str, target: int, proposals: PROPOSE_TYPES):
+        logger.debug("on_propose: msg_id={}, dialogue_id={}, origin={}, target={}, proposals={}"
+                     .format(msg_id, dialogue_id, origin, target, proposals))
         _warning_not_implemented_method(self.on_propose.__name__)
 
     def on_accept(self, msg_id: int, dialogue_id: int, origin: str, target: int):

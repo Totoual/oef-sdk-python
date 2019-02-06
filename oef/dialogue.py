@@ -277,9 +277,9 @@ class DialogueAgent(Agent, ABC):
         except KeyError:
             self.on_new_cfp(msg_id, dialogue_id, origin, target, query)
 
-    def on_propose(self, msg_id: int, dialogue_id: int, origin: str, target: int, proposal: PROPOSE_TYPES):
+    def on_propose(self, msg_id: int, dialogue_id: int, origin: str, target: int, proposals: PROPOSE_TYPES):
         dialogue = self._get_dialogue((origin, dialogue_id))
-        dialogue.on_propose(msg_id, target, proposal)
+        dialogue.on_propose(msg_id, target, proposals)
 
     def on_accept(self, msg_id: int, dialogue_id: int, origin: str, target: int):
         dialogue = self._get_dialogue((origin, dialogue_id))

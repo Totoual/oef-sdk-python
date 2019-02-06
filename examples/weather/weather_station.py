@@ -64,11 +64,7 @@ class WeatherStation(OEFAgent):
         WEATHER_DATA_MODEL
     )
 
-    def on_cfp(self, origin: str,
-               dialogue_id: int,
-               msg_id: int,
-               target: int,
-               query: CFP_TYPES):
+    def on_cfp(self, msg_id: int, dialogue_id: int, origin: str, target: int, query: CFP_TYPES):
         """Send a simple Propose to the sender of the CFP."""
         print("[{0}]: Received CFP from {1}".format(self.public_key, origin))
 
@@ -76,12 +72,9 @@ class WeatherStation(OEFAgent):
         price = 50
         proposal = Description({"price": price})
         print("[{}]: Sending propose at price: {}".format(self.public_key, price))
-        self.send_propose(dialogue_id, origin, [proposal], msg_id + 1, target + 1)
+        self.send_propose(msg_id + 1, dialogue_id, origin, target + 1, [proposal])
 
-    def on_accept(self, origin: str,
-                  dialogue_id: int,
-                  msg_id: int,
-                  target: int):
+    def on_accept(self, msg_id: int, dialogue_id: int, origin: str, target: int):
         """Once we received an Accept, send the requested data."""
         print("[{0}]: Received accept from {1}."
               .format(self.public_key, origin))

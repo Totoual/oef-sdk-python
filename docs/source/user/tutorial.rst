@@ -66,12 +66,13 @@ how to implement the associated callbacks.
     from oef.agents import OEFAgent
 
     class EchoServiceAgent(OEFAgent):
-
-        def on_message(self, origin: str, dialogue_id: int, content: bytes):
-            """ this method is called whenever a new message is sent to this agent.
-            We send the received message back to the origin"""
-            print("[{}]: Received message: origin={}, dialogue_id={}, content={}"
-                 .format(self.public_key, origin, dialogue_id, content))
+        """
+        The class that defines the behaviour of the echo service agent.
+        """
+    
+        def on_message(self, msg_id: int, dialogue_id: int, origin: str, content: bytes):
+            print("[{}]: Received message: msg_id={}, dialogue_id={}, origin={}, content={}"
+                  .format(self.public_key, msg_id, dialogue_id, origin, content))
             print("[{}]: Sending {} back to {}".format(self.public_key, content, origin))
             self.send_message(1, dialogue_id, origin, content)
 
@@ -184,9 +185,9 @@ the consumer of the service we implemented in the previous section.
         The class that defines the behaviour of the echo client agent.
         """
 
-        def on_message(self, origin: str, dialogue_id: int, content: bytes):
-            print("[{}]: Received message: origin={}, dialogue_id={}, content={}"
-                  .format(self.public_key, origin, dialogue_id, content))
+        def on_message(self, msg_id: int, dialogue_id: int, origin: str, content: bytes):
+            print("[{}]: Received message: msg_id={}, dialogue_id={}, origin={}, content={}"
+                  .format(self.public_key, msg_id, dialogue_id, origin, content))
             print("[{}]: Stopping...".format(self.public_key))
             self.stop()
 
@@ -287,15 +288,16 @@ The output from the client agent should be:
    [echo_client]: Make search to the OEF
    [echo_client]: search_id=0. Agents found: ['echo_server']
    [echo_client]: Sending b'hello' to echo_server
-   [echo_client]: Received message: origin=echo_server, dialogue_id=0, content=b'hello'
+   [echo_client]: Received message: msg_id=1, dialogue_id=0, origin=echo_server, content=b'hello'
    [echo_client]: Stopping...
+   [echo_client]: Disconnecting...
 
 Whereas, the one from the server agent is:
 
 ::
 
    [echo_server]: Waiting for messages...
-   [echo_server]: Received message: origin=echo_client, dialogue_id=0, content=b'hello'
+   [echo_server]: Received message: msg_id=0, dialogue_id=0, origin=echo_client, content=b'hello'
    [echo_server]: Sending b'hello' back to echo_client
 
 
@@ -464,46 +466,39 @@ This is the code for our weather station:
    from oef.messages import CFP_TYPES
 
 
-   class WeatherStation(OEFAgent):
-       """Class that implements the behaviour of the weather station."""
+    class WeatherStation(OEFAgent):
+        """Class that implements the behaviour of the weather station."""
 
-       weather_service_description = Description(
-           {
-               "wind_speed": False,
-               "temperature": True,
-               "air_pressure": True,
-               "humidity": True,
-           },
-           WEATHER_DATA_MODEL
-       )
+        weather_service_description = Description(
+            {
+                "wind_speed": False,
+                "temperature": True,
+                "air_pressure": True,
+                "humidity": True,
+            },
+            WEATHER_DATA_MODEL
+        )
 
-       def on_cfp(self, origin: str,
-                  dialogue_id: int,
-                  msg_id: int,
-                  target: int,
-                  query: CFP_TYPES):
-           """Send a simple Propose to the sender of the CFP."""
-           print("[{0}]: Received CFP from {1}".format(self.public_key, origin))
+        def on_cfp(self, msg_id: int, dialogue_id: int, origin: str, target: int, query: CFP_TYPES):
+            """Send a simple Propose to the sender of the CFP."""
+            print("[{0}]: Received CFP from {1}".format(self.public_key, origin))
 
-           # prepare the proposal with a given price.
-           price = 50
-           proposal = Description({"price": price})
-           print("[{}]: Sending propose at price: {}".format(self.public_key, price))
-           self.send_propose(dialogue_id, origin, [proposal], msg_id + 1, target + 1)
+            # prepare the proposal with a given price.
+            price = 50
+            proposal = Description({"price": price})
+            print("[{}]: Sending propose at price: {}".format(self.public_key, price))
+            self.send_propose(msg_id + 1, dialogue_id, origin, target + 1, [proposal])
 
-       def on_accept(self, origin: str,
-                     dialogue_id: int,
-                     msg_id: int,
-                     target: int):
-           """Once we received an Accept, send the requested data."""
-           print("[{0}]: Received accept from {1}."
-                 .format(self.public_key, origin))
+        def on_accept(self, msg_id: int, dialogue_id: int, origin: str, target: int):
+            """Once we received an Accept, send the requested data."""
+            print("[{0}]: Received accept from {1}."
+                  .format(self.public_key, origin))
 
-           # send the measurements to the client. for the sake of simplicity, they are hard-coded.
-           data = {"temperature": 15.0, "humidity": 0.7, "air_pressure": 1019.0}
-           encoded_data = json.dumps(data).encode("utf-8")
-           print("[{0}]: Sending data to {1}: {2}".format(self.public_key, origin, pprint.pformat(data)))
-           self.send_message(0, dialogue_id, origin, encoded_data)
+            # send the measurements to the client. for the sake of simplicity, they are hard-coded.
+            data = {"temperature": 15.0, "humidity": 0.7, "air_pressure": 1019.0}
+            encoded_data = json.dumps(data).encode("utf-8")
+            print("[{0}]: Sending data to {1}: {2}".format(self.public_key, origin, pprint.pformat(data)))
+            self.send_message(0, dialogue_id, origin, encoded_data)
 
 
 
@@ -542,32 +537,35 @@ This is the code for the client of the weather service:
 
     class WeatherClient(OEFAgent):
         """Class that implements the behavior of the weather client."""
+
         def on_search_result(self, search_id: int, agents: List[str]):
             """For every agent returned in the service search, send a CFP to obtain resources from them."""
             if len(agents) == 0:
                 print("[{}]: No agent found. Stopping...".format(self.public_key))
                 self.stop()
                 return
+
             print("[{0}]: Agent found: {1}".format(self.public_key, agents))
             for agent in agents:
                 print("[{0}]: Sending to agent {1}".format(self.public_key, agent))
                 # we send a 'None' query, meaning "give me all the resources you can propose."
                 query = None
-                self.send_cfp(0, agent, query)
-        def on_propose(self, origin: str, dialogue_id: int, msg_id: int, target: int, proposals: PROPOSE_TYPES):
+                self.send_cfp(1, 0, agent, 0, query)
+
+        def on_propose(self, msg_id: int, dialogue_id: int, origin: str, target: int, proposals: PROPOSE_TYPES):
             """When we receive a Propose message, answer with an Accept."""
             print("[{0}]: Received propose from agent {1}".format(self.public_key, origin))
             for i, p in enumerate(proposals):
                 print("[{0}]: Proposal {1}: {2}".format(self.public_key, i, p.values))
             print("[{0}]: Accepting Propose.".format(self.public_key))
-            self.send_accept(dialogue_id, origin, msg_id + 1, msg_id)
-        def on_message(self, origin: str,
-                       dialogue_id: int,
-                       content: bytes):
+            self.send_accept(msg_id, dialogue_id, origin, msg_id + 1)
+
+        def on_message(self, msg_id: int, dialogue_id: int, origin: str, content: bytes):
             """Extract and print data from incoming (simple) messages."""
             data = json.loads(content.decode("utf-8"))
             print("[{0}]: Received measurement from {1}: {2}".format(self.public_key, origin, pprint.pformat(data)))
             self.stop()
+
 
 His behaviour can be summarized with the following lines:
 

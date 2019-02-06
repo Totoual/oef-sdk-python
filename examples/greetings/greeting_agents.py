@@ -41,9 +41,9 @@ parser.add_argument("--port", default=3333, help="Port for the connection with t
 class GreetingsAgent(Agent):
     """A class that implements the greeting agent."""
 
-    def on_message(self, origin: str, dialogue_id: int, content: bytes):
-        print("[{}]: Received message: origin={}, dialogue_id={}, content={}"
-              .format(self.public_key, origin, dialogue_id, content))
+    def on_message(self, msg_id: int, dialogue_id: int, origin: str, content: bytes):
+        print("[{}]: Received message: msg_id={}, dialogue_id={}, origin={}, content={}"
+              .format(self.public_key, msg_id, dialogue_id, origin, content))
         if content == b"hello":
             print("[{}]: Sending greetings message to {}".format(self.public_key, origin))
             self.send_message(1, dialogue_id, origin, b"greetings")

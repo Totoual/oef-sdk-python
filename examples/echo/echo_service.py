@@ -60,9 +60,9 @@ class EchoServiceAgent(OEFAgent):
     The class that defines the behaviour of the echo service agent.
     """
 
-    def on_message(self, origin: str, dialogue_id: int, content: bytes):
-        print("[{}]: Received message: origin={}, dialogue_id={}, content={}"
-              .format(self.public_key, origin, dialogue_id, content))
+    def on_message(self, msg_id: int, dialogue_id: int, origin: str, content: bytes):
+        print("[{}]: Received message: msg_id={}, dialogue_id={}, origin={}, content={}"
+              .format(self.public_key, msg_id, dialogue_id, origin, content))
         print("[{}]: Sending {} back to {}".format(self.public_key, content, origin))
         self.send_message(1, dialogue_id, origin, content)
 

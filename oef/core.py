@@ -232,7 +232,7 @@ class DialogueInterface(ABC):
                    dialogue_id: int,
                    origin: str,
                    target: int,
-                   proposal: PROPOSE_TYPES) -> None:
+                   proposals: PROPOSE_TYPES) -> None:
         """
         Handler for Propose messages.
 
@@ -240,7 +240,7 @@ class DialogueInterface(ABC):
         :param dialogue_id: the identifier of the dialogue in which the message is sent.
         :param origin: the identifier of the agent who sent the message.
         :param target: the identifier of the message to whom this message is answering.
-        :param proposal: the proposal associated with the message.
+        :param proposals: the proposal associated with the message.
         :return: ``None``
         """
 

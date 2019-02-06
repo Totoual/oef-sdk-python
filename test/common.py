@@ -56,8 +56,8 @@ class AgentTest(Agent):
     def on_cfp(self, msg_id: int, dialogue_id: int, origin: str, target: int, query: CFP_TYPES):
         self._process_message((msg_id, dialogue_id, origin, target, query))
 
-    def on_propose(self, msg_id: int, dialogue_id: int, origin: str, target: int, proposal: PROPOSE_TYPES):
-        self._process_message((msg_id, dialogue_id, origin, target, proposal))
+    def on_propose(self, msg_id: int, dialogue_id: int, origin: str, target: int, proposals: PROPOSE_TYPES):
+        self._process_message((msg_id, dialogue_id, origin, target, proposals))
 
     def on_accept(self, msg_id: int, dialogue_id: int, origin: str, target: int):
         self._process_message((msg_id, dialogue_id, origin, target))

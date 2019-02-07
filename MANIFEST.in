@@ -3,6 +3,5 @@ include README.md LICENSE HISTORY.rst AUTHORS.rst Pipfile Pipfile.lock
 recursive-include examples *
 recursive-include test *.py
 recursive-include oef-core-protocol *
-recursive-include docker-images/fetch-ledger-develop-image *
 recursive-include scripts *.py
 recursive-include docs *

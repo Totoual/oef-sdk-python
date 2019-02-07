@@ -125,7 +125,6 @@ class ClientAgentGroupDialogueTest(DialogueAgent):
 
     def on_search_result(self, search_id: int, agents: List[str]):
         """For every agent returned in the service search, send a CFP to obtain resources from them."""
-        print("Agent found: {0}".format(agents))
         self.group = GroupDialogueTest(self, agents)
 
     def on_new_cfp(self, from_: str, dialogue_id: int, msg_id: int, target: int, query: CFP_TYPES) -> None:

@@ -30,7 +30,8 @@ In order to install `oef`, run:
 
 ## Run the tests
 
-To run the tests, you need to clone [oef-core](https://github.com/fetchai/oef-core) repository and build the project:
+To run the tests, you need to clone [oef-core](https://github.com/fetchai/oef-core) repository and build the project.
+Check that you have installed all the dependencies (see [INSTALL.txt](https://github.com/fetchai/oef-core/blob/master/INSTALL.txt)):
 
     python scripts/setup_test.py
     
@@ -46,13 +47,13 @@ For the documentation we use [Sphinx](http://www.sphinx-doc.org/en/master/).
 
 - Install the required packages with Pipenv and activate the shell:
 
-    pipenv install --dev
-    pipenv shell
+      pipenv install --dev
+      pipenv shell
 
 - Then build the docs with:
 
-    cd docs/
-    make html
+      cd docs/
+      make html
     
 And then just open `index.html` in the `build/html` folder.
 

@@ -126,12 +126,11 @@ class TestDescription:
 
 class TestGenerateSchema:
 
-    @given(text(), attribute_schema_values)
-    def test_raise_when_not_required_attribute_is_omitted(self, name, attribute_type):
+    def test_raise_when_not_required_attribute_is_omitted(self):
         """
         Test that if we miss out a required attribute, we moan about it
         """
-        check_inconsistency_checker([AttributeSchema(name, attribute_type, True)], {},
+        check_inconsistency_checker([AttributeSchema("foo", str, True)], {},
                                     "Missing required attribute.")
 
     def test_raise_when_have_extra_attribute(self,):
@@ -156,12 +155,11 @@ class TestGenerateSchema:
                                     {"foo": tuple()},
                                     "unallowed type")
 
-    @given(text(), from_type(type).filter(lambda t: t not in ATTRIBUTE_TYPES.__args__))
-    def test_raise_when_disallowed_types(self, name, not_attribute_type):
+    def test_raise_when_disallowed_types(self):
         """
         Test that if an attribute has a type that is no in the allowed set, we moan
         """
-        check_inconsistency_checker([], {name: not_attribute_type}, "Have extra attribute not in schema")
+        check_inconsistency_checker([], {"foo": tuple}, "Have extra attribute not in schema")
 
     @given(text(), )
     def test_generate_schema_empty(self, name):

@@ -304,3 +304,15 @@ A :class:`~oef.query.ConstraintExpr` `c` (that is, one of :class:`~oef.query.And
       allowed types for :class:`~oef.schema.AttributeSchema`, that is ``str``, ``int``, ``float``, ``bool``,
       :class:`~oef.schema.Location`.
 
+- Moreover, when `c` is a :class:`~oef.query.Constraint`, the attribute must have a consistent type wrt the data model.
+  E.g. consider a :class:`~oef.query.Constraint` like:
+
+.. code-block:: python
+
+  Constraint("foo", Eq(True)))
+
+Consider a :class:`~oef.schema.DataModel` where there is an :class:`~oef.schema.AttributeSchema`
+``"foo"`` of type ``str``. Then the constraint is not compatible with the mentioned data model, because
+the constraint expect an equality comparison with a boolean ``True``, instead of a ``str``.
+
+

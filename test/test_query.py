@@ -22,7 +22,7 @@ from hypothesis import given
 
 from oef import query_pb2
 from oef.query import Relation, Range, Set, And, Or, Constraint, Query, Eq, In, Not, Distance
-from oef.schema import Location, DataModel
+from oef.schema import Location, DataModel, AttributeSchema
 from test.strategies import relations, ranges, query_sets, and_constraints, or_constraints, constraints, \
     queries, not_constraints, distances
 
@@ -208,7 +208,7 @@ class TestQuery:
         assert expected_query == actual_query
 
     def test_not_equal_when_compared_with_different_type(self):
-        a_query = Query([Constraint("foo", Eq(0))])
+        a_query = Query([Constraint("foo", Eq(0))], DataModel("bar", [AttributeSchema("foo", int, True)]))
         not_a_query = tuple()
 
         assert a_query != not_a_query
@@ -225,3 +225,12 @@ class TestQuery:
 
         with pytest.raises(ValueError, match=""):
             a_query = Query([Constraint("an_attribute_name", Eq(0))], DataModel("a_data_model", []))
+
+    def test_query_invalid_when_constraint_attribute_name_different_type(self):
+        """Test that we raise an exception when at least one constraint attribute name
+        has a different type wrt the data model."""
+
+        with pytest.raises(ValueError, match=""):
+            a_query = Query([Constraint("an_attribute_name", Eq(0))],
+                            DataModel("a_data_model", [AttributeSchema("an_attribute_name", str, True)]))
+

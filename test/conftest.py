@@ -24,7 +24,10 @@ import time
 
 from hypothesis import settings
 
+"""The timeout used to test asynchronicity."""
 _ASYNCIO_DELAY = 0.1
+
+"""Settings for the Hypothesis package"""
 settings(max_examples=100)
 
 ROOT_DIR = ".."

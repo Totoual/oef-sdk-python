@@ -28,9 +28,10 @@ This module contains the base class for implementing agents.
 
 """
 import asyncio
+
 import logging
 from abc import ABC
-from typing import List
+from typing import List, Optional
 
 from oef.core import OEFProxy, AgentInterface
 from oef.messages import OEFErrorOperation
@@ -70,16 +71,18 @@ class Agent(AgentInterface, ABC):
         """
         return self._oef_proxy.public_key
 
-    def __init__(self, oef_proxy: OEFProxy):
+    def __init__(self, oef_proxy: OEFProxy, loop: Optional[asyncio.AbstractEventLoop] = None):
         """
         Initialize the OEF Agent.
 
         :param oef_proxy: the proxy for an OEF Node.
+        :param loop: the Asyncio loop to use for running asynchronous operations.
+                     if ``None``, it defaults to the current global event loop.
         """
 
         self._oef_proxy = oef_proxy
+        self._loop = asyncio.get_event_loop() if loop is None else loop
         self._task = None
-        self._loop = asyncio.get_event_loop()
 
     def run(self) -> None:
         """
@@ -253,7 +256,7 @@ class OEFAgent(Agent):
     It provides a nicer constructor that does not require to instantiate :class:`~oef.proxy.OEFLocalProxy` explicitly.
     """
 
-    def __init__(self, public_key: str, oef_addr: str, oef_port: int = 3333) -> None:
+    def __init__(self, public_key: str, oef_addr: str, oef_port: int = 3333, **kwargs) -> None:
         """
         Initialize an OEF network agent.
 
@@ -263,7 +266,7 @@ class OEFAgent(Agent):
         """
         self._oef_addr = oef_addr
         self._oef_port = oef_port
-        super().__init__(OEFNetworkProxy(public_key, str(self._oef_addr), self._oef_port))
+        super().__init__(OEFNetworkProxy(public_key, str(self._oef_addr), self._oef_port), **kwargs)
 
 
 class LocalAgent(Agent):
@@ -275,11 +278,11 @@ class LocalAgent(Agent):
     Notice: other agents need to be constructed with the same :class:`~oef.proxy.OEFLocalProxy.LocalNode` instance.
     """
 
-    def __init__(self, public_key: str, local_node: OEFLocalProxy.LocalNode):
+    def __init__(self, public_key: str, local_node: OEFLocalProxy.LocalNode, **kwargs):
         """
         Initialize an OEF local agent.
 
         :param public_key: the public key (identifier) of the agent.
         :param local_node: an instance of the local implementation of the OEF Node.
         """
-        super().__init__(OEFLocalProxy(public_key, local_node))
+        super().__init__(OEFLocalProxy(public_key, local_node), **kwargs)

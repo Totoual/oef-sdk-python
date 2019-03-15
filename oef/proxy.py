@@ -38,7 +38,8 @@ import oef.agent_pb2 as agent_pb2
 from oef.core import OEFProxy
 from oef.messages import Message, CFP_TYPES, PROPOSE_TYPES, CFP, Propose, Accept, Decline, BaseMessage, \
     AgentMessage, RegisterDescription, RegisterService, UnregisterDescription, \
-    UnregisterService, SearchAgents, SearchServices, OEFErrorOperation
+    UnregisterService, SearchAgents, SearchServices, OEFErrorOperation, SearchResult, OEFErrorMessage, \
+    DialogueErrorMessage
 from oef.query import Query
 from oef.schema import Description
 
@@ -91,7 +92,7 @@ class OEFNetworkProxy(OEFProxy):
         """
         return self._connection is not None
 
-    async def _connect_to_server(self, event_loop) -> Awaitable[Tuple[asyncio.StreamReader, asyncio.StreamWriter]]:
+    async def _connect_to_server(self, event_loop) -> Tuple[asyncio.StreamReader, asyncio.StreamWriter]:
         """
         Connect to the OEF Node.
 
@@ -165,47 +166,47 @@ class OEFNetworkProxy(OEFProxy):
 
     def register_agent(self, msg_id: int, agent_description: Description):
         msg = RegisterDescription(msg_id, agent_description)
-        self._send(msg.to_envelope())
+        self._send(msg.to_pb())
 
     def register_service(self, msg_id: int, service_description: Description):
         msg = RegisterService(msg_id, service_description)
-        self._send(msg.to_envelope())
+        self._send(msg.to_pb())
 
     def unregister_agent(self, msg_id: int):
         msg = UnregisterDescription(msg_id)
-        self._send(msg.to_envelope())
+        self._send(msg.to_pb())
 
     def unregister_service(self, msg_id: int, service_description: Description):
         msg = UnregisterService(msg_id, service_description)
-        self._send(msg.to_envelope())
+        self._send(msg.to_pb())
 
     def search_agents(self, search_id: int, query: Query) -> None:
         msg = SearchAgents(search_id, query)
-        self._send(msg.to_envelope())
+        self._send(msg.to_pb())
 
     def search_services(self, search_id: int, query: Query) -> None:
         msg = SearchServices(search_id, query)
-        self._send(msg.to_envelope())
+        self._send(msg.to_pb())
 
     def send_message(self, msg_id: int, dialogue_id: int, destination: str, msg: bytes) -> None:
         msg = Message(msg_id, dialogue_id, destination, msg)
-        self._send(msg.to_envelope())
+        self._send(msg.to_pb())
 
     def send_cfp(self, msg_id: int, dialogue_id: int, destination: str, target: int, query: CFP_TYPES):
         msg = CFP(msg_id, dialogue_id, destination, target, query)
-        self._send(msg.to_envelope())
+        self._send(msg.to_pb())
 
     def send_propose(self, msg_id: int, dialogue_id: int, destination: str, target: int, proposals: PROPOSE_TYPES):
         msg = Propose(msg_id, dialogue_id, destination, target, proposals)
-        self._send(msg.to_envelope())
+        self._send(msg.to_pb())
 
     def send_accept(self, msg_id: int, dialogue_id: int, destination: str, target: int):
         msg = Accept(msg_id, dialogue_id, destination, target)
-        self._send(msg.to_envelope())
+        self._send(msg.to_pb())
 
     def send_decline(self, msg_id: int, dialogue_id: int, destination: str, target: int):
         msg = Decline(msg_id, dialogue_id, destination, target)
-        self._send(msg.to_envelope())
+        self._send(msg.to_pb())
 
     async def stop(self) -> None:
         """
@@ -332,7 +333,8 @@ class OEFLocalProxy(OEFProxy):
             """
             self.loop.run_until_complete(self._lock.acquire())
             if public_key not in self.agents:
-                self._send_oef_error(public_key, msg_id, OEFErrorOperation.UNREGISTER_DESCRIPTION)
+                msg = OEFErrorMessage(msg_id, OEFErrorOperation.UNREGISTER_DESCRIPTION)
+                self._send(public_key, msg.to_pb())
             else:
                 self.agents.pop(public_key)
             self._lock.release()
@@ -349,7 +351,8 @@ class OEFLocalProxy(OEFProxy):
             self.loop.run_until_complete(self._lock.acquire())
 
             if public_key not in self.services:
-                self._send_oef_error(public_key, msg_id, OEFErrorOperation.UNREGISTER_SERVICE)
+                msg = OEFErrorMessage(msg_id, OEFErrorOperation.UNREGISTER_SERVICE)
+                self._send(public_key, msg.to_pb())
             else:
                 self.services[public_key].remove(service_description)
                 if len(self.services[public_key]) == 0:
@@ -372,7 +375,8 @@ class OEFLocalProxy(OEFProxy):
                 if query.check(description):
                     result.append(agent_public_key)
 
-            self._send_search_result(public_key, search_id, sorted(set(result)))
+            msg = SearchResult(search_id, sorted(set(result)))
+            self._send(public_key, msg.to_pb())
 
         def search_services(self, public_key: str, search_id: int, query: Query) -> None:
             """
@@ -391,7 +395,8 @@ class OEFLocalProxy(OEFProxy):
                     if query.check(description):
                         result.append(agent_public_key)
 
-            self._send_search_result(public_key, search_id, sorted(set(result)))
+            msg = SearchResult(search_id, sorted(set(result)))
+            self._send(public_key, msg.to_pb())
 
         def _send_agent_message(self, origin: str, msg: AgentMessage) -> None:
             """
@@ -401,11 +406,12 @@ class OEFLocalProxy(OEFProxy):
             :param msg: the message.
             :return: ``None``
             """
-            e = msg.to_envelope()
+            e = msg.to_pb()
             destination = e.send_message.destination
 
             if destination not in self._queues:
-                self._send_dialogue_error(origin, msg.msg_id, e.send_message.dialogue_id, destination)
+                msg = DialogueErrorMessage(msg.msg_id, e.send_message.dialogue_id, destination)
+                self._send(origin, msg.to_pb())
                 return
 
             new_msg = agent_pb2.Server.AgentMessage()
@@ -421,31 +427,7 @@ class OEFLocalProxy(OEFProxy):
 
             self._queues[destination].put_nowait(new_msg.SerializeToString())
 
-        def _send_search_result(self, public_key: str, search_id: int, agents: List[str]) -> None:
-            """
-            Send a search result.
-
-            :param public_key: the public key of the agent to whom to send the search result.
-            :param search_id: the id of the search request.
-            :param agents: the list of public key of the agents/services to be returned.
-            :return: ``None``
-            """
-            msg = agent_pb2.Server.AgentMessage()
-            msg.answer_id = search_id
-            msg.agents.agents.extend(agents)
-            self._queues[public_key].put_nowait(msg.SerializeToString())
-
-        def _send_oef_error(self, public_key: str, answer_id: int, operation_error: OEFErrorOperation) -> None:
-            msg = agent_pb2.Server.AgentMessage()
-            msg.answer_id = answer_id
-            msg.oef_error.operation = operation_error.value
-            self._queues[public_key].put_nowait(msg.SerializeToString())
-
-        def _send_dialogue_error(self, public_key: str, msg_id: int, dialogue_id: int, origin: str) -> None:
-            msg = agent_pb2.Server.AgentMessage()
-            msg.answer_id = msg_id
-            msg.dialogue_error.dialogue_id = dialogue_id
-            msg.dialogue_error.origin = origin
+        def _send(self, public_key: str, msg):
             self._queues[public_key].put_nowait(msg.SerializeToString())
 
     def __init__(self, public_key: str, local_node: LocalNode):

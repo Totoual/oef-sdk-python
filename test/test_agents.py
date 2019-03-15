@@ -25,12 +25,12 @@ from oef.schema import Description, AttributeSchema
 from .conftest import _ASYNCIO_DELAY, NetworkOEFNode
 
 
-def test_agent_on_message_handler_warning():
+def test_agent_on_message_handler_warning(oef_addr, oef_port):
     """Test that we give a warning when the handler on_message is not implemented."""
 
     with NetworkOEFNode():
         with patch('logging.Logger.warning') as mock:
-            agent = OEFAgent("test_agent_on_message_warning", "127.0.0.1", 3333)
+            agent = OEFAgent("test_agent_on_message_warning", oef_addr, oef_port)
             agent.connect()
 
             agent.send_message(0, 0, agent.public_key, b"message")
@@ -42,12 +42,12 @@ def test_agent_on_message_handler_warning():
             mock.assert_called_with("You should implement on_message in your OEFAgent class.")
 
 
-def test_agent_on_cfp_handler_warning():
+def test_agent_on_cfp_handler_warning(oef_addr, oef_port):
     """Test that we give a warning when the handler on_cfp is not implemented."""
 
     with NetworkOEFNode():
         with patch('logging.Logger.warning') as mock:
-            agent = OEFAgent("test_agent_on_cfp_warning", "127.0.0.1", 3333)
+            agent = OEFAgent("test_agent_on_cfp_warning", oef_addr, oef_port)
             agent.connect()
 
             agent.send_cfp(1, 0, agent.public_key, 0, None)
@@ -59,12 +59,12 @@ def test_agent_on_cfp_handler_warning():
             mock.assert_called_with("You should implement on_cfp in your OEFAgent class.")
 
 
-def test_agent_on_propose_handler_warning():
+def test_agent_on_propose_handler_warning(oef_addr, oef_port):
     """Test that we give a warning when the handler on_propose is not implemented."""
 
     with NetworkOEFNode():
         with patch('logging.Logger.warning') as mock:
-            agent = OEFAgent("test_agent_on_propose_warning", "127.0.0.1", 3333)
+            agent = OEFAgent("test_agent_on_propose_warning", oef_addr, oef_port)
             agent.connect()
 
             agent.send_propose(2, 0, agent.public_key, 1, b"propose")
@@ -76,12 +76,12 @@ def test_agent_on_propose_handler_warning():
             mock.assert_called_with("You should implement on_propose in your OEFAgent class.")
 
 
-def test_agent_on_accept_handler_warning():
+def test_agent_on_accept_handler_warning(oef_addr, oef_port):
     """Test that we give a warning when the handler on_accept is not implemented."""
 
     with NetworkOEFNode():
         with patch('logging.Logger.warning') as mock:
-            agent = OEFAgent("test_agent_on_accept_warning", "127.0.0.1", 3333)
+            agent = OEFAgent("test_agent_on_accept_warning", oef_addr, oef_port)
             agent.connect()
 
             agent.send_accept(3, 0, agent.public_key, 2)
@@ -93,12 +93,12 @@ def test_agent_on_accept_handler_warning():
             mock.assert_called_with("You should implement on_accept in your OEFAgent class.")
 
 
-def test_agent_on_decline_handler_warning():
+def test_agent_on_decline_handler_warning(oef_addr, oef_port):
     """Test that we give a warning when the handler on_decline is not implemented."""
 
     with NetworkOEFNode():
         with patch('logging.Logger.warning') as mock:
-            agent = OEFAgent("test_agent_on_decline_warning", "127.0.0.1", 3333)
+            agent = OEFAgent("test_agent_on_decline_warning", oef_addr, oef_port)
             agent.connect()
 
             agent.send_decline(4, 0, agent.public_key, 2)
@@ -110,12 +110,12 @@ def test_agent_on_decline_handler_warning():
             mock.assert_called_with("You should implement on_decline in your OEFAgent class.")
 
 
-def test_agent_on_search_result_handler_warning():
+def test_agent_on_search_result_handler_warning(oef_addr, oef_port):
     """Test that we give a warning when the handler on_search_result is not implemented."""
 
     with NetworkOEFNode():
         with patch('logging.Logger.warning') as mock:
-            agent = OEFAgent("test_agent_on_search_result_warning", "127.0.0.1", 3333)
+            agent = OEFAgent("test_agent_on_search_result_warning", oef_addr, oef_port)
             agent.connect()
 
             agent.search_agents(0, Query([Constraint("foo", Eq(0))]))
@@ -127,12 +127,12 @@ def test_agent_on_search_result_handler_warning():
             mock.assert_called_with("You should implement on_search_result in your OEFAgent class.")
 
 
-def test_agent_on_oef_error_handler_warning():
+def test_agent_on_oef_error_handler_warning(oef_addr, oef_port):
     """Test that we give a warning when the handler on_search_result is not implemented."""
 
     with NetworkOEFNode():
         with patch('logging.Logger.warning') as mock:
-            agent = OEFAgent("test_agent_on_oef_error_warning", "127.0.0.1", 3333)
+            agent = OEFAgent("test_agent_on_oef_error_warning", oef_addr, oef_port)
             agent.connect()
 
             # generate and OEFError with the unregister_service operation,
@@ -146,12 +146,12 @@ def test_agent_on_oef_error_handler_warning():
             mock.assert_called_with("You should implement on_oef_error in your OEFAgent class.")
 
 
-def test_agent_on_dialogue_error_handler_warning():
+def test_agent_on_dialogue_error_handler_warning(oef_addr, oef_port):
     """Test that we give a warning when the handler on_search_result is not implemented."""
 
     with NetworkOEFNode():
         with patch('logging.Logger.warning') as mock:
-            agent = OEFAgent("test_agent_on_dialogue_error_warning", "127.0.0.1", 3333)
+            agent = OEFAgent("test_agent_on_dialogue_error_warning", oef_addr, oef_port)
             agent.connect()
 
             # send a message to an unconnected agent

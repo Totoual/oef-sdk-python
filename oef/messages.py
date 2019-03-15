@@ -64,7 +64,7 @@ class BaseMessage(ABC):
         self.msg_id = msg_id
 
     @abstractmethod
-    def to_envelope(self) -> agent_pb2.Envelope:
+    def to_pb(self):
         """
         Pack the message into a protobuf message.
 
@@ -90,7 +90,7 @@ class RegisterDescription(BaseMessage):
         super().__init__(msg_id)
         self.agent_description = agent_description
 
-    def to_envelope(self) -> agent_pb2.Envelope:
+    def to_pb(self) -> agent_pb2.Envelope:
         envelope = agent_pb2.Envelope()
         envelope.msg_id = self.msg_id
         envelope.register_description.CopyFrom(self.agent_description.to_agent_description_pb())
@@ -115,7 +115,7 @@ class RegisterService(BaseMessage):
         super().__init__(msg_id)
         self.service_description = service_description
 
-    def to_envelope(self) -> agent_pb2.Envelope:
+    def to_pb(self) -> agent_pb2.Envelope:
         envelope = agent_pb2.Envelope()
         envelope.msg_id = self.msg_id
         envelope.register_service.CopyFrom(self.service_description.to_agent_description_pb())
@@ -136,7 +136,7 @@ class UnregisterDescription(BaseMessage):
         """
         super().__init__(msg_id)
 
-    def to_envelope(self) -> agent_pb2.Envelope:
+    def to_pb(self) -> agent_pb2.Envelope:
         envelope = agent_pb2.Envelope()
         envelope.msg_id = self.msg_id
         envelope.unregister_description.CopyFrom(agent_pb2.Envelope.Nothing())
@@ -161,7 +161,7 @@ class UnregisterService(BaseMessage):
         super().__init__(msg_id)
         self.service_description = service_description
 
-    def to_envelope(self) -> agent_pb2.Envelope:
+    def to_pb(self) -> agent_pb2.Envelope:
         envelope = agent_pb2.Envelope()
         envelope.msg_id = self.msg_id
         envelope.unregister_service.CopyFrom(self.service_description.to_agent_description_pb())
@@ -193,7 +193,7 @@ class SearchAgents(BaseMessage):
         super().__init__(msg_id)
         self.query = query
 
-    def to_envelope(self):
+    def to_pb(self) -> agent_pb2.Envelope:
         envelope = agent_pb2.Envelope()
         envelope.msg_id = self.msg_id
         envelope.search_agents.query.CopyFrom(self.query.to_pb())
@@ -225,7 +225,7 @@ class SearchServices(BaseMessage):
         super().__init__(msg_id)
         self.query = query
 
-    def to_envelope(self) -> agent_pb2.Envelope:
+    def to_pb(self) -> agent_pb2.Envelope:
         envelope = agent_pb2.Envelope()
         envelope.msg_id = self.msg_id
         envelope.search_services.query.CopyFrom(self.query.to_pb())
@@ -236,21 +236,58 @@ class OEFErrorMessage(BaseMessage):
     """
     This message is used by the OEF Node to notify the agent about generic error in the OEF.
 
-    It contains:
+    The error code can happen while handling one of these operations:
 
-    * a
+    1. Register a service
+    2. Unregister a service
+    3. Register a description
+    4. Unregister a description
 
     """
 
-    def to_envelope(self) -> agent_pb2.Envelope:
-        pass
+    def __init__(self, msg_id: int, oef_error_operation: OEFErrorOperation):
+        super().__init__(msg_id)
+        self.oef_error_operation = oef_error_operation
+
+    def to_pb(self) -> agent_pb2.Server.AgentMessage:
+        msg = agent_pb2.Server.AgentMessage()
+        msg.answer_id = self.msg_id
+        msg.oef_error.operation = self.oef_error_operation.value
+        return msg
 
 
 class DialogueErrorMessage(BaseMessage):
-    """"""
+    """
+    This message is used by the OEF Node to notify the agent about an error in sending a message to another agent.
+    """
 
-    def to_envelope(self) -> agent_pb2.Envelope:
-        pass
+    def __init__(self, msg_id: int, dialogue_id: int, origin: str):
+        super().__init__(msg_id)
+        self.dialogue_id = dialogue_id
+        self.origin = origin
+
+    def to_pb(self) -> agent_pb2.Server.AgentMessage:
+        msg = agent_pb2.Server.AgentMessage()
+        msg.answer_id = self.msg_id
+        msg.dialogue_error.dialogue_id = self.dialogue_id
+        msg.dialogue_error.origin = self.origin
+        return msg
+
+
+class SearchResult(BaseMessage):
+    """
+    This message is used by the OEF Node to return results after an agent/service query.
+    """
+
+    def __init__(self, search_id: int, agents: List[str]):
+        super().__init__(search_id)
+        self.agents = agents
+
+    def to_pb(self) -> agent_pb2.Server.SearchResult:
+        msg = agent_pb2.Server.AgentMessage()
+        msg.answer_id = self.msg_id
+        msg.agents.agents.extend(self.agents)
+        return msg
 
 
 class AgentMessage(BaseMessage, ABC):
@@ -304,7 +341,7 @@ class Message(AgentMessage):
         self.destination = destination
         self.msg = msg
 
-    def to_envelope(self) -> agent_pb2.Envelope:
+    def to_pb(self) -> agent_pb2.Envelope:
         agent_msg = agent_pb2.Agent.Message()
         agent_msg.dialogue_id = self.dialogue_id
         agent_msg.destination = self.destination
@@ -353,7 +390,7 @@ class CFP(AgentMessage):
         self.query = query
         self.target = target
 
-    def to_envelope(self) -> agent_pb2.Agent.Message:
+    def to_pb(self) -> agent_pb2.Agent.Message:
         fipa_msg = fipa_pb2.Fipa.Message()
         fipa_msg.target = self.target
         cfp = fipa_pb2.Fipa.Cfp()
@@ -414,7 +451,7 @@ class Propose(AgentMessage):
         self.target = target
         self.proposals = proposals
 
-    def to_envelope(self) -> agent_pb2.Agent.Message:
+    def to_pb(self) -> agent_pb2.Agent.Message:
         fipa_msg = fipa_pb2.Fipa.Message()
         fipa_msg.target = self.target
         propose = fipa_pb2.Fipa.Propose()
@@ -469,7 +506,7 @@ class Accept(AgentMessage):
         self.destination = destination
         self.target = target
 
-    def to_envelope(self) -> agent_pb2.Agent.Message:
+    def to_pb(self) -> agent_pb2.Agent.Message:
         fipa_msg = fipa_pb2.Fipa.Message()
         fipa_msg.target = self.target
         accept = fipa_pb2.Fipa.Accept()
@@ -519,7 +556,7 @@ class Decline(AgentMessage):
         self.destination = destination
         self.target = target
 
-    def to_envelope(self):
+    def to_pb(self):
         fipa_msg = fipa_pb2.Fipa.Message()
         fipa_msg.target = self.target
         decline = fipa_pb2.Fipa.Decline()

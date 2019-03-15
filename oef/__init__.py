@@ -23,6 +23,9 @@
 Python SDK for OEF Agent development.
 """
 
+from .__version__ import __title__, __description__, __url__, __version__
+from .__version__ import __build__, __author__, __license__, __copyright__
+
 # Set default logging handler to avoid "No handler found" warnings.
 import logging
 from logging import NullHandler

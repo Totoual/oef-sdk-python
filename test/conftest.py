@@ -19,6 +19,7 @@
 # ------------------------------------------------------------------------------
 import inspect
 import os
+import pytest
 import subprocess
 import time
 
@@ -46,3 +47,14 @@ class NetworkOEFNode:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.p.terminate()
         self.p.kill()
+
+
+@pytest.fixture(scope= "module")
+def oef_addr() -> str:
+    return "127.0.0.1"
+
+
+@pytest.fixture(scope= "module")
+def oef_port() -> int:
+    return 3333
+

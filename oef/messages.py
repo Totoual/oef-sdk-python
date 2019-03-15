@@ -28,14 +28,12 @@ This module contains classes to manage serialization of data in Protobuf message
 """
 
 from abc import ABC, abstractmethod
-from typing import Optional, Union, List
-
 from enum import Enum
-
-from oef.schema import Description
+from typing import Union, List
 
 from oef import agent_pb2, fipa_pb2
 from oef.query import Query
+from oef.schema import Description
 
 NoneType = type(None)
 CFP_TYPES = Union[Query, bytes, NoneType]
@@ -232,6 +230,27 @@ class SearchServices(BaseMessage):
         envelope.msg_id = self.msg_id
         envelope.search_services.query.CopyFrom(self.query.to_pb())
         return envelope
+
+
+class OEFErrorMessage(BaseMessage):
+    """
+    This message is used by the OEF Node to notify the agent about generic error in the OEF.
+
+    It contains:
+
+    * a
+
+    """
+
+    def to_envelope(self) -> agent_pb2.Envelope:
+        pass
+
+
+class DialogueErrorMessage(BaseMessage):
+    """"""
+
+    def to_envelope(self) -> agent_pb2.Envelope:
+        pass
 
 
 class AgentMessage(BaseMessage, ABC):

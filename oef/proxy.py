@@ -38,7 +38,7 @@ import oef.agent_pb2 as agent_pb2
 from oef.core import OEFProxy
 from oef.messages import Message, CFP_TYPES, PROPOSE_TYPES, CFP, Propose, Accept, Decline, BaseMessage, \
     AgentMessage, RegisterDescription, RegisterService, UnregisterDescription, \
-    UnregisterService, SearchAgents, SearchServices
+    UnregisterService, SearchAgents, SearchServices, OEFErrorOperation
 from oef.query import Query
 from oef.schema import Description
 
@@ -108,7 +108,7 @@ class OEFNetworkProxy(OEFProxy):
         :return: ``None``
         :raises OEFConnectionError: if the connection has not been established yet.
         """
-        if self._server_writer is None:
+        if not self.is_connected():
             raise OEFConnectionError("Connection not established yet. Please use 'connect()'.")
         serialized_msg = protobuf_msg.SerializeToString()
         nbytes = struct.pack("I", len(serialized_msg))
@@ -122,7 +122,7 @@ class OEFNetworkProxy(OEFProxy):
         :return: ``None``
         :raises OEFConnectionError: if the connection has not been established yet.
         """
-        if self._server_reader is None:
+        if not self.is_connected():
             raise OEFConnectionError("Connection not established yet. Please use 'connect()'.")
         nbytes_packed = await self._server_reader.read(len(struct.pack("I", 0)))
         logger.debug("received ${0}".format(nbytes_packed))
@@ -228,18 +228,18 @@ class OEFLocalProxy(OEFProxy):
     class LocalNode:
         """A light-weight local implementation of a OEF Node."""
 
-        def __init__(self):
+        def __init__(self, loop=None):
             """
             Initialize a local (i.e. non-networked) implementation of an OEF Node
             """
             self.agents = dict()                     # type: Dict[str, Description]
             self.services = defaultdict(lambda: [])  # type: Dict[str, List[Description]]
+            self.loop = asyncio.get_event_loop() if loop is None else loop
             self._lock = asyncio.Lock()
             self._task = None
 
             self._read_queue = asyncio.Queue()  # type: asyncio.Queue
             self._queues = {}  # type: Dict[str, asyncio.Queue]
-            self.loop = asyncio.get_event_loop()
 
         def __enter__(self):
             self._task = asyncio.ensure_future(self.run())
@@ -296,7 +296,7 @@ class OEFLocalProxy(OEFProxy):
             """
             if self._task:
                 self._task.cancel()
-                asyncio.get_event_loop().run_until_complete(self._task)
+                self._task = None
 
         def register_agent(self, public_key: str, agent_description: Description) -> None:
             """
@@ -322,29 +322,38 @@ class OEFLocalProxy(OEFProxy):
             self.services[public_key].append(service_description)
             self._lock.release()
 
-        def unregister_agent(self, public_key: str) -> None:
+        def unregister_agent(self, public_key: str, msg_id: int) -> None:
             """
             Unregister an agent.
 
             :param public_key: the public key of the agent to be unregistered.
+            :param msg_id: the message id of the request.
             :return: ``None``
             """
             self.loop.run_until_complete(self._lock.acquire())
-            self.agents.pop(public_key)
+            if public_key not in self.agents:
+                self._send_oef_error(public_key, msg_id, OEFErrorOperation.UNREGISTER_DESCRIPTION)
+            else:
+                self.agents.pop(public_key)
             self._lock.release()
 
-        def unregister_service(self, public_key: str, service_description: Description) -> None:
+        def unregister_service(self, public_key: str, msg_id: int, service_description: Description) -> None:
             """
             Unregister a service agent.
 
             :param public_key: the public key of the service agent to be unregistered.
+            :param msg_id: the message id of the request.
             :param service_description: the description of the service agent to be unregistered.
             :return: ``None``
             """
             self.loop.run_until_complete(self._lock.acquire())
-            self.services[public_key].remove(service_description)
-            if len(self.services[public_key]) == 0:
-                self.services.pop(public_key)
+
+            if public_key not in self.services:
+                self._send_oef_error(public_key, msg_id, OEFErrorOperation.UNREGISTER_SERVICE)
+            else:
+                self.services[public_key].remove(service_description)
+                if len(self.services[public_key]) == 0:
+                    self.services.pop(public_key)
             self._lock.release()
 
         def search_agents(self, public_key: str, search_id: int, query: Query) -> None:
@@ -395,6 +404,10 @@ class OEFLocalProxy(OEFProxy):
             e = msg.to_envelope()
             destination = e.send_message.destination
 
+            if destination not in self._queues:
+                self._send_dialogue_error(origin, msg.msg_id, e.send_message.dialogue_id, destination)
+                return
+
             new_msg = agent_pb2.Server.AgentMessage()
             new_msg.answer_id = msg.msg_id
             new_msg.content.origin = origin
@@ -420,6 +433,19 @@ class OEFLocalProxy(OEFProxy):
             msg = agent_pb2.Server.AgentMessage()
             msg.answer_id = search_id
             msg.agents.agents.extend(agents)
+            self._queues[public_key].put_nowait(msg.SerializeToString())
+
+        def _send_oef_error(self, public_key: str, answer_id: int, operation_error: OEFErrorOperation) -> None:
+            msg = agent_pb2.Server.AgentMessage()
+            msg.answer_id = answer_id
+            msg.oef_error.operation = operation_error.value
+            self._queues[public_key].put_nowait(msg.SerializeToString())
+
+        def _send_dialogue_error(self, public_key: str, msg_id: int, dialogue_id: int, origin: str) -> None:
+            msg = agent_pb2.Server.AgentMessage()
+            msg.answer_id = msg_id
+            msg.dialogue_error.dialogue_id = dialogue_id
+            msg.dialogue_error.origin = origin
             self._queues[public_key].put_nowait(msg.SerializeToString())
 
     def __init__(self, public_key: str, local_node: LocalNode):
@@ -449,10 +475,10 @@ class OEFLocalProxy(OEFProxy):
         self.local_node.search_services(self.public_key, search_id, query)
 
     def unregister_agent(self, msg_id: int) -> None:
-        self.local_node.unregister_agent(self.public_key)
+        self.local_node.unregister_agent(self.public_key, msg_id)
 
     def unregister_service(self, msg_id: int, service_description: Description) -> None:
-        self.local_node.unregister_service(self.public_key, service_description)
+        self.local_node.unregister_service(self.public_key, msg_id, service_description)
 
     def send_message(self, msg_id: int, dialogue_id: int, destination: str, msg: bytes):
         msg = Message(msg_id, dialogue_id, destination, msg)
@@ -486,10 +512,14 @@ class OEFLocalProxy(OEFProxy):
         return True
 
     async def _receive(self) -> bytes:
+        if not self.is_connected():
+            raise OEFConnectionError("Connection not established yet. Please use 'connect()'.")
         data = await self._read_queue.get()
         return data
 
     def _send(self, msg: BaseMessage) -> None:
+        if not self.is_connected():
+            raise OEFConnectionError("Connection not established yet. Please use 'connect()'.")
         self._write_queue.put_nowait((self.public_key, msg))
 
     async def stop(self):

@@ -78,7 +78,7 @@ class ProtocCommand(distutils.cmd.Command):
         arguments = []
         arguments.append("--proto_path=%s" % self.proto_path)
         arguments.append("--python_out=oef")
-        arguments += glob.glob(os.path.join("oef-core-protocol", "*.proto"))
+        arguments += glob.glob(os.path.join(self.proto_path, "*.proto"))
         return arguments
 
     def _fix_import_statements_in_all_protobuf_modules(self):
@@ -88,9 +88,9 @@ class ProtocCommand(distutils.cmd.Command):
 
     def _fix_import_statements_in_protobuf_module(self, filename):
         for line in fileinput.input(filename, inplace=True):
-            line = re.sub("^(import \w*_pb2)", "from . \g<1>", line.strip())
+            line = re.sub("^(import \w*_pb2)", "from . \g<1>", line)
             # stdout redirected to the file (fileinput.input with inplace=True)
-            print(line)
+            print(line, end="")
 
 
 class BuildPyCommand(setuptools.command.build_py.build_py):

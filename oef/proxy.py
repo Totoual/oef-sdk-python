@@ -66,18 +66,21 @@ class OEFNetworkProxy(OEFProxy):
      * Establish a connection with another agent
     """
 
-    def __init__(self, public_key: str, oef_addr: str, port: int = DEFAULT_OEF_NODE_PORT) -> None:
+    def __init__(self, public_key: str, oef_addr: str, port: int = DEFAULT_OEF_NODE_PORT,
+                 loop: asyncio.AbstractEventLoop = None) -> None:
         """
         Initialize the proxy to the OEF Node.
 
         :param public_key: the public key used in the protocols.
         :param oef_addr: the IP address of the OEF node.
         :param port: port number for the connection.
+        :param loop: the event loop.
         """
         super().__init__(public_key)
 
         self.oef_addr = oef_addr
         self.port = port
+        self._loop = loop if loop is not None else asyncio.get_event_loop()
 
         # these are setup in _connect_to_server
         self._connection = None
@@ -136,11 +139,11 @@ class OEFNetworkProxy(OEFProxy):
             logger.debug("Read bytes: {}".format(len(data)))
         return data
 
-    async def connect(self) -> bool:
+    async def connect(self, loop: asyncio.AbstractEventLoop = None) -> bool:
         if self.is_connected() and not self._server_writer.transport.is_closing():
             return True
 
-        event_loop = asyncio.get_event_loop()
+        event_loop = self._loop if loop is None else loop
         self._connection = await self._connect_to_server(event_loop)
         self._server_reader, self._server_writer = self._connection
         # Step 1: Agent --(ID)--> OEFCore

@@ -84,24 +84,27 @@ class Agent(AgentInterface, ABC):
         self._loop = asyncio.get_event_loop() if loop is None else loop
         self._task = None
 
-    def run(self) -> None:
+    def run(self, loop: asyncio.AbstractEventLoop = None) -> None:
         """
         Run the agent synchronously. That is, until :func:`~oef.agents.Agent.stop` is not called.
 
+        :param loop: the event loop to be used. Defaults to the one used in the constructor.
         :return: ``None``
         """
-        self._loop.run_until_complete(self.async_run())
+        _loop = self._loop if loop is None else loop
+        _loop.run_until_complete(self.async_run(loop=_loop))
 
-    async def async_run(self) -> None:
+    async def async_run(self, loop: asyncio.AbstractEventLoop = None) -> None:
         """
         Run the agent asynchronously.
 
         :return: ``None``
         """
+        _loop = self._loop if loop is None else loop
         if self._task:
             logger.warning("Agent {} already scheduled for running.".format(self.public_key))
             return
-        self._task = asyncio.ensure_future(self._oef_proxy.loop(self))
+        self._task = asyncio.ensure_future(self._oef_proxy.loop(self), loop=_loop)
         await self._task
 
     def stop(self) -> None:
@@ -116,35 +119,41 @@ class Agent(AgentInterface, ABC):
             self._task.cancel()
             self._task = None
 
-    def connect(self) -> bool:
+    def connect(self, loop: asyncio.AbstractEventLoop = None) -> bool:
         """
         Connect to the OEF Node.
 
+        :param loop: the event loop to be used. Defaults to the one used in the constructor.
         :return: True if the connection has been established successfully, False otherwise.
         """
-        return self._loop.run_until_complete(self.async_connect())
+        _loop = self._loop if loop is None else loop
+        return _loop.run_until_complete(self.async_connect(loop=_loop))
 
-    async def async_connect(self) -> bool:
+    async def async_connect(self, loop: asyncio.AbstractEventLoop = None) -> bool:
         """
         The asynchronous counterpart of :func:`~oef.agents.Agent.connect`.
 
+        :param loop: the event loop to be used. Defaults to the one used in the constructor.
         :return: True if the connection has been established successfully, False otherwise.
         """
+        _loop = self._loop if loop is None else loop
         logger.debug("{}: Connecting...".format(self.public_key))
-        status = await self._oef_proxy.connect()
+        status = await self._oef_proxy.connect(loop=_loop)
         if status:
             logger.debug("{}: Connection established.".format(self.public_key))
         else:
             raise OEFConnectionError("Public key already in use.")
         return status
 
-    def disconnect(self) -> None:
+    def disconnect(self, loop: asyncio.AbstractEventLoop = None) -> None:
         """
         Disconnect from the OEF Node.
 
+        :param loop: the event loop to be used. Defaults to the one used in the constructor.
         :return: ``None``
         """
-        return self._loop.run_until_complete(self.async_disconnect())
+        _loop = self._loop if loop is None else loop
+        return _loop.run_until_complete(self.async_disconnect())
 
     async def async_disconnect(self) -> None:
         """

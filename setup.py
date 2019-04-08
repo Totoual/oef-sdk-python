@@ -32,7 +32,6 @@ import glob
 import setuptools.command.build_py
 from setuptools import setup
 
-
 class ProtocCommand(distutils.cmd.Command):
     """A custom command to generate Python Protobuf modules from oef-core-protocol"""
 
@@ -90,7 +89,7 @@ class ProtocCommand(distutils.cmd.Command):
         for line in fileinput.input(filename, inplace=True):
             line = re.sub("^(import \w*_pb2)", "from . \g<1>", line)
             # stdout redirected to the file (fileinput.input with inplace=True)
-            print(line, end="")
+            #print(line, end="")
 
 
 class BuildPyCommand(setuptools.command.build_py.build_py):

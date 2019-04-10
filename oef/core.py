@@ -43,11 +43,10 @@ class OEFCoreInterface(ABC):
     """Methods to interact with an OEF node."""
 
     @abstractmethod
-    async def connect(self, loop: asyncio.AbstractEventLoop = None) -> bool:
+    async def connect(self) -> bool:
         """
         Connect to the OEF Node
 
-        :param loop: the event loop to set up the connection.
         :return: True if the connection has been established, False otherwise.
         """
 

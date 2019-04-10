@@ -13,3 +13,8 @@ Release History
 - Improved API for the query language.
 - Added support for negotiation with multiple buyers/sellers, not only one-to-one.
 - Misc bug fix.
+
+0.3.0 (2018-04-19)
+-------------------
+
+TODO

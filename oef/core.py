@@ -99,6 +99,18 @@ class OEFCoreInterface(ABC):
         """
 
     @abstractmethod
+    def search_services_wide(self, msg_id: int, query: Query) -> None:
+        """
+        Search for a particular service widely. This allows constrained search of all
+        services that have been registered with the OEF Search. All matching services will be returned
+        (potentially including services offered by ourselves).
+
+        :param msg_id: the identifier of the message.
+        :param query: the constraint on the matching services
+        :return: ``None``.
+        """
+
+    @abstractmethod
     def unregister_agent(self, msg_id: int) -> None:
         """
         Remove the description of an agent from the OEF. This agent will no longer be queryable
@@ -314,6 +326,16 @@ class ConnectionInterface(ABC):
         :return: ``None``
         """
 
+    @abstractmethod
+    def on_search_result_wide(self, search_id: int, agents: List[str]) -> None:
+        """
+        Handler for Search Result Wide messages.
+
+        :param search_id: the identifier of the search to whom the result is answering.
+        :param agents: the list of identifiers of the agents compliant with the search constraints.
+        :return: ``None``
+        """
+
 
 class AgentInterface(DialogueInterface, ConnectionInterface, ABC):
     """
@@ -372,6 +394,8 @@ class OEFProxy(OEFCoreInterface, ABC):
             logger.debug("loop {0}".format(case))
             if case == "agents":
                 agent.on_search_result(msg.answer_id, msg.agents.agents)
+            elif case == "agents_wide":
+                agent.on_search_result_wide(msg.answer_id, msg.agents.agents)
             elif case == "oef_error":
                 agent.on_oef_error(msg.answer_id, OEFErrorOperation(msg.oef_error.operation))
             elif case == "dialogue_error":

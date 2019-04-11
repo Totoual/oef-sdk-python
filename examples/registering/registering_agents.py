@@ -34,7 +34,7 @@ if __name__ == '__main__':
     print("Agent successfully connected.")
 
     # specify message id to receive any error messages from the OEF Node.
-    # look at the 'onOEFError' agent method.
+    # look at the 'on_oef_error' agent method.
     message_id = 0
     agent.register_agent(message_id, Description({}))
     print("Agent registered to the OEF Node.")

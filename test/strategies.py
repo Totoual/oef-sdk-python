@@ -66,6 +66,7 @@ range_values = one_of(*[tuples(integers_32, integers_32),
                         tuples(text(), text()),
                         tuples(locations(), locations())])
 
+
 @composite
 def attributes_schema(draw):
     attr_name = draw(text())

@@ -84,27 +84,24 @@ class Agent(AgentInterface, ABC):
         self._loop = asyncio.get_event_loop() if loop is None else loop
         self._task = None
 
-    def run(self, loop: asyncio.AbstractEventLoop = None) -> None:
+    def run(self) -> None:
         """
         Run the agent synchronously. That is, until :func:`~oef.agents.Agent.stop` is not called.
 
-        :param loop: the event loop to be used. Defaults to the one used in the constructor.
         :return: ``None``
         """
-        _loop = self._loop if loop is None else loop
-        _loop.run_until_complete(self.async_run(loop=_loop))
+        self._loop.run_until_complete(self.async_run())
 
-    async def async_run(self, loop: asyncio.AbstractEventLoop = None) -> None:
+    async def async_run(self) -> None:
         """
         Run the agent asynchronously.
 
         :return: ``None``
         """
-        _loop = self._loop if loop is None else loop
         if self._task:
             logger.warning("Agent {} already scheduled for running.".format(self.public_key))
             return
-        self._task = asyncio.ensure_future(self._oef_proxy.loop(self), loop=_loop)
+        self._task = asyncio.ensure_future(self._oef_proxy.loop(self), loop=self._loop)
         await self._task
 
     def stop(self) -> None:
@@ -119,41 +116,35 @@ class Agent(AgentInterface, ABC):
             self._task.cancel()
             self._task = None
 
-    def connect(self, loop: asyncio.AbstractEventLoop = None) -> bool:
+    def connect(self) -> bool:
         """
         Connect to the OEF Node.
 
-        :param loop: the event loop to be used. Defaults to the one used in the constructor.
         :return: True if the connection has been established successfully, False otherwise.
         """
-        _loop = self._loop if loop is None else loop
-        return _loop.run_until_complete(self.async_connect(loop=_loop))
+        return self._loop.run_until_complete(self.async_connect())
 
-    async def async_connect(self, loop: asyncio.AbstractEventLoop = None) -> bool:
+    async def async_connect(self) -> bool:
         """
         The asynchronous counterpart of :func:`~oef.agents.Agent.connect`.
 
-        :param loop: the event loop to be used. Defaults to the one used in the constructor.
         :return: True if the connection has been established successfully, False otherwise.
         """
-        _loop = self._loop if loop is None else loop
         logger.debug("{}: Connecting...".format(self.public_key))
-        status = await self._oef_proxy.connect(loop=_loop)
+        status = await self._oef_proxy.connect()
         if status:
             logger.debug("{}: Connection established.".format(self.public_key))
         else:
             raise OEFConnectionError("Public key already in use.")
         return status
 
-    def disconnect(self, loop: asyncio.AbstractEventLoop = None) -> None:
+    def disconnect(self) -> None:
         """
         Disconnect from the OEF Node.
 
-        :param loop: the event loop to be used. Defaults to the one used in the constructor.
         :return: ``None``
         """
-        _loop = self._loop if loop is None else loop
-        return _loop.run_until_complete(self.async_disconnect())
+        return self._loop.run_until_complete(self.async_disconnect())
 
     async def async_disconnect(self) -> None:
         """
@@ -219,41 +210,41 @@ class Agent(AgentInterface, ABC):
                      .format(self.public_key, msg_id, dialogue_id, destination, target))
         self._oef_proxy.send_decline(msg_id, dialogue_id, destination, target)
 
-    def on_message(self, msg_id: int, dialogue_id: int, origin: str, content: bytes):
+    async def on_message(self, msg_id: int, dialogue_id: int, origin: str, content: bytes):
         logger.debug("on_message: msg_id={}, dialogue_id={}, origin={}, content={}"
                      .format(msg_id, dialogue_id, origin, content))
         _warning_not_implemented_method(self.on_message.__name__)
 
-    def on_cfp(self, msg_id: int, dialogue_id: int, origin: str, target: int, query: CFP_TYPES):
+    async def on_cfp(self, msg_id: int, dialogue_id: int, origin: str, target: int, query: CFP_TYPES):
         logger.debug("on_cfp: msg_id={}, dialogue_id={}, origin={}, target={}, query={}"
                      .format(msg_id, dialogue_id, origin, target, query))
         _warning_not_implemented_method(self.on_cfp.__name__)
 
-    def on_propose(self, msg_id: int, dialogue_id: int, origin: str, target: int, proposals: PROPOSE_TYPES):
+    async def on_propose(self, msg_id: int, dialogue_id: int, origin: str, target: int, proposals: PROPOSE_TYPES):
         logger.debug("on_propose: msg_id={}, dialogue_id={}, origin={}, target={}, proposals={}"
                      .format(msg_id, dialogue_id, origin, target, proposals))
         _warning_not_implemented_method(self.on_propose.__name__)
 
-    def on_accept(self, msg_id: int, dialogue_id: int, origin: str, target: int):
+    async def on_accept(self, msg_id: int, dialogue_id: int, origin: str, target: int):
         logger.debug("on_accept: msg_id={}, dialogue_id={}, origin={}, target={}"
                      .format(msg_id, dialogue_id, origin, target))
         _warning_not_implemented_method(self.on_accept.__name__)
 
-    def on_decline(self, msg_id: int, dialogue_id: int, origin: str, target: int):
+    async def on_decline(self, msg_id: int, dialogue_id: int, origin: str, target: int):
         logger.debug("on_accept: msg_id={}, dialogue_id={}, origin={}, target={}"
                      .format(msg_id, dialogue_id, origin, target))
         _warning_not_implemented_method(self.on_decline.__name__)
 
-    def on_oef_error(self, answer_id: int, operation: OEFErrorOperation):
+    async def on_oef_error(self, answer_id: int, operation: OEFErrorOperation):
         logger.debug("on_oef_error: answer_id={}, operation={}".format(answer_id, operation))
         _warning_not_implemented_method(self.on_oef_error.__name__)
 
-    def on_dialogue_error(self, answer_id: int, dialogue_id: int, origin: str):
+    async def on_dialogue_error(self, answer_id: int, dialogue_id: int, origin: str):
         logger.debug("on_dialogue_error: answer_id={}, dialogue_id={}, origin={}"
                      .format(answer_id, dialogue_id, origin))
         _warning_not_implemented_method(self.on_dialogue_error.__name__)
 
-    def on_search_result(self, search_id: int, agents: List[str]):
+    async def on_search_result(self, search_id: int, agents: List[str]):
         logger.debug("on_search_result: search_id={}, agents={}".format(search_id, agents))
         _warning_not_implemented_method(self.on_search_result.__name__)
 

@@ -40,7 +40,7 @@ parser = ArgumentParser("local-greetings-agents", "A simple example with OEF Age
 class GreetingsAgent(Agent):
     """A class that implements the greeting agent."""
 
-    def on_message(self, msg_id: int, dialogue_id: int, origin: str, content: bytes):
+    async def on_message(self, msg_id: int, dialogue_id: int, origin: str, content: bytes):
         print("[{}]: Received message: msg_id={}, dialogue_id={}, origin={}, content={}"
               .format(self.public_key, msg_id, dialogue_id, origin, content))
         if content == b"hello":
@@ -50,7 +50,7 @@ class GreetingsAgent(Agent):
         if content == b"greetings":
             self.stop()
 
-    def on_search_result(self, search_id: int, agents: List[str]):
+    async def on_search_result(self, search_id: int, agents: List[str]):
         if len(agents) > 0:
             print("[{}]: Agents found: {}".format(self.public_key, agents))
             for a in agents:

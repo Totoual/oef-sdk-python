@@ -139,11 +139,11 @@ class OEFNetworkProxy(OEFProxy):
             logger.debug("Read bytes: {}".format(len(data)))
         return data
 
-    async def connect(self, loop: asyncio.AbstractEventLoop = None) -> bool:
+    async def connect(self) -> bool:
         if self.is_connected() and not self._server_writer.transport.is_closing():
             return True
 
-        event_loop = self._loop if loop is None else loop
+        event_loop = self._loop
         self._connection = await self._connect_to_server(event_loop)
         self._server_reader, self._server_writer = self._connection
         # Step 1: Agent --(ID)--> OEFCore

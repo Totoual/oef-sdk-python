@@ -18,22 +18,20 @@
 #   limitations under the License.
 #
 # ------------------------------------------------------------------------------
-
-
-import distutils.cmd
-import distutils.log
+import distutils
 import fileinput
+import glob
 import os
 import re
 import shutil
 import subprocess
-import glob
+from distutils.cmd import Command
 
 import setuptools.command.build_py
 from setuptools import setup
 
 
-class ProtocCommand(distutils.cmd.Command):
+class ProtocCommand(Command):
     """A custom command to generate Python Protobuf modules from oef-core-protocol"""
 
     description = "Generate Python Protobuf modules from protobuf files specifications."
@@ -134,5 +132,5 @@ setup(
     install_requires=["protobuf"],
     tests_require=["tox"],
     python_requires='>=3.5',
-    license=about['__license__'],
+    license=about['__license__']
 )

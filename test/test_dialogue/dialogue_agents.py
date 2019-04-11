@@ -41,26 +41,26 @@ class SimpleSingleDialogueTest(SingleDialogue):
         self.notify = notify
         self.received_msg = []
 
-    def on_message(self, msg_id: int, content: bytes) -> None:
-        self._process_message((msg_id, content))
-
     def _process_message(self, arguments: Tuple):
         """Store the message into the state of the agent."""
         self.received_msg.append(arguments)
 
-    def on_cfp(self, msg_id: int, target: int, query: CFP_TYPES) -> None:
+    async def on_message(self, msg_id: int, content: bytes) -> None:
+        self._process_message((msg_id, content))
+
+    async def on_cfp(self, msg_id: int, target: int, query: CFP_TYPES) -> None:
         self._process_message((msg_id, target, query))
 
-    def on_propose(self, msg_id: int, target: int, proposals: PROPOSE_TYPES):
+    async def on_propose(self, msg_id: int, target: int, proposals: PROPOSE_TYPES):
         self._process_message((msg_id, target, proposals))
 
-    def on_decline(self, msg_id: int, target: int) -> None:
+    async def on_decline(self, msg_id: int, target: int) -> None:
         self._process_message((msg_id, target))
 
-    def on_accept(self, msg_id: int, target: int) -> None:
+    async def on_accept(self, msg_id: int, target: int) -> None:
         self._process_message((msg_id, target))
 
-    def on_dialogue_error(self, answer_id: int, dialogue_id: int, origin: str) -> None:
+    async def on_dialogue_error(self, answer_id: int, dialogue_id: int, origin: str) -> None:
         pass
 
 
@@ -75,7 +75,7 @@ class ClientSingleDialogueTest(SimpleSingleDialogueTest):
         self.received_msg = []
         self.agent.send_cfp(1, self.id, destination, 0, None)
 
-    def on_propose(self, msg_id: int, target: int, proposals: PROPOSE_TYPES):
+    async def on_propose(self, msg_id: int, target: int, proposals: PROPOSE_TYPES):
         assert type(proposals) == list and len(proposals) == 1
         proposal = proposals[0]
         self.notify(self.destination, proposal.values["price"])
@@ -105,15 +105,15 @@ class GroupDialogueTest(GroupDialogues):
 
 class AgentSingleDialogueTest(DialogueAgent):
 
-    def on_new_cfp(self, msg_id: int, dialogue_id: int, from_: str, target: int, query: CFP_TYPES) -> None:
+    async def on_new_cfp(self, msg_id: int, dialogue_id: int, from_: str, target: int, query: CFP_TYPES) -> None:
         self.register_dialogue(SimpleSingleDialogueTest(self, from_, dialogue_id))
-        self.on_cfp(msg_id, dialogue_id, from_, target, query)
+        await self.on_cfp(msg_id, dialogue_id, from_, target, query)
 
-    def on_new_message(self, msg_id: int, dialogue_id: int, from_: str, content: bytes) -> None:
+    async def on_new_message(self, msg_id: int, dialogue_id: int, from_: str, content: bytes) -> None:
         self.register_dialogue(SimpleSingleDialogueTest(self, from_, dialogue_id))
-        self.on_message(msg_id, dialogue_id, from_, content)
+        await self.on_message(msg_id, dialogue_id, from_, content)
 
-    def on_connection_error(self, operation: OEFErrorOperation) -> None:
+    async def on_connection_error(self, operation: OEFErrorOperation) -> None:
         pass
 
 
@@ -123,17 +123,17 @@ class ClientAgentGroupDialogueTest(DialogueAgent):
         super().__init__(oef_proxy)
         self.group = None
 
-    def on_search_result(self, search_id: int, agents: List[str]):
+    async def on_search_result(self, search_id: int, agents: List[str]):
         """For every agent returned in the service search, send a CFP to obtain resources from them."""
         self.group = GroupDialogueTest(self, agents)
 
-    def on_new_cfp(self, from_: str, dialogue_id: int, msg_id: int, target: int, query: CFP_TYPES) -> None:
+    async def on_new_cfp(self, from_: str, dialogue_id: int, msg_id: int, target: int, query: CFP_TYPES) -> None:
         pass
 
-    def on_new_message(self, msg_id: int, dialogue_id: int, from_: str, content: bytes) -> None:
+    async def on_new_message(self, msg_id: int, dialogue_id: int, from_: str, content: bytes) -> None:
         pass
 
-    def on_connection_error(self, operation: OEFErrorOperation) -> None:
+    async def on_connection_error(self, operation: OEFErrorOperation) -> None:
         pass
 
 
@@ -143,13 +143,13 @@ class ServerAgentTest(Agent):
         super().__init__(oef_proxy)
         self.price = price
 
-    def on_cfp(self, msg_id: int, dialogue_id: int, origin: str, target: int, query: CFP_TYPES):
+    async def on_cfp(self, msg_id: int, dialogue_id: int, origin: str, target: int, query: CFP_TYPES):
         proposal = Description({"price": self.price})
         self.send_propose(msg_id + 1, dialogue_id, origin, target + 1, [proposal])
 
-    def on_accept(self, msg_id: int, dialogue_id: int, origin: str, target: int):
+    async def on_accept(self, msg_id: int, dialogue_id: int, origin: str, target: int):
         self.stop()
 
-    def on_decline(self, msg_id: int, dialogue_id: int, origin: str, target: int):
+    async def on_decline(self, msg_id: int, dialogue_id: int, origin: str, target: int):
         self.stop()
 

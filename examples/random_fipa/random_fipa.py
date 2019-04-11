@@ -37,11 +37,11 @@ from oef.messages import CFP_TYPES, PROPOSE_TYPES
 
 class Negotiator(OEFAgent):
 
-    def on_cfp(self, msg_id: int,
-               dialogue_id: int,
-               origin: str,
-               target: int,
-               query: CFP_TYPES):
+    async def on_cfp(self, msg_id: int,
+                     dialogue_id: int,
+                     origin: str,
+                     target: int,
+                     query: CFP_TYPES):
         """
         Handle CFP messages. Do the following:
 
@@ -61,11 +61,11 @@ class Negotiator(OEFAgent):
             self.send_decline(msg_id, dialogue_id, origin, msg_id + 1)
             self.stop()
 
-    def on_propose(self, msg_id: int,
-                   dialogue_id: int,
-                   origin: str,
-                   target: int,
-                   proposal: PROPOSE_TYPES):
+    async def on_propose(self, msg_id: int,
+                         dialogue_id: int,
+                         origin: str,
+                         target: int,
+                         proposal: PROPOSE_TYPES):
         """
         Handle CFP messages. Do the following:
 

@@ -43,18 +43,18 @@ class WeatherClient(DialogueAgent):
         super().__init__(oef_proxy)
         self.group = None
 
-    def on_search_result(self, search_id: int, agents: List[str]):
+    async def on_search_result(self, search_id: int, agents: List[str]):
         """For every agent returned in the service search, send a CFP to obtain resources from them."""
         print("Agent found: {0}".format(agents))
         self.group = WeatherGroupDialogues(self, agents)
 
-    def on_new_cfp(self, from_: str, dialogue_id: int, msg_id: int, target: int, query: CFP_TYPES) -> None:
+    async def on_new_cfp(self, from_: str, dialogue_id: int, msg_id: int, target: int, query: CFP_TYPES) -> None:
         pass
 
-    def on_new_message(self, msg_id: int, dialogue_id: int, from_: str, content: bytes):
+    async def on_new_message(self, msg_id: int, dialogue_id: int, from_: str, content: bytes):
         pass
 
-    def on_connection_error(self, operation: OEFErrorOperation) -> None:
+    async def on_connection_error(self, operation: OEFErrorOperation) -> None:
         pass
 
 
@@ -69,20 +69,20 @@ class WeatherClientDialogue(SingleDialogue):
         self.data_received = 0
         self.agent.send_cfp(1, self.id, destination, 0, None)
 
-    def on_propose(self, msg_id: int, target: int, proposals: PROPOSE_TYPES):
+    async def on_propose(self, msg_id: int, target: int, proposals: PROPOSE_TYPES):
         print("Received propose from agent {0}".format(self.destination))
         assert type(proposals) == list and len(proposals) == 1
         proposal = proposals[0]
         print("Proposal: {}".format(proposal.values))
         self.notify(self.destination, proposal.values["price"])
 
-    def on_error(self):
+    async def on_error(self):
         pass
 
-    def on_cfp(self, msg_id: int, target: int, query: CFP_TYPES) -> None:
+    async def on_cfp(self, msg_id: int, target: int, query: CFP_TYPES) -> None:
         pass
 
-    def on_message(self, msg_id: int, content: bytes):
+    async def on_message(self, msg_id: int, content: bytes):
         """Extract and print data from incoming (simple) messages."""
 
         data = json.loads(content.decode("utf-8"))
@@ -90,13 +90,13 @@ class WeatherClientDialogue(SingleDialogue):
               .format(self.agent.public_key, self.destination, pprint.pformat(data)))
         self.agent.stop()
 
-    def on_decline(self, msg_id: int, target: int) -> None:
+    async def on_decline(self, msg_id: int, target: int) -> None:
         pass
 
-    def on_accept(self, msg_id: int, target: int) -> None:
+    async def on_accept(self, msg_id: int, target: int) -> None:
         pass
 
-    def on_dialogue_error(self, answer_id: int, dialogue_id: int, origin: str) -> None:
+    async def on_dialogue_error(self, answer_id: int, dialogue_id: int, origin: str) -> None:
         pass
 
     def send_answer(self, winner: str):
@@ -143,7 +143,7 @@ class WeatherStation(Agent):
         super().__init__(oef_proxy)
         self.price = price
 
-    def on_cfp(self, msg_id: int, dialogue_id: int, origin: str, target: int, query: CFP_TYPES):
+    async def on_cfp(self, msg_id: int, dialogue_id: int, origin: str, target: int, query: CFP_TYPES):
         """Send a simple Propose to the sender of the CFP."""
         print("[{0}]: Received CFP from {1}".format(self.public_key, origin))
 
@@ -152,7 +152,7 @@ class WeatherStation(Agent):
         print("[{}]: Sending propose at price: {}".format(self.public_key, self.price))
         self.send_propose(msg_id + 1, dialogue_id, origin, target + 1, [proposal])
 
-    def on_accept(self, msg_id: int, dialogue_id: int, origin: str, target: int):
+    async def on_accept(self, msg_id: int, dialogue_id: int, origin: str, target: int):
         """Once we received an Accept, send the requested data."""
         print("[{0}]: Received accept from {1}."
               .format(self.public_key, origin))
@@ -164,7 +164,7 @@ class WeatherStation(Agent):
         self.send_message(0, dialogue_id, origin, encoded_data)
         self.stop()
 
-    def on_decline(self, msg_id: int, dialogue_id: int, origin: str, target: int):
+    async def on_decline(self, msg_id: int, dialogue_id: int, origin: str, target: int):
         self.stop()
 
 

@@ -65,7 +65,7 @@ from oef.query import Query
 class WeatherClient(OEFAgent):
     """Class that implements the behavior of the weather client."""
 
-    def on_search_result(self, search_id: int, agents: List[str]):
+    async def on_search_result(self, search_id: int, agents: List[str]):
         """For every agent returned in the service search, send a CFP to obtain resources from them."""
         if len(agents) == 0:
             print("[{}]: No agent found. Stopping...".format(self.public_key))
@@ -79,7 +79,7 @@ class WeatherClient(OEFAgent):
             query = None
             self.send_cfp(1, 0, agent, 0, query)
 
-    def on_propose(self, msg_id: int, dialogue_id: int, origin: str, target: int, proposals: PROPOSE_TYPES):
+    async def on_propose(self, msg_id: int, dialogue_id: int, origin: str, target: int, proposals: PROPOSE_TYPES):
         """When we receive a Propose message, answer with an Accept."""
         print("[{0}]: Received propose from agent {1}".format(self.public_key, origin))
         for i, p in enumerate(proposals):
@@ -87,7 +87,7 @@ class WeatherClient(OEFAgent):
         print("[{0}]: Accepting Propose.".format(self.public_key))
         self.send_accept(msg_id, dialogue_id, origin, msg_id + 1)
 
-    def on_message(self, msg_id: int, dialogue_id: int, origin: str, content: bytes):
+    async def on_message(self, msg_id: int, dialogue_id: int, origin: str, content: bytes):
         """Extract and print data from incoming (simple) messages."""
         data = json.loads(content.decode("utf-8"))
         print("[{0}]: Received measurement from {1}: {2}".format(self.public_key, origin, pprint.pformat(data)))

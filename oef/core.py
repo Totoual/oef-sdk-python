@@ -319,8 +319,8 @@ class AgentInterface(DialogueInterface, ConnectionInterface, ABC):
     Interface to be implemented by agents.
     It contains methods from:
 
-    * DialogueInterface, that contains handlers for the incoming messages from other agents
-    * ConnectionInterface, that contains handlers for error and search result messages from the OEF.
+    * :class:`~oef.core.DialogueInterface`, that contains handlers for the incoming messages from other agents
+    * :class:`~oef.core.ConnectionInterface`, that contains handlers for error and search result messages from the OEF.
     """
     pass
 

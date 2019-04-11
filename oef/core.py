@@ -395,7 +395,7 @@ class OEFProxy(OEFCoreInterface, ABC):
             if case == "agents":
                 agent.on_search_result(msg.answer_id, msg.agents.agents)
             elif case == "agents_wide":
-                agent.on_search_result_wide(msg.answer_id, msg.agents.agents)
+                agent.on_search_result_wide(msg.answer_id, msg.agents_wide.agents)
             elif case == "oef_error":
                 agent.on_oef_error(msg.answer_id, OEFErrorOperation(msg.oef_error.operation))
             elif case == "dialogue_error":

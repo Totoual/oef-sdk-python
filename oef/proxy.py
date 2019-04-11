@@ -38,8 +38,8 @@ import oef.agent_pb2 as agent_pb2
 from oef.core import OEFProxy
 from oef.messages import Message, CFP_TYPES, PROPOSE_TYPES, CFP, Propose, Accept, Decline, BaseMessage, \
     AgentMessage, RegisterDescription, RegisterService, UnregisterDescription, \
-    UnregisterService, SearchAgents, SearchServices, OEFErrorOperation, SearchResult, OEFErrorMessage, \
-    DialogueErrorMessage
+    UnregisterService, SearchAgents, SearchServices, SearchServicesWide, OEFErrorOperation, SearchResult, \
+    OEFErrorMessage, DialogueErrorMessage
 from oef.query import Query
 from oef.schema import Description
 
@@ -192,7 +192,7 @@ class OEFNetworkProxy(OEFProxy):
         self._send(msg.to_pb())
 
     def search_services_wide(self, search_id: int, query: Query) -> None:
-        msg = SearchServices(search_id, query)
+        msg = SearchServicesWide(search_id, query)
         self._send(msg.to_pb())
 
     def send_message(self, msg_id: int, dialogue_id: int, destination: str, msg: bytes) -> None:

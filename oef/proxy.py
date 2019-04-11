@@ -433,15 +433,16 @@ class OEFLocalProxy(OEFProxy):
         def _send(self, public_key: str, msg):
             self._queues[public_key].put_nowait(msg.SerializeToString())
 
-    def __init__(self, public_key: str, local_node: LocalNode):
+    def __init__(self, public_key: str, local_node: LocalNode, loop: asyncio.AbstractEventLoop = None):
         """
         Initialize a OEF proxy for a local OEF Node (that is, :class:`~oef.proxy.OEFLocalProxy.LocalNode`
 
         :param public_key: the public key used in the protocols.
         :param local_node: the Local OEF Node object. This reference must be the same across the agents of interest.
+        :param loop: the event loop.
         """
 
-        super().__init__(public_key)
+        super().__init__(public_key, loop)
         self.local_node = local_node
         self._connection = None
         self._read_queue = None

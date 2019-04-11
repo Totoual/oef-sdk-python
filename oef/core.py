@@ -29,7 +29,7 @@ The core module that contains the main abstraction of the SDK.
 import asyncio
 import logging
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Optional
 
 from oef import agent_pb2 as agent_pb2
 from oef.messages import CFP_TYPES, PROPOSE_TYPES, OEFErrorOperation
@@ -328,8 +328,9 @@ class AgentInterface(DialogueInterface, ConnectionInterface, ABC):
 class OEFProxy(OEFCoreInterface, ABC):
     """Abstract definition of an OEF Proxy."""
 
-    def __init__(self, public_key):
+    def __init__(self, public_key: str, loop: Optional[asyncio.AbstractEventLoop] = None):
         self._public_key = public_key
+        self._loop = loop if loop is not None else asyncio.get_event_loop()
 
     @property
     def public_key(self) -> str:

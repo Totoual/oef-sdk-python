@@ -132,5 +132,6 @@ setup(
     install_requires=["protobuf"],
     tests_require=["tox"],
     python_requires='>=3.5',
-    license=about['__license__']
+    license=about['__license__'],
+    zip_safe=False
 )

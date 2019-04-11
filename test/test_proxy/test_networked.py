@@ -408,29 +408,29 @@ def test_oef_error_when_unregistering_an_unregistered_service(oef_addr, oef_port
         agent_1.disconnect()
 
 
-# def test_oef_error_when_failing_in_unregistering_agent(oef_addr, oef_port):
-#     """Test that we receive an OEF Error message when we try to unregister a non registered agent."""
-#
-#     with NetworkOEFNode():
-#
-#         agent_0 = AgentTest(OEFNetworkProxy("agent_0", oef_addr, oef_port))
-#         agent_1 = AgentTest(OEFNetworkProxy("agent_1", oef_addr, oef_port))
-#
-#         agent_0.connect()
-#         agent_1.connect()
-#
-#         asyncio.ensure_future(agent_0.async_run())
-#
-#         agent_0.on_oef_error = MagicMock()
-#         agent_0.unregister_agent(0)
-#         asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
-#
-#         agent_0.on_oef_error.assert_called_with(0, OEFErrorOperation.UNREGISTER_DESCRIPTION)
-#
-#         agent_0.stop()
-#
-#         agent_0.disconnect()
-#         agent_1.disconnect()
+def test_oef_error_when_failing_in_unregistering_agent(oef_addr, oef_port):
+    """Test that we receive an OEF Error message when we try to unregister a non registered agent."""
+
+    with NetworkOEFNode():
+
+        agent_0 = AgentTest(OEFNetworkProxy("agent_0", oef_addr, oef_port))
+        agent_1 = AgentTest(OEFNetworkProxy("agent_1", oef_addr, oef_port))
+
+        agent_0.connect()
+        agent_1.connect()
+
+        asyncio.ensure_future(agent_0.async_run())
+
+        agent_0.on_oef_error = MagicMock()
+        agent_0.unregister_agent(0)
+        asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
+
+        agent_0.on_oef_error.assert_called_with(0, OEFErrorOperation.UNREGISTER_DESCRIPTION)
+
+        agent_0.stop()
+
+        agent_0.disconnect()
+        agent_1.disconnect()
 
 
 def test_dialogue_error_when_destination_is_not_connected(oef_addr, oef_port):

@@ -383,7 +383,7 @@ def test_unregister_service():
         assert len(agent_0.received_msg) == 1
 
 
-def test_oef_error_when_failing_in_unregistering_service():
+def test_oef_error_when_unregistering_an_unregistered_service():
     """Test that we receive an OEF Error message when we try to unregister a non existing service."""
 
     with OEFLocalProxy.LocalNode() as node:
@@ -401,6 +401,31 @@ def test_oef_error_when_failing_in_unregistering_service():
         asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
 
         agent_0.on_oef_error.assert_called_with(0, OEFErrorOperation.UNREGISTER_SERVICE)
+
+        agent_0.stop()
+
+        agent_0.disconnect()
+        agent_1.disconnect()
+
+
+def test_oef_error_when_failing_in_unregistering_agent():
+    """Test that we receive an OEF Error message when we try to unregister a non registered agent."""
+
+    with OEFLocalProxy.LocalNode() as node:
+
+        agent_0 = AgentTest(OEFLocalProxy("agent_0", node))
+        agent_1 = AgentTest(OEFLocalProxy("agent_1", node))
+
+        agent_0.connect()
+        agent_1.connect()
+
+        asyncio.ensure_future(agent_0.async_run())
+
+        agent_0.on_oef_error = MagicMock()
+        agent_0.unregister_agent(0)
+        asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
+
+        agent_0.on_oef_error.assert_called_with(0, OEFErrorOperation.UNREGISTER_DESCRIPTION)
 
         agent_0.stop()
 

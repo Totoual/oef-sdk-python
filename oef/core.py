@@ -196,10 +196,10 @@ class DialogueInterface(ABC):
     """
 
     @abstractmethod
-    def on_message(self, msg_id: int,
-                   dialogue_id: int,
-                   origin: str,
-                   content: bytes) -> None:
+    async def on_message(self, msg_id: int,
+                         dialogue_id: int,
+                         origin: str,
+                         content: bytes) -> None:
         """
         Handler for simple messages.
 
@@ -211,11 +211,11 @@ class DialogueInterface(ABC):
         """
 
     @abstractmethod
-    def on_cfp(self, msg_id: int,
-               dialogue_id: int,
-               origin: str,
-               target: int,
-               query: CFP_TYPES) -> None:
+    async def on_cfp(self, msg_id: int,
+                     dialogue_id: int,
+                     origin: str,
+                     target: int,
+                     query: CFP_TYPES) -> None:
         """
         Handler for CFP messages.
 
@@ -228,11 +228,11 @@ class DialogueInterface(ABC):
         """
 
     @abstractmethod
-    def on_propose(self, msg_id: int,
-                   dialogue_id: int,
-                   origin: str,
-                   target: int,
-                   proposals: PROPOSE_TYPES) -> None:
+    async def on_propose(self, msg_id: int,
+                         dialogue_id: int,
+                         origin: str,
+                         target: int,
+                         proposals: PROPOSE_TYPES) -> None:
         """
         Handler for Propose messages.
 
@@ -245,10 +245,10 @@ class DialogueInterface(ABC):
         """
 
     @abstractmethod
-    def on_accept(self, msg_id: int,
-                  dialogue_id: int,
-                  origin: str,
-                  target: int) -> None:
+    async def on_accept(self, msg_id: int,
+                        dialogue_id: int,
+                        origin: str,
+                        target: int) -> None:
         """
         Handler for Accept messages.
 
@@ -260,10 +260,10 @@ class DialogueInterface(ABC):
         """
 
     @abstractmethod
-    def on_decline(self, msg_id: int,
-                   dialogue_id: int,
-                   origin: str,
-                   target: int) -> None:
+    async def on_decline(self, msg_id: int,
+                         dialogue_id: int,
+                         origin: str,
+                         target: int) -> None:
         """
         Handler for Decline messages.
 
@@ -279,7 +279,7 @@ class ConnectionInterface(ABC):
     """Methods to handle error and search result messages from the OEF Node."""
 
     @abstractmethod
-    def on_oef_error(self, answer_id: int, operation: OEFErrorOperation) -> None:
+    async def on_oef_error(self, answer_id: int, operation: OEFErrorOperation) -> None:
         """
         Handler for error messages from the OEF node.
 
@@ -290,7 +290,7 @@ class ConnectionInterface(ABC):
         """
 
     @abstractmethod
-    def on_dialogue_error(self, answer_id: int,
+    async def on_dialogue_error(self, answer_id: int,
                           dialogue_id: int,
                           origin: str) -> None:
         """
@@ -304,7 +304,7 @@ class ConnectionInterface(ABC):
         """
 
     @abstractmethod
-    def on_search_result(self, search_id: int, agents: List[str]) -> None:
+    async def on_search_result(self, search_id: int, agents: List[str]) -> None:
         """
         Handler for Search Result messages.
 
@@ -370,16 +370,16 @@ class OEFProxy(OEFCoreInterface, ABC):
             case = msg.WhichOneof("payload")
             logger.debug("loop {0}".format(case))
             if case == "agents":
-                agent.on_search_result(msg.answer_id, msg.agents.agents)
+                await agent.on_search_result(msg.answer_id, msg.agents.agents)
             elif case == "oef_error":
-                agent.on_oef_error(msg.answer_id, OEFErrorOperation(msg.oef_error.operation))
+                await agent.on_oef_error(msg.answer_id, OEFErrorOperation(msg.oef_error.operation))
             elif case == "dialogue_error":
-                agent.on_dialogue_error(msg.answer_id, msg.dialogue_error.dialogue_id, msg.dialogue_error.origin)
+                await agent.on_dialogue_error(msg.answer_id, msg.dialogue_error.dialogue_id, msg.dialogue_error.origin)
             elif case == "content":
                 content_case = msg.content.WhichOneof("payload")
                 logger.debug("msg content {0}".format(content_case))
                 if content_case == "content":
-                    agent.on_message(msg.answer_id, msg.content.dialogue_id, msg.content.origin, msg.content.content)
+                    await agent.on_message(msg.answer_id, msg.content.dialogue_id, msg.content.origin, msg.content.content)
                 elif content_case == "fipa":
                     fipa = msg.content.fipa
                     fipa_case = fipa.WhichOneof("msg")
@@ -393,18 +393,18 @@ class OEFProxy(OEFCoreInterface, ABC):
                             query = Query.from_pb(fipa.cfp.query)
                         else:
                             raise Exception("Query type not valid.")
-                        agent.on_cfp(msg.answer_id, msg.content.dialogue_id, msg.content.origin, fipa.target, query)
+                        await agent.on_cfp(msg.answer_id, msg.content.dialogue_id, msg.content.origin, fipa.target, query)
                     elif fipa_case == "propose":
                         propose_case = fipa.propose.WhichOneof("payload")
                         if propose_case == "content":
                             proposals = fipa.propose.content
                         else:
                             proposals = [Description.from_pb(propose) for propose in fipa.propose.proposals.objects]
-                        agent.on_propose(msg.answer_id, msg.content.dialogue_id, msg.content.origin, fipa.target,
+                        await agent.on_propose(msg.answer_id, msg.content.dialogue_id, msg.content.origin, fipa.target,
                                          proposals)
                     elif fipa_case == "accept":
-                        agent.on_accept(msg.answer_id, msg.content.dialogue_id, msg.content.origin, fipa.target)
+                        await agent.on_accept(msg.answer_id, msg.content.dialogue_id, msg.content.origin, fipa.target)
                     elif fipa_case == "decline":
-                        agent.on_decline(msg.answer_id, msg.content.dialogue_id, msg.content.origin, fipa.target)
+                        await agent.on_decline(msg.answer_id, msg.content.dialogue_id, msg.content.origin, fipa.target)
                     else:
                         logger.warning("Not implemented yet: fipa {0}".format(fipa_case))

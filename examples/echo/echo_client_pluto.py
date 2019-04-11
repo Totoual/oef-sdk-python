@@ -49,7 +49,7 @@ from typing import List
 
 from oef.agents import OEFAgent
 from oef.schema import DataModel, AttributeSchema
-from oef.query import Query, Constraint, Eq
+from oef.query import Query, Constraint, Eq, SearchResultItem
 
 
 # Uncomment the following lines if you want more output
@@ -69,13 +69,13 @@ class EchoClientAgent(OEFAgent):
         print("[{}]: Stopping...".format(self.public_key))
         self.stop()
 
-    def on_search_result_wide(self, search_id: int, agents: List[str]):
+    def on_search_result_wide(self, search_id: int, agents: List[SearchResultItem]):
         if len(agents) > 0:
-            print("[{}]: search_id={}. Agents found: {}".format(self.public_key, search_id, agents))
+            print("[{}]: search_id={}. Agents found: {}".format(self.public_key, search_id, len(agents)))
             msg = b"hello"
             for agent in agents:
-                print("[{}]: Sending {} to {}".format(self.public_key, msg, agent))
-                self.send_message(0, 0, agent, msg)
+                print("[{}]: Sending {} to {}".format(self.public_key, msg, agent.public_key))
+                self.send_message(0, 0, agent.public_key, msg)
         else:
             print("[{}]: No agent found. Stopping...".format(self.public_key))
             self.stop()

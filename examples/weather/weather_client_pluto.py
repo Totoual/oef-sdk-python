@@ -59,25 +59,25 @@ from oef.agents import OEFAgent
 from typing import List
 from oef.proxy import PROPOSE_TYPES
 from oef.query import Eq, Constraint
-from oef.query import Query
+from oef.query import Query, SearchResultItem
 
 
 class WeatherClient(OEFAgent):
     """Class that implements the behavior of the weather client."""
 
-    def on_search_result_wide(self, search_id: int, agents: List[str]):
+    def on_search_result_wide(self, search_id: int, agents: List[SearchResultItem]):
         """For every agent returned in the service search, send a CFP to obtain resources from them."""
         if len(agents) == 0:
             print("[{}]: No agent found. Stopping...".format(self.public_key))
             self.stop()
             return
 
-        print("[{0}]: Agent found: {1}".format(self.public_key, agents))
+        print("[{0}]: Agent found: {1}".format(self.public_key, len(agents)))
         for agent in agents:
-            print("[{0}]: Sending to agent {1}".format(self.public_key, agent))
+            print("[{0}]: Sending to agent {1}".format(self.public_key, agent.public_key))
             # we send a 'None' query, meaning "give me all the resources you can propose."
             query = None
-            self.send_cfp(1, 0, agent, 0, query)
+            self.send_cfp(1, 0, agent.public_key, 0, query)
 
     def on_propose(self, msg_id: int, dialogue_id: int, origin: str, target: int, proposals: PROPOSE_TYPES):
         """When we receive a Propose message, answer with an Accept."""

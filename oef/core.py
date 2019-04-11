@@ -33,7 +33,7 @@ from typing import List
 
 from oef import agent_pb2 as agent_pb2
 from oef.messages import CFP_TYPES, PROPOSE_TYPES, OEFErrorOperation
-from oef.query import Query
+from oef.query import Query, SearchResultItem
 from oef.schema import Description
 
 logger = logging.getLogger(__name__)
@@ -327,7 +327,7 @@ class ConnectionInterface(ABC):
         """
 
     @abstractmethod
-    def on_search_result_wide(self, search_id: int, agents: List[str]) -> None:
+    def on_search_result_wide(self, search_id: int, agents: List[SearchResultItem]) -> None:
         """
         Handler for Search Result Wide messages.
 
@@ -395,7 +395,15 @@ class OEFProxy(OEFCoreInterface, ABC):
             if case == "agents":
                 agent.on_search_result(msg.answer_id, msg.agents.agents)
             elif case == "agents_wide":
-                agent.on_search_result_wide(msg.answer_id, msg.agents_wide.agents)
+                result_items = []
+                for item in msg.agents_wide.result:
+                    core_key  = str(item.key,'ascii')
+                    core_addr = item.ip
+                    core_port = item.port
+                    for agt in item.agents:
+                        agent_key = str(agt.key,'ascii')
+                        result_items.append(SearchResultItem(agent_key, core_key, core_addr, core_port))
+                agent.on_search_result_wide(msg.answer_id, result_items)
             elif case == "oef_error":
                 agent.on_oef_error(msg.answer_id, OEFErrorOperation(msg.oef_error.operation))
             elif case == "dialogue_error":

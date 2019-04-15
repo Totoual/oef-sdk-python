@@ -208,41 +208,41 @@ class Agent(AgentInterface, ABC):
                      .format(self.public_key, msg_id, dialogue_id, destination, target))
         self._oef_proxy.send_decline(msg_id, dialogue_id, destination, target)
 
-    async def on_message(self, msg_id: int, dialogue_id: int, origin: str, content: bytes):
+    def on_message(self, msg_id: int, dialogue_id: int, origin: str, content: bytes):
         logger.debug("on_message: msg_id={}, dialogue_id={}, origin={}, content={}"
                      .format(msg_id, dialogue_id, origin, content))
         _warning_not_implemented_method(self.on_message.__name__)
 
-    async def on_cfp(self, msg_id: int, dialogue_id: int, origin: str, target: int, query: CFP_TYPES):
+    def on_cfp(self, msg_id: int, dialogue_id: int, origin: str, target: int, query: CFP_TYPES):
         logger.debug("on_cfp: msg_id={}, dialogue_id={}, origin={}, target={}, query={}"
                      .format(msg_id, dialogue_id, origin, target, query))
         _warning_not_implemented_method(self.on_cfp.__name__)
 
-    async def on_propose(self, msg_id: int, dialogue_id: int, origin: str, target: int, proposals: PROPOSE_TYPES):
+    def on_propose(self, msg_id: int, dialogue_id: int, origin: str, target: int, proposals: PROPOSE_TYPES):
         logger.debug("on_propose: msg_id={}, dialogue_id={}, origin={}, target={}, proposals={}"
                      .format(msg_id, dialogue_id, origin, target, proposals))
         _warning_not_implemented_method(self.on_propose.__name__)
 
-    async def on_accept(self, msg_id: int, dialogue_id: int, origin: str, target: int):
+    def on_accept(self, msg_id: int, dialogue_id: int, origin: str, target: int):
         logger.debug("on_accept: msg_id={}, dialogue_id={}, origin={}, target={}"
                      .format(msg_id, dialogue_id, origin, target))
         _warning_not_implemented_method(self.on_accept.__name__)
 
-    async def on_decline(self, msg_id: int, dialogue_id: int, origin: str, target: int):
+    def on_decline(self, msg_id: int, dialogue_id: int, origin: str, target: int):
         logger.debug("on_accept: msg_id={}, dialogue_id={}, origin={}, target={}"
                      .format(msg_id, dialogue_id, origin, target))
         _warning_not_implemented_method(self.on_decline.__name__)
 
-    async def on_oef_error(self, answer_id: int, operation: OEFErrorOperation):
+    def on_oef_error(self, answer_id: int, operation: OEFErrorOperation):
         logger.debug("on_oef_error: answer_id={}, operation={}".format(answer_id, operation))
         _warning_not_implemented_method(self.on_oef_error.__name__)
 
-    async def on_dialogue_error(self, answer_id: int, dialogue_id: int, origin: str):
+    def on_dialogue_error(self, answer_id: int, dialogue_id: int, origin: str):
         logger.debug("on_dialogue_error: answer_id={}, dialogue_id={}, origin={}"
                      .format(answer_id, dialogue_id, origin))
         _warning_not_implemented_method(self.on_dialogue_error.__name__)
 
-    async def on_search_result(self, search_id: int, agents: List[str]):
+    def on_search_result(self, search_id: int, agents: List[str]):
         logger.debug("on_search_result: search_id={}, agents={}".format(search_id, agents))
         _warning_not_implemented_method(self.on_search_result.__name__)
 

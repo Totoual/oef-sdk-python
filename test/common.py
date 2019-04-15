@@ -47,28 +47,28 @@ class AgentTest(Agent):
         """Store the message into the state of the agent."""
         self.received_msg.append(arguments)
 
-    async def on_message(self, msg_id: int, dialogue_id: int, origin: str, content: bytes):
+    def on_message(self, msg_id: int, dialogue_id: int, origin: str, content: bytes):
         self._process_message((msg_id, dialogue_id, origin, content))
 
-    async def on_search_result(self, search_id: int, agents: List[str]):
+    def on_search_result(self, search_id: int, agents: List[str]):
         self._process_message((search_id, sorted(agents)))
 
-    async def on_cfp(self, msg_id: int, dialogue_id: int, origin: str, target: int, query: CFP_TYPES):
+    def on_cfp(self, msg_id: int, dialogue_id: int, origin: str, target: int, query: CFP_TYPES):
         self._process_message((msg_id, dialogue_id, origin, target, query))
 
-    async def on_propose(self, msg_id: int, dialogue_id: int, origin: str, target: int, proposals: PROPOSE_TYPES):
+    def on_propose(self, msg_id: int, dialogue_id: int, origin: str, target: int, proposals: PROPOSE_TYPES):
         self._process_message((msg_id, dialogue_id, origin, target, proposals))
 
-    async def on_accept(self, msg_id: int, dialogue_id: int, origin: str, target: int):
+    def on_accept(self, msg_id: int, dialogue_id: int, origin: str, target: int):
         self._process_message((msg_id, dialogue_id, origin, target))
 
-    async def on_decline(self, msg_id: int, dialogue_id: int, origin: str, target: int):
+    def on_decline(self, msg_id: int, dialogue_id: int, origin: str, target: int):
         self._process_message((msg_id, dialogue_id, origin, target))
 
-    async def on_dialogue_error(self, answer_id: int, dialogue_id: int, origin: str):
+    def on_dialogue_error(self, answer_id: int, dialogue_id: int, origin: str):
         pass
 
-    async def on_oef_error(self, answer_id: int, operation: agent_pb2.Server.AgentMessage.OEFError.Operation):
+    def on_oef_error(self, answer_id: int, operation: agent_pb2.Server.AgentMessage.OEFError.Operation):
         pass
 
 

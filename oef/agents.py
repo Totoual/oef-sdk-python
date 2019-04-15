@@ -36,7 +36,7 @@ from typing import List, Optional
 from oef.core import OEFProxy, AgentInterface
 from oef.messages import OEFErrorOperation
 from oef.proxy import OEFNetworkProxy, PROPOSE_TYPES, CFP_TYPES, OEFLocalProxy, OEFConnectionError
-from oef.query import Query
+from oef.query import Query, SearchResultItem
 from oef.schema import Description
 
 logger = logging.getLogger(__name__)
@@ -188,6 +188,10 @@ class Agent(AgentInterface, ABC):
         """Search services. See :func:`~oef.core.OEFCoreInterface.search_services`."""
         self._oef_proxy.search_services(search_id, query)
 
+    def search_services_wide(self, search_id: int, query: Query) -> None:
+        """Search services widely. See :func:`~oef.core.OEFCoreInterface.search_services_wide`."""
+        self._oef_proxy.search_services_wide(search_id, query)
+
     def send_message(self, msg_id: int, dialogue_id: int, destination: str, msg: bytes) -> None:
         """Send a simple message. See :func:`~oef.core.OEFCoreInterface.send_message`."""
         logger.debug("Agent {}: msg_id={}, dialogue_id={}, destination={}, msg={}"
@@ -256,6 +260,10 @@ class Agent(AgentInterface, ABC):
     def on_search_result(self, search_id: int, agents: List[str]):
         logger.debug("on_search_result: search_id={}, agents={}".format(search_id, agents))
         _warning_not_implemented_method(self.on_search_result.__name__)
+
+    def on_search_result_wide(self, search_id: int, agents: List[SearchResultItem]):
+        logger.debug("on_search_result_wide: search_id={}, agents={}".format(search_id, agents))
+        _warning_not_implemented_method(self.on_search_result_wide.__name__)
 
 
 class OEFAgent(Agent):

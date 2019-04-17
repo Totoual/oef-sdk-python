@@ -18,20 +18,19 @@
 #   limitations under the License.
 #
 # ------------------------------------------------------------------------------
-import distutils
 import fileinput
 import glob
 import os
 import re
 import shutil
 import subprocess
-from distutils.cmd import Command
 
-import setuptools.command.build_py
-from setuptools import setup
+from setuptools import setup, Command
+from setuptools.command.build_py import build_py as _build_py
+from setuptools.command.develop import develop as _develop
 
 
-class ProtocCommand(Command):
+class protoc(Command):
     """A custom command to generate Python Protobuf modules from oef-core-protocol"""
 
     description = "Generate Python Protobuf modules from protobuf files specifications."
@@ -45,10 +44,7 @@ class ProtocCommand(Command):
         self._fix_import_statements_in_all_protobuf_modules()
 
     def _run_command(self, command):
-        self.announce(
-            "Running %s" % str(command),
-            level=distutils.log.INFO
-        )
+        self.announce("Running %s" % str(command))
         subprocess.check_call(command)
 
     def initialize_options(self):
@@ -91,12 +87,20 @@ class ProtocCommand(Command):
             print(line, end="")
 
 
-class BuildPyCommand(setuptools.command.build_py.build_py):
-    """Custom build command."""
+class build_py(_build_py):
+    """Custom build_py command."""
 
     def run(self):
         self.run_command("protoc")
-        setuptools.command.build_py.build_py.run(self)
+        _build_py.run(self)
+
+
+class develop(_develop):
+    """Custom develop command."""
+
+    def run(self):
+        self.run_command("protoc")
+        _develop.run(self)
 
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -117,8 +121,9 @@ setup(
     long_description_content_type='text/markdown',
     packages=['oef'],
     cmdclass={
-        'protoc': ProtocCommand,
-        'build_py': BuildPyCommand
+        'protoc': protoc,
+        'build_py': build_py,
+        'develop': develop,
     },
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',

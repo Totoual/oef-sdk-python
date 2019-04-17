@@ -90,7 +90,7 @@ The ``GreetingsAgent`` behaviour is implemented in the following callbacks:
     class GreetingsAgent(OEFAgent):
         """A class that implements the greeting agent."""
 
-        async def on_message(self, msg_id: int, dialogue_id: int, origin: str, content: bytes):
+        def on_message(self, msg_id: int, dialogue_id: int, origin: str, content: bytes):
             print("[{}]: Received message: msg_id={}, dialogue_id={}, origin={}, content={}"
                   .format(self.public_key, msg_id, dialogue_id, origin, content))
             if content == b"hello":
@@ -100,7 +100,7 @@ The ``GreetingsAgent`` behaviour is implemented in the following callbacks:
             if content == b"greetings":
                 self.stop()
 
-        async def on_search_result(self, search_id: int, agents: List[str]):
+        def on_search_result(self, search_id: int, agents: List[str]):
             if len(agents) > 0:
                 print("[{}]: Agents found: {}".format(self.public_key, agents))
                 for a in agents:

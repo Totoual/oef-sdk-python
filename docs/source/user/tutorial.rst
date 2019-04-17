@@ -70,7 +70,7 @@ how to implement the associated callbacks.
         The class that defines the behaviour of the echo service agent.
         """
 
-        async def on_message(self, msg_id: int, dialogue_id: int, origin: str, content: bytes):
+        def on_message(self, msg_id: int, dialogue_id: int, origin: str, content: bytes):
             print("[{}]: Received message: msg_id={}, dialogue_id={}, origin={}, content={}"
                   .format(self.public_key, msg_id, dialogue_id, origin, content))
             print("[{}]: Sending {} back to {}".format(self.public_key, content, origin))
@@ -185,13 +185,13 @@ the consumer of the service we implemented in the previous section.
         The class that defines the behaviour of the echo client agent.
         """
 
-        async def on_message(self, msg_id: int, dialogue_id: int, origin: str, content: bytes):
+        def on_message(self, msg_id: int, dialogue_id: int, origin: str, content: bytes):
             print("[{}]: Received message: msg_id={}, dialogue_id={}, origin={}, content={}"
                   .format(self.public_key, msg_id, dialogue_id, origin, content))
             print("[{}]: Stopping...".format(self.public_key))
             self.stop()
 
-        async def on_search_result(self, search_id: int, agents: List[str]):
+        def on_search_result(self, search_id: int, agents: List[str]):
             if len(agents) > 0:
                 print("[{}]: search_id={}. Agents found: {}".format(self.public_key, search_id, agents))
                 msg = b"hello"
@@ -482,7 +482,7 @@ This is the code for our weather station:
             WEATHER_DATA_MODEL
         )
 
-        async def on_cfp(self, msg_id: int, dialogue_id: int, origin: str, target: int, query: CFP_TYPES):
+        def on_cfp(self, msg_id: int, dialogue_id: int, origin: str, target: int, query: CFP_TYPES):
             """Send a simple Propose to the sender of the CFP."""
             print("[{0}]: Received CFP from {1}".format(self.public_key, origin))
 
@@ -492,7 +492,7 @@ This is the code for our weather station:
             print("[{}]: Sending propose at price: {}".format(self.public_key, price))
             self.send_propose(msg_id + 1, dialogue_id, origin, target + 1, [proposal])
 
-        async def on_accept(self, msg_id: int, dialogue_id: int, origin: str, target: int):
+        def on_accept(self, msg_id: int, dialogue_id: int, origin: str, target: int):
             """Once we received an Accept, send the requested data."""
             print("[{0}]: Received accept from {1}."
                   .format(self.public_key, origin))
@@ -542,7 +542,7 @@ This is the code for the client of the weather service:
     class WeatherClient(OEFAgent):
         """Class that implements the behavior of the weather client."""
 
-        async def on_search_result(self, search_id: int, agents: List[str]):
+        def on_search_result(self, search_id: int, agents: List[str]):
             """For every agent returned in the service search, send a CFP to obtain resources from them."""
             if len(agents) == 0:
                 print("[{}]: No agent found. Stopping...".format(self.public_key))
@@ -556,7 +556,7 @@ This is the code for the client of the weather service:
                 query = None
                 self.send_cfp(1, 0, agent, 0, query)
 
-        async def on_propose(self, msg_id: int, dialogue_id: int, origin: str, target: int, proposals: PROPOSE_TYPES):
+        def on_propose(self, msg_id: int, dialogue_id: int, origin: str, target: int, proposals: PROPOSE_TYPES):
             """When we receive a Propose message, answer with an Accept."""
             print("[{0}]: Received propose from agent {1}".format(self.public_key, origin))
             for i, p in enumerate(proposals):
@@ -564,7 +564,7 @@ This is the code for the client of the weather service:
             print("[{0}]: Accepting Propose.".format(self.public_key))
             self.send_accept(msg_id, dialogue_id, origin, msg_id + 1)
 
-        async def on_message(self, msg_id: int, dialogue_id: int, origin: str, content: bytes):
+        def on_message(self, msg_id: int, dialogue_id: int, origin: str, content: bytes):
             """Extract and print data from incoming (simple) messages."""
             data = json.loads(content.decode("utf-8"))
             print("[{0}]: Received measurement from {1}: {2}".format(self.public_key, origin, pprint.pformat(data)))

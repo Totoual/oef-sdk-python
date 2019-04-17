@@ -63,13 +63,13 @@ class EchoClientAgent(OEFAgent):
     The class that defines the behaviour of the echo client agent.
     """
 
-    async def on_message(self, msg_id: int, dialogue_id: int, origin: str, content: bytes):
+    def on_message(self, msg_id: int, dialogue_id: int, origin: str, content: bytes):
         print("[{}]: Received message: msg_id={}, dialogue_id={}, origin={}, content={}"
               .format(self.public_key, msg_id, dialogue_id, origin, content))
         print("[{}]: Stopping...".format(self.public_key))
         self.stop()
 
-    async def on_search_result(self, search_id: int, agents: List[str]):
+    def on_search_result(self, search_id: int, agents: List[str]):
         if len(agents) > 0:
             print("[{}]: search_id={}. Agents found: {}".format(self.public_key, search_id, agents))
             msg = b"hello"

@@ -274,7 +274,7 @@ Hence, to specify a behaviour when a search result is called, you need to:
 
     class MyAgent(OEFAgent):
 
-        async def on_search_result(self, search_id: int, agents: List[str]):
+        def on_search_result(self, search_id: int, agents: List[str]):
             ...
 
 
@@ -351,7 +351,7 @@ The parameter ``origin`` will be the public key of the sender, ``"sender"``.
 
     class RecipientAgent(OEFAgent):
 
-        async def on_message(msg_id: int, origin: str, dialogue_id: int, content: bytes):
+        def on_message(msg_id: int, origin: str, dialogue_id: int, content: bytes):
             ...
 
 Here follows the sequence diagram that depicts the message exchange:
@@ -445,7 +445,7 @@ The parameter ``origin`` will be the public key of the sender (in this case ``"b
 
     class Seller(OEFAgent):
 
-        async def on_cfp(self, msg_id: int,
+        def on_cfp(self, msg_id: int,
                    dialogue_id: int,
                    origin: str,
                    target: int,
@@ -478,7 +478,7 @@ the `Seller`.
 
     class Seller(OEFAgent):
 
-        async def on_cfp(self, msg_id: int,
+        def on_cfp(self, msg_id: int,
                    dialogue_id: int,
                    origin: str,
                    target: int,
@@ -512,7 +512,7 @@ The parameter ``origin`` will be the public key of the sender (in this case ``"s
 
     class Buyer(OEFAgent):
 
-        async def on_propose(self, msg_id: int,
+        def on_propose(self, msg_id: int,
                        dialogue_id: int,
                        origin: str,
                        target: int,
@@ -540,7 +540,7 @@ the `Buyer`.
 
     class Buyer(OEFAgent):
 
-        async def on_propose(self, msg_id: int,
+        def on_propose(self, msg_id: int,
                        dialogue_id: int,
                        origin: str,
                        target: int,
@@ -571,7 +571,7 @@ The parameter ``origin`` will be the public key of the sender (in this case ``"b
 
     class Seller(OEFAgent):
 
-        async def on_accept(self, msg_id: int,
+        def on_accept(self, msg_id: int,
                       dialogue_id: int,
                       origin: str,
                       target: int) -> None:
@@ -606,7 +606,7 @@ the `Buyer`.
 
     class Buyer(OEFAgent):
 
-        async def on_propose(self, msg_id: int,
+        def on_propose(self, msg_id: int,
                        dialogue_id: int,
                        origin: str,
                        target: int,
@@ -637,7 +637,7 @@ The parameter ``origin`` will be the public key of the sender (in this case ``"b
 
     class Seller(OEFAgent):
 
-        async def on_decline(self, msg_id: int,
+        def on_decline(self, msg_id: int,
                        dialogue_id: int,
                        origin: str,
                        target: int) -> None:
@@ -732,7 +732,7 @@ of the :func:`~oef.agents.Agent.on_oef_error` method.
 
     class MyAgent(OEFAgent):
 
-        async def on_oef_error(self, answer_id: int, operation: OEFErrorOperation):
+        def on_oef_error(self, answer_id: int, operation: OEFErrorOperation):
             ...
 
 
@@ -759,7 +759,7 @@ of the :func:`~oef.agents.Agent.on_dialogue_error` method.
 
     class MyAgent(OEFAgent):
 
-        async def on_dialogue_error(self, answer_id: int, dialogue_id: int, origin: str):
+        def on_dialogue_error(self, answer_id: int, dialogue_id: int, origin: str):
             ...
 
 The ``answer_id``, ``dialogue_id`` and ``origin`` parameters will be the same of, respectively,

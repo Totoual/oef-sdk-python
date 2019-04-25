@@ -30,6 +30,6 @@ RUN python3 -m pip install pipenv
 
 RUN apt-get install -y protobuf-compiler
 
-RUN mkdir /build
-COPY . /build
-WORKDIR /build
+RUN mkdir /source
+COPY . /source
+WORKDIR /source

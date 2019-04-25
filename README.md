@@ -22,11 +22,23 @@ by choosing the release for your platform. The name format is `protoc-$(VERSION)
 (e.g. for Windows look at `protoc-$(VERSION)-win32.zip`).
   - [Compile from source](https://github.com/protocolbuffers/protobuf/blob/master/src/README.md#c-installation---windows).
 
-    
+- On MacOS
+
+        brew install protobuf
+
+
 ## Installation
 In order to install `oef`, run:
 
-    python setup.py install
+    python setup.py install 
+
+or
+
+    python3 setup.py install 
+
+or
+
+    python3 setup.py install
 
 ## Run the tests
 

@@ -89,7 +89,7 @@ class WeatherStation(OEFAgent):
 if __name__ == "__main__":
     agent = WeatherStation("weather_station", oef_addr="127.0.0.1", oef_port=3333)
     agent.connect()
-    agent.register_service(0, agent.weather_service_description)
+    agent.register_service(77, agent.weather_service_description)
 
     print("[{}]: Waiting for clients...".format(agent.public_key))
     try:

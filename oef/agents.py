@@ -102,6 +102,9 @@ class Agent(AgentInterface, ABC):
         self._task = asyncio.ensure_future(self._oef_proxy.loop(self), loop=self._loop)
         await self._task
 
+    def halt_loop(self):
+        self._loop.stop()
+
     def stop(self) -> None:
         """
         Stop the agent. Specifically, if :func:`~oef.agents.Agent.run` or :func:`~oef.agents.Agent.async_run`

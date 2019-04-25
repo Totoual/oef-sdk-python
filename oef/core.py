@@ -414,7 +414,9 @@ class OEFProxy(OEFCoreInterface, ABC):
 
     def __init__(self, public_key: str, loop: Optional[asyncio.AbstractEventLoop] = None):
         self._public_key = public_key
-        self._loop = loop if loop is not None else asyncio.get_event_loop()
+        if not loop:
+            raise Exception("no NONE loop")
+        self._loop = loop if loop else asyncio.get_event_loop()
 
     @property
     def public_key(self) -> str:
@@ -454,6 +456,7 @@ class OEFProxy(OEFCoreInterface, ABC):
             msg.ParseFromString(data)
             case = msg.WhichOneof("payload")
             logger.debug("loop {0}".format(case))
+
             if case == "agents":
                 await agent.async_on_search_result(msg.answer_id, msg.agents.agents)
             elif case == "agents_wide":
@@ -461,10 +464,11 @@ class OEFProxy(OEFCoreInterface, ABC):
                 for item in msg.agents_wide.result:
                     core_key  = str(item.key,'ascii')
                     core_addr = item.ip
+                    distance = item.distance
                     core_port = item.port
                     for agt in item.agents:
                         agent_key = str(agt.key,'ascii')
-                        result_items.append(SearchResultItem(agent_key, core_key, core_addr, core_port))
+                        result_items.append(SearchResultItem(agent_key, core_key, core_addr, core_port, distance))
                 agent.on_search_result_wide(msg.answer_id, result_items)
             elif case == "oef_error":
                 await agent.async_on_oef_error(msg.answer_id, OEFErrorOperation(msg.oef_error.operation))
@@ -508,3 +512,6 @@ class OEFProxy(OEFCoreInterface, ABC):
                                                      fipa.target)
                     else:
                         logger.warning("Not implemented yet: fipa {0}".format(fipa_case))
+            else:
+                print("UNKNOWN CASE: ", case)
+                exit(76)

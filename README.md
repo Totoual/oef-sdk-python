@@ -36,6 +36,10 @@ or
 
     python3 setup.py install 
 
+or
+
+    python3 setup.py install
+
 ## Run the tests
 
 To run the tests, you need to clone [oef-core](https://github.com/fetchai/oef-core) repository and build the project.

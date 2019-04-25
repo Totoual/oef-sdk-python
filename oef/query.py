@@ -1153,3 +1153,15 @@ class Query(ProtobufSerializable):
         if type(other) != Query:
             return False
         return self.constraints == other.constraints and self.model == other.model
+
+class SearchResultItem:
+    def __init__(self, public_key: str,
+                 core_key : str,
+                 core_addr: str,
+                 core_port: int):
+        self.public_key = public_key
+        self.core_key   = core_key
+        self.core_addr  = core_addr
+        self.core_port  = core_port
+        
+

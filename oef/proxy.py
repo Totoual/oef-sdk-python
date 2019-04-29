@@ -76,11 +76,10 @@ class OEFNetworkProxy(OEFProxy):
         :param port: port number for the connection.
         :param loop: the event loop.
         """
-        super().__init__(public_key)
+        super().__init__(public_key, loop=loop)
 
         self.oef_addr = oef_addr
         self.port = port
-        self._loop = loop if loop is not None else asyncio.get_event_loop()
 
         # these are setup in _connect_to_server
         self._connection = None

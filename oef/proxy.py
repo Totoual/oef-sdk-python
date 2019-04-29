@@ -38,8 +38,8 @@ import oef.agent_pb2 as agent_pb2
 from oef.core import OEFProxy
 from oef.messages import Message, CFP_TYPES, PROPOSE_TYPES, CFP, Propose, Accept, Decline, BaseMessage, \
     AgentMessage, RegisterDescription, RegisterService, UnregisterDescription, \
-    UnregisterService, SearchAgents, SearchServices, OEFErrorOperation, SearchResult, OEFErrorMessage, \
-    DialogueErrorMessage
+    UnregisterService, SearchAgents, SearchServices, SearchServicesWide, OEFErrorOperation, SearchResult, \
+    OEFErrorMessage, DialogueErrorMessage
 from oef.query import Query
 from oef.schema import Description
 
@@ -190,6 +190,10 @@ class OEFNetworkProxy(OEFProxy):
         msg = SearchServices(search_id, query)
         self._send(msg.to_pb())
 
+    def search_services_wide(self, search_id: int, query: Query) -> None:
+        msg = SearchServicesWide(search_id, query)
+        self._send(msg.to_pb())
+
     def send_message(self, msg_id: int, dialogue_id: int, destination: str, msg: bytes) -> None:
         msg = Message(msg_id, dialogue_id, destination, msg)
         self._send(msg.to_pb())
@@ -325,6 +329,9 @@ class OEFLocalProxy(OEFProxy):
             self.services[public_key].append(service_description)
             self._lock.release()
 
+        def register_service_wide(self, public_key: str, service_description: Description):
+            self.register_service(public_key, service_description);
+
         def unregister_agent(self, public_key: str, msg_id: int) -> None:
             """
             Unregister an agent.
@@ -458,6 +465,9 @@ class OEFLocalProxy(OEFProxy):
 
     def search_services(self, search_id: int, query: Query) -> None:
         self.local_node.search_services(self.public_key, search_id, query)
+
+    def search_services_wide(self, search_id: int, query: Query) -> None:
+        self.local_node.search_services_wide(self.public_key, search_id, query)
 
     def unregister_agent(self, msg_id: int) -> None:
         self.local_node.unregister_agent(self.public_key, msg_id)

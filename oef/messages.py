@@ -232,6 +232,39 @@ class SearchServices(BaseMessage):
         return envelope
 
 
+class SearchServicesWide(BaseMessage):
+    """
+    This message is used for searching services registered at an OEF Search Node.
+    It contains:
+
+    * a search id, that identifies the search query. This id will be used
+      by the sender in order to distinguish different incoming search results.
+    * a query, i.e. a list of constraints defined over a data model.
+
+    If everything works correctly, eventually, the sender of the message will receive a
+    search result message (containing agents ids and the OEF Core node they are connected to)
+    and the agent's :func:`~oef.core.OEFCoreInterface.on_search_result_wide` is executed.
+
+    It is used in the method :func:`~oef.core.OEFCoreInterface.search_services_wide`.
+    """
+
+    def __init__(self, msg_id: int, query: Query):
+        """
+        Initialize a SearchServices message.
+
+        :param msg_id: the identifier of the message.
+        :param query: the query that describe the agent we are looking for.
+        """
+        super().__init__(msg_id)
+        self.query = query
+
+    def to_pb(self) -> agent_pb2.Envelope:
+        envelope = agent_pb2.Envelope()
+        envelope.msg_id = self.msg_id
+        envelope.search_services_wide.query.CopyFrom(self.query.to_pb())
+        return envelope
+
+
 class OEFErrorMessage(BaseMessage):
     """
     This message is used by the OEF Node to notify the agent about generic error in the OEF.

@@ -71,40 +71,35 @@ class Agent(AgentInterface, ABC):
         """
         return self._oef_proxy.public_key
 
-    def __init__(self, oef_proxy: OEFProxy, loop: Optional[asyncio.AbstractEventLoop] = None):
+    def __init__(self, oef_proxy: OEFProxy):
         """
         Initialize the OEF Agent.
 
         :param oef_proxy: the proxy for an OEF Node.
-        :param loop: the Asyncio loop to use for running asynchronous operations.
-                     if ``None``, it defaults to the current global event loop.
         """
 
         self._oef_proxy = oef_proxy
-        self._loop = asyncio.get_event_loop() if loop is None else loop
+        self._loop = self._oef_proxy._loop
         self._task = None
 
-    def run(self, loop: asyncio.AbstractEventLoop = None) -> None:
+    def run(self) -> None:
         """
         Run the agent synchronously. That is, until :func:`~oef.agents.Agent.stop` is not called.
 
-        :param loop: the event loop to be used. Defaults to the one used in the constructor.
         :return: ``None``
         """
-        _loop = self._loop if loop is None else loop
-        _loop.run_until_complete(self.async_run(loop=_loop))
+        self._loop.run_until_complete(self.async_run())
 
-    async def async_run(self, loop: asyncio.AbstractEventLoop = None) -> None:
+    async def async_run(self) -> None:
         """
         Run the agent asynchronously.
 
         :return: ``None``
         """
-        _loop = self._loop if loop is None else loop
         if self._task:
             logger.warning("Agent {} already scheduled for running.".format(self.public_key))
             return
-        self._task = asyncio.ensure_future(self._oef_proxy.loop(self), loop=_loop)
+        self._task = asyncio.ensure_future(self._oef_proxy.loop(self), loop=self._loop)
         await self._task
 
     def stop(self) -> None:
@@ -119,41 +114,35 @@ class Agent(AgentInterface, ABC):
             self._task.cancel()
             self._task = None
 
-    def connect(self, loop: asyncio.AbstractEventLoop = None) -> bool:
+    def connect(self) -> bool:
         """
         Connect to the OEF Node.
 
-        :param loop: the event loop to be used. Defaults to the one used in the constructor.
         :return: True if the connection has been established successfully, False otherwise.
         """
-        _loop = self._loop if loop is None else loop
-        return _loop.run_until_complete(self.async_connect(loop=_loop))
+        return self._loop.run_until_complete(self.async_connect())
 
-    async def async_connect(self, loop: asyncio.AbstractEventLoop = None) -> bool:
+    async def async_connect(self) -> bool:
         """
         The asynchronous counterpart of :func:`~oef.agents.Agent.connect`.
 
-        :param loop: the event loop to be used. Defaults to the one used in the constructor.
         :return: True if the connection has been established successfully, False otherwise.
         """
-        _loop = self._loop if loop is None else loop
         logger.debug("{}: Connecting...".format(self.public_key))
-        status = await self._oef_proxy.connect(loop=_loop)
+        status = await self._oef_proxy.connect()
         if status:
             logger.debug("{}: Connection established.".format(self.public_key))
         else:
             raise OEFConnectionError("Public key already in use.")
         return status
 
-    def disconnect(self, loop: asyncio.AbstractEventLoop = None) -> None:
+    def disconnect(self) -> None:
         """
         Disconnect from the OEF Node.
 
-        :param loop: the event loop to be used. Defaults to the one used in the constructor.
         :return: ``None``
         """
-        _loop = self._loop if loop is None else loop
-        return _loop.run_until_complete(self.async_disconnect())
+        return self._loop.run_until_complete(self.async_disconnect())
 
     async def async_disconnect(self) -> None:
         """
@@ -265,17 +254,19 @@ class OEFAgent(Agent):
     It provides a nicer constructor that does not require to instantiate :class:`~oef.proxy.OEFLocalProxy` explicitly.
     """
 
-    def __init__(self, public_key: str, oef_addr: str, oef_port: int = 3333, **kwargs) -> None:
+    def __init__(self, public_key: str, oef_addr: str, oef_port: int = 3333,
+                 loop: Optional[asyncio.AbstractEventLoop] = None):
         """
         Initialize an OEF network agent.
 
         :param public_key: the public key (identifier) of the agent
         :param oef_addr: the IP address of the OEF Node.
         :param oef_port: the port for the connection.
+        :param loop: the event loop.
         """
         self._oef_addr = oef_addr
         self._oef_port = oef_port
-        super().__init__(OEFNetworkProxy(public_key, str(self._oef_addr), self._oef_port), **kwargs)
+        super().__init__(OEFNetworkProxy(public_key, str(self._oef_addr), self._oef_port, loop=loop))
 
 
 class LocalAgent(Agent):
@@ -287,11 +278,13 @@ class LocalAgent(Agent):
     Notice: other agents need to be constructed with the same :class:`~oef.proxy.OEFLocalProxy.LocalNode` instance.
     """
 
-    def __init__(self, public_key: str, local_node: OEFLocalProxy.LocalNode, **kwargs):
+    def __init__(self, public_key: str, local_node: OEFLocalProxy.LocalNode,
+                 loop: Optional[asyncio.AbstractEventLoop] = None):
         """
         Initialize an OEF local agent.
 
         :param public_key: the public key (identifier) of the agent.
         :param local_node: an instance of the local implementation of the OEF Node.
+        :param loop: the event loop.
         """
-        super().__init__(OEFLocalProxy(public_key, local_node), **kwargs)
+        super().__init__(OEFLocalProxy(public_key, local_node, loop=loop))

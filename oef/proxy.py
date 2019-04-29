@@ -76,11 +76,10 @@ class OEFNetworkProxy(OEFProxy):
         :param port: port number for the connection.
         :param loop: the event loop.
         """
-        super().__init__(public_key)
+        super().__init__(public_key, loop=loop)
 
         self.oef_addr = oef_addr
         self.port = port
-        self._loop = loop if loop is not None else asyncio.get_event_loop()
 
         # these are setup in _connect_to_server
         self._connection = None
@@ -139,11 +138,11 @@ class OEFNetworkProxy(OEFProxy):
             logger.debug("Read bytes: {}".format(len(data)))
         return data
 
-    async def connect(self, loop: asyncio.AbstractEventLoop = None) -> bool:
+    async def connect(self) -> bool:
         if self.is_connected() and not self._server_writer.transport.is_closing():
             return True
 
-        event_loop = self._loop if loop is None else loop
+        event_loop = self._loop
         self._connection = await self._connect_to_server(event_loop)
         self._server_reader, self._server_writer = self._connection
         # Step 1: Agent --(ID)--> OEFCore
@@ -433,15 +432,16 @@ class OEFLocalProxy(OEFProxy):
         def _send(self, public_key: str, msg):
             self._queues[public_key].put_nowait(msg.SerializeToString())
 
-    def __init__(self, public_key: str, local_node: LocalNode):
+    def __init__(self, public_key: str, local_node: LocalNode, loop: asyncio.AbstractEventLoop = None):
         """
         Initialize a OEF proxy for a local OEF Node (that is, :class:`~oef.proxy.OEFLocalProxy.LocalNode`
 
         :param public_key: the public key used in the protocols.
         :param local_node: the Local OEF Node object. This reference must be the same across the agents of interest.
+        :param loop: the event loop.
         """
 
-        super().__init__(public_key)
+        super().__init__(public_key, loop)
         self.local_node = local_node
         self._connection = None
         self._read_queue = None

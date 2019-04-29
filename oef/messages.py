@@ -77,7 +77,7 @@ class RegisterDescription(BaseMessage):
     This message is used for registering a new agent  in the Agent Directory of an OEF Node.
     The agent is described by a :class:`~oef.schema.Description` object.
 
-    It is used in the method :func:`~oef.core.OEFCoreInterface.register_agent`.
+    It is used in the method :func:`~oef.agents.Agent.register_agent`.
     """
 
     def __init__(self, msg_id: int, agent_description: Description):
@@ -102,7 +102,7 @@ class RegisterService(BaseMessage):
     This message is used for registering a new agent in the Service Directory of an OEF Node.
     The service agent is described by a :class:`~oef.schema.Description` object.
 
-    It is used in the method :func:`~oef.core.OEFCoreInterface.register_service`.
+    It is used in the method :func:`~oef.agents.Agent.register_service`.
     """
 
     def __init__(self, msg_id: int, service_description: Description):
@@ -126,7 +126,7 @@ class UnregisterDescription(BaseMessage):
     """
     This message is used for unregistering an agent in the Agent Directory of an OEF Node.
 
-    It is used in the method :func:`~oef.core.OEFCoreInterface.unregister_agent`.
+    It is used in the method :func:`~oef.agents.Agent.unregister_agent`.
     """
 
     def __init__(self, msg_id: int):
@@ -148,7 +148,7 @@ class UnregisterService(BaseMessage):
     This message is used for unregistering a `(service agent, description)` in the Service Directory of an OEF Node.
     The service agent is described by a :class:`~oef.schema.Description` object.
 
-    It is used in the method :func:`~oef.core.OEFCoreInterface.unregister_service`.
+    It is used in the method :func:`~oef.agents.Agent.unregister_service`.
     """
 
     def __init__(self, msg_id: int, service_description):
@@ -178,9 +178,9 @@ class SearchAgents(BaseMessage):
     * a query, i.e. a list of constraints defined over a data model.
 
     If everything works correctly, eventually, the sender of the message will receive a
-    search result message and the agent's :func:`~oef.core.OEFCoreInterface.on_search_result` will be executed.
+    search result message and the agent's :func:`~oef.agents.Agent.on_search_result` will be executed.
 
-    It is used in the method :func:`~oef.core.OEFCoreInterface.search_agents`.
+    It is used in the method :func:`~oef.agents.Agent.search_agents`.
     """
 
     def __init__(self, msg_id: int, query: Query):
@@ -210,9 +210,9 @@ class SearchServices(BaseMessage):
     * a query, i.e. a list of constraints defined over a data model.
 
     If everything works correctly, eventually, the sender of the message will receive a
-    search result message and the agent's :func:`~oef.core.OEFCoreInterface.on_search_result` is executed.
+    search result message and the agent's :func:`~oef.agents.Agent.on_search_result` is executed.
 
-    It is used in the method :func:`~oef.core.OEFCoreInterface.search_services`.
+    It is used in the method :func:`~oef.agents.Agent.search_services`.
     """
 
     def __init__(self, msg_id: int, query: Query):
@@ -319,9 +319,9 @@ class Message(AgentMessage):
     * a sequence of bytes, that is the content of the message.
 
     If everything works correctly, eventually, the recipient will receive the content of the message
-     and the recipient's :func:`~oef.core.OEFCoreInterface.on_message` is executed.
+     and the recipient's :func:`~oef.agents.Agent.on_message` is executed.
 
-    It is used in the method :func:`~oef.core.OEFCoreInterface.send_message`.
+    It is used in the method :func:`~oef.agents.Agent.send_message`.
     """
 
     def __init__(self, msg_id: int,
@@ -365,9 +365,9 @@ class CFP(AgentMessage):
     * a query, that describes the resources the sender is interested in.
 
     If everything works correctly, eventually, the recipient will receive the content of the message
-    and the recipient's :func:`~oef.core.OEFCoreInterface.on_cfp` is executed.
+    and the recipient's :func:`~oef.agents.Agent.on_cfp` is executed.
 
-    It is used in the method :func:`~oef.core.OEFCoreInterface.send_cfp`.
+    It is used in the method :func:`~oef.agents.Agent.send_cfp`.
     """
 
     def __init__(self, msg_id: int,
@@ -425,9 +425,9 @@ class Propose(AgentMessage):
     * a list of proposals describing the resources that the seller proposes.
 
     If everything works correctly, eventually, the recipient will receive the content of the message
-    and the recipient's :func:`~oef.core.OEFCoreInterface.on_propose` is executed.
+    and the recipient's :func:`~oef.agents.Agent.on_propose` is executed.
 
-    It is used in the method :func:`~oef.core.OEFCoreInterface.send_propose`.
+    It is used in the method :func:`~oef.agents.Agent.send_propose`.
     """
 
     def __init__(self, msg_id: int,
@@ -484,9 +484,9 @@ class Accept(AgentMessage):
     * target, that is, the identifier of the message to whom this message is targeting.
 
     If everything works correctly, eventually, the recipient will receive the content of the message
-    and the recipient's :func:`~oef.core.OEFCoreInterface.on_accept` is executed.
+    and the recipient's :func:`~oef.agents.Agent.on_accept` is executed.
 
-    It is used in the method :func:`~oef.core.OEFCoreInterface.send_accept`.
+    It is used in the method :func:`~oef.agents.Agent.send_accept`.
     """
 
     def __init__(self, msg_id: int,
@@ -533,9 +533,9 @@ class Decline(AgentMessage):
     * target, that is, the identifier of the message to whom this message is targeting.
 
     If everything works correctly, eventually, the recipient will receive the content of the message
-    and the recipient's :func:`~oef.core.OEFCoreInterface.on_decline` is executed.
+    and the recipient's :func:`~oef.agents.Agent.on_decline` is executed.
 
-    It is used in the method :func:`~oef.core.OEFCoreInterface.send_decline`.
+    It is used in the method :func:`~oef.agents.Agent.send_decline`.
     """
 
     def __init__(self, msg_id: int,

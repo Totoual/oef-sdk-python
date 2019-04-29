@@ -74,11 +74,11 @@ With the OEF Node running, we can start to connect agents.
 Write Agents
 ~~~~~~~~~~~~
 
-The ``GreetingsAgent`` does the following:
+The ``GreetingsAgent`` behaviour is implemented in the following callbacks:
 
-* ``on_search_result``: Once the agent receives results from its search,
+* :func:`~oef.agents.Agent.on_search_result`: Once the agent receives results from its search,
   the agent sends a ``"hello"`` message to each agent discovered.
-* ``on_message``: whenever the agent receives a ``"hello"`` message,
+* :func:`~oef.agents.Agent.on_message`: whenever the agent receives a ``"hello"`` message,
   it answers with ``"greetings"``.
 
 
@@ -87,7 +87,7 @@ The ``GreetingsAgent`` does the following:
     from typing import List
     from oef.agents import OEFAgent
 
-    class GreetingsAgent(Agent):
+    class GreetingsAgent(OEFAgent):
         """A class that implements the greeting agent."""
 
         def on_message(self, msg_id: int, dialogue_id: int, origin: str, content: bytes):

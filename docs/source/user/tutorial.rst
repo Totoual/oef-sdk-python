@@ -69,7 +69,7 @@ how to implement the associated callbacks.
         """
         The class that defines the behaviour of the echo service agent.
         """
-    
+
         def on_message(self, msg_id: int, dialogue_id: int, origin: str, content: bytes):
             print("[{}]: Received message: msg_id={}, dialogue_id={}, origin={}, content={}"
                   .format(self.public_key, msg_id, dialogue_id, origin, content))
@@ -253,7 +253,7 @@ all service agents that satisfy the given constraints.
 .. code-block:: python
 
     print("[{}]: Make search to the OEF".format(client_agent.public_key))
-    client_agent.search_services(0, echo_query))
+    client_agent.search_services(0, echo_query)
 
 Wait for search results
 ```````````````````````
@@ -434,6 +434,8 @@ Once we have the data model, we can provide an `instance` of that model. To do s
 
 .. code-block:: python
 
+    from oef.schema import Description
+
     weather_service_description = Description(
         {
             "wind_speed": False,
@@ -464,6 +466,7 @@ This is the code for our weather station:
    from oef.agents import OEFAgent
    from oef.schema import Description
    from oef.messages import CFP_TYPES
+   import json
 
 
     class WeatherStation(OEFAgent):
@@ -534,6 +537,7 @@ This is the code for the client of the weather service:
     import pprint
     from oef.agents import OEFAgent
     from oef.messages import PROPOSE_TYPES
+    import json
 
     class WeatherClient(OEFAgent):
         """Class that implements the behavior of the weather client."""

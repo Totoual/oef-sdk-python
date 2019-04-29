@@ -25,10 +25,10 @@ import time
 
 from hypothesis import settings
 
-"""The timeout used to test asynchronicity."""
+# The timeout used to test asynchronicity.
 _ASYNCIO_DELAY = 0.1
 
-"""Settings for the Hypothesis package"""
+# Settings for the Hypothesis package
 settings(max_examples=100)
 
 ROOT_DIR = ".."
@@ -49,12 +49,14 @@ class NetworkOEFNode:
         self.p.kill()
 
 
-@pytest.fixture(scope= "module")
+@pytest.fixture(scope="module")
 def oef_addr() -> str:
+    """The IP address pointing to the OEF Node to use during the tests."""
     return "127.0.0.1"
 
 
-@pytest.fixture(scope= "module")
+@pytest.fixture(scope="module")
 def oef_port() -> int:
+    """The port of the connection to the OEF Node to use during the tests."""
     return 3333
 

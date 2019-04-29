@@ -41,12 +41,12 @@ class SimpleSingleDialogueTest(SingleDialogue):
         self.notify = notify
         self.received_msg = []
 
-    def on_message(self, msg_id: int, content: bytes) -> None:
-        self._process_message((msg_id, content))
-
     def _process_message(self, arguments: Tuple):
         """Store the message into the state of the agent."""
         self.received_msg.append(arguments)
+
+    def on_message(self, msg_id: int, content: bytes) -> None:
+        self._process_message((msg_id, content))
 
     def on_cfp(self, msg_id: int, target: int, query: CFP_TYPES) -> None:
         self._process_message((msg_id, target, query))

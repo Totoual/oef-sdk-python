@@ -15,8 +15,8 @@ to data sources (such as IoT devices) to propose a data service as a *Data Servi
 and AEAs looking for data can get it as a *Data Service Consumer*. AEAs will register,
 query, and negotiate data services on behalf of their representatives.
 
-.. image:: https://github.com/uvue-git/oef-sdk-python/wiki/imgs/fetch-world.png
-   :target: https://github.com/uvue-git/oef-sdk-python/wiki/imgs/fetch-world.png
+.. image:: https://github.com/fetchai/oef-sdk-python/wiki/imgs/fetch-world.png
+   :target: https://github.com/fetchai/oef-sdk-python/wiki/imgs/fetch-world.png
    :alt: Fetch World
 
 The *Fetch network* achieves this by providing a 3-level layered software architecture:
@@ -47,8 +47,8 @@ For each connected and correctly identified agent, the AgentDirectory stores its
 description (as a property list), and session. If the agent registers a data service,
 the data service along with the agent ID will be stored in the ServiceDirectory.
 
-.. image:: https://github.com/uvue-git/oef-sdk-python/wiki/imgs/oef-core.png
-   :target: https://github.com/uvue-git/oef-sdk-python/wiki/imgs/oef-core.png
+.. image:: https://github.com/fetchai/oef-sdk-python/wiki/imgs/oef-core.png
+   :target: https://github.com/fetchai/oef-sdk-python/wiki/imgs/oef-core.png
    :alt: OEF-core
 
 For simplicity, in the next, we use `OEF core` and `OEF node` interchangeably.
@@ -71,8 +71,8 @@ Agent-to-OEF core interactions
  and identify itself using its public key.
 
 
-.. image:: https://github.com/uvue-git/oef-sdk-python/wiki/imgs/operation-connect-2.png
-   :target: https://github.com/uvue-git/oef-sdk-python/wiki/imgs/operation-connect-2.png
+.. image:: https://github.com/fetchai/oef-sdk-python/wiki/imgs/operation-connect-2.png
+   :target: https://github.com/fetchai/oef-sdk-python/wiki/imgs/operation-connect-2.png
    :alt: Connect Operation
 
 **2.** Once connected and correctly identified, a *session* is created on the OEF-Core side.
@@ -82,20 +82,20 @@ with other agents.
 Once a session is in place, an agent can:
 - Register a DataService: propose a DataService by registering a data model (a description) and wait for interested agents to contact it. Note that the actual data is not sent
 
-.. image:: https://github.com/uvue-git/oef-sdk-python/wiki/imgs/operation-register.png
-   :target: https://github.com/uvue-git/oef-sdk-python/wiki/imgs/operation-register.png
+.. image:: https://github.com/fetchai/oef-sdk-python/wiki/imgs/operation-register.png
+   :target: https://github.com/fetchai/oef-sdk-python/wiki/imgs/operation-register.png
    :alt: Register Operation
 
 - Query for a DataService: query the OEF-core for a data model with a set of constraints
 
-.. image:: https://github.com/uvue-git/oef-sdk-python/wiki/imgs/operation-query.png
-   :target: https://github.com/uvue-git/oef-sdk-python/wiki/imgs/operation-query.png
+.. image:: https://github.com/fetchai/oef-sdk-python/wiki/imgs/operation-query.png
+   :target: https://github.com/fetchai/oef-sdk-python/wiki/imgs/operation-query.png
    :alt: Query Operation
 
 - Search for agents: conduct an agent property-based search (GPS position, market type, ...)
 
-.. image:: https://github.com/uvue-git/oef-sdk-python/wiki/imgs/operation-search.png
-   :target: https://github.com/uvue-git/oef-sdk-python/wiki/imgs/operation-search.png
+.. image:: https://github.com/fetchai/oef-sdk-python/wiki/imgs/operation-search.png
+   :target: https://github.com/fetchai/oef-sdk-python/wiki/imgs/operation-search.png
    :alt: Search Operation
 
 

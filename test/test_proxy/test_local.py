@@ -16,14 +16,17 @@
 #   limitations under the License.
 #
 # ------------------------------------------------------------------------------
+
+"""This module contains tests for the messaging functionalities with the local implementation of the OEF Node."""
+
 import asyncio
+from unittest.mock import MagicMock, patch
 
 import pytest
-from unittest.mock import MagicMock, patch
 
 from oef.agents import Agent
 from oef.messages import OEFErrorOperation
-from oef.proxy import OEFLocalProxy, OEFNetworkProxy, OEFConnectionError
+from oef.proxy import OEFLocalProxy, OEFConnectionError
 from oef.query import Query, Constraint, Eq, Gt
 from oef.schema import Description, DataModel, AttributeSchema
 from ..common import AgentTest
@@ -31,6 +34,7 @@ from ..conftest import _ASYNCIO_DELAY
 
 
 def test_on_message():
+    """Test that we can send and receive a simple message."""
 
     with OEFLocalProxy.LocalNode() as node:
 
@@ -42,11 +46,10 @@ def test_on_message():
         agent_0.connect()
         agent_1.connect()
 
-        asyncio.ensure_future(asyncio.gather(agent_0.async_run(), agent_1.async_run()))
-
         agent_0.send_message(0, 0, agent_0.public_key, msg)
         agent_0.send_message(0, 0, agent_1.public_key, msg)
 
+        asyncio.ensure_future(asyncio.gather(agent_0.async_run(), agent_1.async_run()))
         asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
 
         agent_0.stop()
@@ -64,7 +67,7 @@ def test_on_message():
 
 def test_on_cfp():
     """
-    Test that an agent can send a CFP to another agent, with different types of queries. Using the local OEF node.
+    Test that an agent can send a CFP to another agent, with different types of queries.
     """
 
     with OEFLocalProxy.LocalNode() as node:
@@ -80,17 +83,14 @@ def test_on_cfp():
         agent_0.send_cfp(0, 0, agent_1.public_key, 0, None)
         expected_message_01 = (0, 0, agent_0.public_key, 0, None)
         asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
-        assert expected_message_01 == agent_1.received_msg[0]
 
         agent_0.send_cfp(0, 1, agent_1.public_key, 0, b"hello")
         expected_message_02 = (0, 1, agent_0.public_key, 0, b"hello")
         asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
-        assert expected_message_02 == agent_1.received_msg[1]
 
         agent_0.send_cfp(0, 2, agent_1.public_key, 0, Query([Constraint("foo", Eq(0))]))
         expected_message_03 = (0, 2, agent_0.public_key, 0, Query([Constraint("foo", Eq(0))]))
         asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
-        assert expected_message_03 == agent_1.received_msg[2]
 
         agent_0.stop()
         agent_1.stop()
@@ -99,6 +99,10 @@ def test_on_cfp():
         agent_1.disconnect()
 
         assert len(agent_1.received_msg) == 3
+
+        assert expected_message_01 == agent_1.received_msg[0]
+        assert expected_message_02 == agent_1.received_msg[1]
+        assert expected_message_03 == agent_1.received_msg[2]
 
 
 def test_on_propose():
@@ -118,29 +122,30 @@ def test_on_propose():
         agent_0.send_propose(0, 0, agent_1.public_key, 0, b"hello")
         expected_message_01 = (0, 0, agent_0.public_key, 0, b"hello")
         asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
-        assert expected_message_01 == agent_1.received_msg[0]
 
         agent_0.send_propose(0, 0, agent_1.public_key, 0, [])
         expected_message_02 = (0, 0, agent_0.public_key, 0, [])
         asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
-        assert expected_message_02 == agent_1.received_msg[1]
 
         agent_0.send_propose(0, 0, agent_1.public_key, 0, [Description({})])
         expected_message_03 = (0, 0, agent_0.public_key, 0, [Description({})])
         asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
-        assert expected_message_03 == agent_1.received_msg[2]
 
         agent_0.send_propose(0, 0, agent_1.public_key, 0, [Description({}), Description({})])
         expected_message_04 = (0, 0, agent_0.public_key, 0, [Description({}), Description({})])
         asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
-        assert expected_message_04 == agent_1.received_msg[3]
-
-        assert len(agent_1.received_msg) == 4
 
         agent_1.stop()
 
         agent_0.disconnect()
         agent_1.disconnect()
+
+        assert len(agent_1.received_msg) == 4
+
+        assert expected_message_01 == agent_1.received_msg[0]
+        assert expected_message_02 == agent_1.received_msg[1]
+        assert expected_message_03 == agent_1.received_msg[2]
+        assert expected_message_04 == agent_1.received_msg[3]
 
 
 def test_on_accept():
@@ -160,14 +165,15 @@ def test_on_accept():
 
         agent_0.send_accept(0, 0, agent_1.public_key, 0)
         asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
-        assert agent_1.received_msg[0] == (0, 0, agent_0.public_key, 0)
-
-        assert len(agent_1.received_msg) == 1
 
         agent_1.stop()
 
         agent_0.disconnect()
         agent_1.disconnect()
+
+        assert agent_1.received_msg[0] == (0, 0, agent_0.public_key, 0)
+
+        assert len(agent_1.received_msg) == 1
 
 
 def test_on_decline():
@@ -187,14 +193,15 @@ def test_on_decline():
 
         agent_0.send_decline(0, 0, agent_1.public_key, 0)
         asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
-        assert agent_1.received_msg[0] == (0, 0, agent_0.public_key, 0)
-
-        assert len(agent_1.received_msg) == 1
 
         agent_1.stop()
 
         agent_0.disconnect()
         agent_1.disconnect()
+
+        assert len(agent_1.received_msg) == 1
+
+        assert agent_1.received_msg[0] == (0, 0, agent_0.public_key, 0)
 
 
 def test_on_search_result_services():
@@ -228,19 +235,14 @@ def test_on_search_result_services():
         agent_0.search_services(0, Query([Constraint("foo", Eq(0))], dummy_datamodel))
         asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
         expected_message_01 = (0, [])
-        assert expected_message_01 == agent_0.received_msg[0]
 
         agent_0.search_services(0, Query([Constraint("foo", Gt(10)), Constraint("bar", Gt("B"))], dummy_datamodel))
         expected_message_02 = (0, [agent_1.public_key])
         asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
-        assert expected_message_02 == agent_0.received_msg[1]
 
         agent_0.search_services(0, Query([Constraint("bar", Gt("A"))], dummy_datamodel))
         expected_message_03 = (0, [agent_1.public_key, agent_2.public_key])
         asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
-        assert expected_message_03 == agent_0.received_msg[2]
-
-        assert len(agent_0.received_msg) == 3
 
         agent_1.unregister_service(0, desc_1)
         agent_2.unregister_service(0, desc_2)
@@ -251,6 +253,12 @@ def test_on_search_result_services():
         agent_0.disconnect()
         agent_1.disconnect()
         agent_2.disconnect()
+
+        assert len(agent_0.received_msg) == 3
+
+        assert expected_message_01 == agent_0.received_msg[0]
+        assert expected_message_02 == agent_0.received_msg[1]
+        assert expected_message_03 == agent_0.received_msg[2]
 
 
 def test_on_search_result_agents():
@@ -281,19 +289,14 @@ def test_on_search_result_agents():
         agent_0.search_agents(0, Query([Constraint("foo", Eq(0))], dummy_datamodel))
         expected_message_01 = (0, [])
         asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
-        assert expected_message_01 == agent_0.received_msg[0]
 
         agent_0.search_agents(0, Query([Constraint("foo", Gt(10)), Constraint("bar", Gt("B"))], dummy_datamodel))
         expected_message_02 = (0, [agent_1.public_key])
         asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
-        assert expected_message_02 == agent_0.received_msg[1]
 
         agent_0.search_agents(0, Query([Constraint("bar", Gt("A"))], dummy_datamodel))
         expected_message_03 = (0, [agent_1.public_key, agent_2.public_key])
         asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
-        assert expected_message_03 == agent_0.received_msg[2]
-
-        assert len(agent_0.received_msg) == 3
 
         agent_1.unregister_agent(0)
         agent_2.unregister_agent(0)
@@ -303,6 +306,12 @@ def test_on_search_result_agents():
         agent_0.disconnect()
         agent_1.disconnect()
         agent_2.disconnect()
+
+        assert len(agent_0.received_msg) == 3
+
+        assert expected_message_01 == agent_0.received_msg[0]
+        assert expected_message_02 == agent_0.received_msg[1]
+        assert expected_message_03 == agent_0.received_msg[2]
 
 
 def test_unregister_agent():
@@ -328,13 +337,14 @@ def test_unregister_agent():
 
         agent_0.search_agents(0, Query([Constraint("foo", Eq(0))], dummy_datamodel))
         asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
-        assert (0, []) == agent_0.received_msg[0]
-        assert len(agent_0.received_msg) == 1
 
         agent_0.stop()
 
         agent_0.disconnect()
         agent_1.disconnect()
+
+        assert (0, []) == agent_0.received_msg[0]
+        assert len(agent_0.received_msg) == 1
 
 
 def test_unregister_service():
@@ -362,17 +372,18 @@ def test_unregister_service():
 
         agent_0.search_services(0, Query([Constraint("foo", Eq(0))], dummy_datamodel))
         asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
-        assert (0, []) == agent_0.received_msg[0]
-
-        assert len(agent_0.received_msg) == 1
 
         agent_0.stop()
 
         agent_0.disconnect()
         agent_1.disconnect()
 
+        assert (0, []) == agent_0.received_msg[0]
 
-def test_oef_error_when_failing_in_unregistering_service():
+        assert len(agent_0.received_msg) == 1
+
+
+def test_oef_error_when_unregistering_an_unregistered_service():
     """Test that we receive an OEF Error message when we try to unregister a non existing service."""
 
     with OEFLocalProxy.LocalNode() as node:
@@ -390,6 +401,31 @@ def test_oef_error_when_failing_in_unregistering_service():
         asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
 
         agent_0.on_oef_error.assert_called_with(0, OEFErrorOperation.UNREGISTER_SERVICE)
+
+        agent_0.stop()
+
+        agent_0.disconnect()
+        agent_1.disconnect()
+
+
+def test_oef_error_when_failing_in_unregistering_agent():
+    """Test that we receive an OEF Error message when we try to unregister a non registered agent."""
+
+    with OEFLocalProxy.LocalNode() as node:
+
+        agent_0 = AgentTest(OEFLocalProxy("agent_0", node))
+        agent_1 = AgentTest(OEFLocalProxy("agent_1", node))
+
+        agent_0.connect()
+        agent_1.connect()
+
+        asyncio.ensure_future(agent_0.async_run())
+
+        agent_0.on_oef_error = MagicMock()
+        agent_0.unregister_agent(0)
+        asyncio.get_event_loop().run_until_complete(asyncio.sleep(_ASYNCIO_DELAY))
+
+        agent_0.on_oef_error.assert_called_with(0, OEFErrorOperation.UNREGISTER_DESCRIPTION)
 
         agent_0.stop()
 
@@ -522,10 +558,10 @@ def test_send_more_than_64_kilobytes():
     actual_msg_id, actual_dialogue_id, actual_origin, actual_content = agent.received_msg[0]
 
     # assert that we received only one message
-    assert 1 == len(agent.received_msg)
+    assert len(agent.received_msg) == 1
 
     # assert that the message contains what we've sent.
-    assert actual_msg_id == expected_msg_id
-    assert actual_dialogue_id == expected_dialogue_id
-    assert actual_origin == expected_origin
-    assert actual_content == expected_content
+    assert expected_msg_id == actual_msg_id
+    assert expected_dialogue_id == actual_dialogue_id
+    assert expected_origin == actual_origin
+    assert expected_content == actual_content

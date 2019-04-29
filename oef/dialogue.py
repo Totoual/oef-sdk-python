@@ -136,6 +136,36 @@ class SingleDialogue(ABC):
         :return: ``None``
         """
 
+    async def async_on_message(self, msg_id: int, content: bytes) -> None:
+        """
+        The same of :func:`~oef.dialogue.SingleDialogue.on_message`, but in asynchronous context.
+        """
+        self.on_message(msg_id, content)
+
+    async def async_on_cfp(self, msg_id: int, target: int, query: CFP_TYPES) -> None:
+        """
+        The same of :func:`~oef.dialogue.SingleDialogue.on_cfp`, but in asynchronous context.
+        """
+        self.on_cfp(msg_id, target, query)
+
+    async def async_on_propose(self, msg_id: int, target: int, proposals: PROPOSE_TYPES) -> None:
+        """
+        The same of :func:`~oef.dialogue.SingleDialogue.on_propose`, but in asynchronous context.
+        """
+        self.on_propose(msg_id, target, proposals)
+
+    async def async_on_accept(self, msg_id: int, target: int) -> None:
+        """
+        The same of :func:`~oef.dialogue.SingleDialogue.on_accept`, but in asynchronous context.
+        """
+        self.on_accept(msg_id, target)
+
+    async def async_on_decline(self, msg_id: int, target: int) -> None:
+        """
+        The same of :func:`~oef.dialogue.SingleDialogue.on_decline`, but in asynchronous context.
+        """
+        self.on_decline(msg_id, target)
+
     def send_message(self, msg_id: int, msg: bytes) -> None:
         """
         Send a simple message. Analogous to the :func:`~oef.core.OEFCoreInterface.send_message` method.
@@ -262,6 +292,50 @@ class DialogueAgent(Agent, ABC):
         :param operation: the OEF error
         :return: ``None``
         """
+
+    async def async_on_new_cfp(self, msg_id: int, dialogue_id: int, from_: str, target: int, query: CFP_TYPES) -> None:
+        """
+        The same of :func:`~oef.dialogue.DialogueAgent.on_new_cfp`, but in asynchronous context.
+        """
+        self.on_new_cfp(msg_id, dialogue_id, from_, target, query)
+
+    async def async_on_new_message(self, msg_id: int, dialogue_id: int, from_: str, content: bytes) -> None:
+        """
+        The same of :func:`~oef.dialogue.DialogueAgent.on_new_message`, but in asynchronous context.
+        """
+        self.on_new_message(msg_id, dialogue_id, from_, content)
+
+    async def async_on_connection_error(self, operation: OEFErrorOperation) -> None:
+        """
+        The same of :func:`~oef.dialogue.DialogueAgent.on_connection_error`, but in asynchronous context.
+        """
+        self.on_connection_error(operation)
+
+    async def async_on_message(self, msg_id: int, dialogue_id: int, origin: str, content: bytes):
+        try:
+            dialogue = self._get_dialogue((origin, dialogue_id))
+            await dialogue.async_on_message(msg_id, content)
+        except KeyError:
+            await self.async_on_new_message(msg_id, dialogue_id, origin, content)
+
+    async def async_on_cfp(self, msg_id: int, dialogue_id: int, origin: str, target: int, query: CFP_TYPES):
+        try:
+            dialogue = self._get_dialogue((origin, dialogue_id))
+            await dialogue.async_on_cfp(msg_id, target, query)
+        except KeyError:
+            await self.async_on_new_cfp(msg_id, dialogue_id, origin, target, query)
+
+    async def async_on_propose(self, msg_id: int, dialogue_id: int, origin: str, target: int, proposals: PROPOSE_TYPES):
+        dialogue = self._get_dialogue((origin, dialogue_id))
+        await dialogue.async_on_propose(msg_id, target, proposals)
+
+    async def async_on_accept(self, msg_id: int, dialogue_id: int, origin: str, target: int):
+        dialogue = self._get_dialogue((origin, dialogue_id))
+        await dialogue.async_on_accept(msg_id, target)
+
+    async def async_on_decline(self, msg_id: int, dialogue_id: int, origin: str, target: int):
+        dialogue = self._get_dialogue((origin, dialogue_id))
+        await dialogue.async_on_decline(msg_id, target)
 
     def on_message(self, msg_id: int, dialogue_id: int, origin: str, content: bytes):
         try:

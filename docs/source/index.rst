@@ -35,6 +35,7 @@ User guide
    user/defining-data-model
    user/query-language
    user/communication-protocols
+   user/advanced-topics
 
    oef
 

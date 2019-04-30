@@ -78,7 +78,7 @@ if __name__ == '__main__':
     echo_model = DataModel("echo", [echo_feature], "echo service.")
     echo_description = Description({"does_echo": True}, echo_model)
 
-    msg_id = 0
+    msg_id = 22
     server_agent.register_service(msg_id, echo_description)
 
     # run the agent

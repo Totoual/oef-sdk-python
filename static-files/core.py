@@ -371,12 +371,18 @@ class ConnectionInterface(ABC):
         """
 
     @abstractmethod
+    def on_search_result_wide(self, search_id: int, agents: List[SearchResultItem]) -> None:
         """
         Handler for Search Result Wide messages.
-        The same of :func:`~oef.core.ConnectionInterface.on_oef_error`, but in asynchronous context.
+
         :param search_id: the identifier of the search to whom the result is answering.
         :param agents: the list of identifiers of the agents compliant with the search constraints.
         :return: ``None``
+        """
+
+    async def async_on_oef_error(self, answer_id: int, operation: OEFErrorOperation) -> None:
+        """
+        The same of :func:`~oef.core.ConnectionInterface.on_oef_error`, but in asynchronous context.
         """
         self.on_oef_error(answer_id, operation)
 

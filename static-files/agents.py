@@ -116,6 +116,8 @@ class Agent(AgentInterface, ABC):
         if self._task:
             self._task.cancel()
             self._task = None
+        else:
+            raise Exception("NO TASK TO CANCEL")
 
     def connect(self) -> bool:
         """

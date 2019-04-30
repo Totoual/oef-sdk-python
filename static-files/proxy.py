@@ -80,6 +80,7 @@ class OEFNetworkProxy(OEFProxy):
 
         self.oef_addr = oef_addr
         self.port = port
+        #self._loop = loop if loop is not None else asyncio.get_event_loop()
 
         # these are setup in _connect_to_server
         self._connection = None

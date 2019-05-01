@@ -374,7 +374,6 @@ class ConnectionInterface(ABC):
     def on_search_result_wide(self, search_id: int, agents: List[SearchResultItem]) -> None:
         """
         Handler for Search Result Wide messages.
-
         :param search_id: the identifier of the search to whom the result is answering.
         :param agents: the list of identifiers of the agents compliant with the search constraints.
         :return: ``None``
